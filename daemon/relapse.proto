@@ -1,5 +1,6 @@
 syntax = "proto3";
 package relapse_proto;
+option go_package="github.com/nerdynz/relapse/daemon/relapse_proto";
 
 message Capture {
 	int64 CaptureID = 1;
@@ -20,12 +21,24 @@ message DayResponse {
   repeated Capture Captures = 2;
 }
 
+message Settings {
+	repeated Setting Settings = 1;
+}
+message Setting {
+	string Key = 1;
+	string Value = 2;
+}
+
 message StartRequest {}
 message StartResponse {}
 message StopRequest {}
 message StopResponse {}
+message SettingsRequest {}
 
 service Relapse {
+  rpc GetSettings(SettingsRequest) returns (Settings) {}
+  rpc GetSetting(Setting) returns (Setting) {}
+  rpc SetSetting(Setting) returns (Setting) {}
   rpc GetCapturesForADay(DayRequest) returns (DayResponse) {}
   rpc StartCapture(StartRequest) returns (StartResponse) {}
   rpc StopCapture(StopRequest) returns (StopResponse) {}

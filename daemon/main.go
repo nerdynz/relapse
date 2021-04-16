@@ -12,6 +12,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 
@@ -132,6 +133,21 @@ func startCapturing() error {
 }
 
 type server struct {
+	relapse_proto.UnsafeRelapseServer
+}
+
+func (srv *server) GetSettings(ctx context.Context, req *relapse_proto.SettingsRequest) (*relapse_proto.Settings, error) {
+	return &relapse_proto.Settings{
+		Settings: make([]*relapse_proto.Setting, 0),
+	}, errors.New("Not implemented yet")
+}
+
+func (srv *server) GetSetting(ctx context.Context, req *relapse_proto.Setting) (*relapse_proto.Setting, error) {
+	return &relapse_proto.Setting{}, errors.New("Not implemented yet")
+}
+
+func (srv *server) SetSetting(ctx context.Context, req *relapse_proto.Setting) (*relapse_proto.Setting, error) {
+	return req, errors.New("Not implemented yet")
 }
 
 func (srv *server) StartCapture(ctx context.Context, req *relapse_proto.StartRequest) (*relapse_proto.StartResponse, error) {
@@ -325,5 +341,6 @@ func doCapture() error {
 	if err != nil {
 		return fmt.Errorf("DB trans commit failed: %v", err)
 	}
+	logrus.Infof("CaptureDayTimeSeconds_"+strconv.FormatInt(cap.CaptureDayTimeSeconds, 10))
 	return nil
 }

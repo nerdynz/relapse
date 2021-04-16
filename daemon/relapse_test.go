@@ -7,8 +7,8 @@ import (
 
 	"github.com/davecgh/go-spew/spew"
 	"github.com/nerdynz/relapse/daemon/relapse_proto"
+	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc"
-	"gopkg.in/stretchr/testify.v1/assert"
 )
 
 func TestGetDatabase(t *testing.T) {

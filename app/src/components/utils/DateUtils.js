@@ -93,8 +93,8 @@ export default {
     const MS_PER_DAY = 1000 * 60 * 60 * 24
 
     // Discard the time and time-zone information.
-    let utc1 = Date.UTC(start.getFullYear(), start.getMonth(), start.getDate())
-    let utc2 = Date.UTC(end.getFullYear(), end.getMonth(), end.getDate())
+    const utc1 = Date.UTC(start.getFullYear(), start.getMonth(), start.getDate())
+    const utc2 = Date.UTC(end.getFullYear(), end.getMonth(), end.getDate())
 
     return Math.floor((utc2 - utc1) / MS_PER_DAY)
   },
@@ -130,10 +130,10 @@ export default {
    */
   formatDate (date, format, translation) {
     translation = (!translation) ? DateLanguages.translations.en : translation
-    let year = date.getFullYear()
-    let month = date.getMonth() + 1
-    let day = date.getDate()
-    let str = format
+    const year = date.getFullYear()
+    const month = date.getMonth() + 1
+    const day = date.getDate()
+    const str = format
       .replace(/dd/, ('0' + day).slice(-2))
       .replace(/d/, day)
       .replace(/yyyy/, year)
@@ -154,7 +154,7 @@ export default {
    * @return {Array}
    */
   createDateArray (start, end) {
-    let dates = []
+    const dates = []
     while (start <= end) {
       dates.push(new Date(start))
       start = new Date(start).setDate(new Date(start).getDate() + 1)

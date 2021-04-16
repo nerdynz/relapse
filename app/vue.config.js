@@ -7,10 +7,10 @@ module.exports = {
   css: {
     loaderOptions: {
       sass: {
-        additionalData: `
+        prependData: `
           @import "@/scss/_variables.scss";
         `
       }
     }
   }
-};
+}

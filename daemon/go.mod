@@ -20,6 +20,7 @@ require (
 	github.com/spf13/viper v1.7.1
 	golang.org/x/sys v0.0.0-20210403161142-5e06dd20ab57 // indirect
 	google.golang.org/grpc v1.34.0
+	google.golang.org/protobuf v1.26.0 // indirect
 	gopkg.in/stretchr/testify.v1 v1.2.2
 	gopkg.in/yaml.v2 v2.3.0 // indirect
 )
