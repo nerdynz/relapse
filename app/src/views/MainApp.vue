@@ -6,57 +6,57 @@
 </template>
 
 <script>
-import ScreenshotViewer from "@/components/ScreenshotViewer";
+import ScreenshotViewer from '@/components/ScreenshotViewer'
 // import HelpView from './HelpView'
-import { mapActions, mapGetters } from "vuex";
-import { ipcRenderer } from "electron";
+import { mapActions, mapGetters } from 'vuex'
+import { ipcRenderer } from 'electron'
 
-let clicks = 0;
+let clicks = 0
 export default {
-  name: "main-app",
+  name: 'main-app',
   components: {
-    ScreenshotViewer
+    ScreenshotViewer,
     // HelpView
   },
   computed: {
     totalHoursWorked() {
-      let hours = Math.floor(this.totalMinutesWorked / 60);
-      let minutes = this.totalMinutesWorked % 60;
+      let hours = Math.floor(this.totalMinutesWorked / 60)
+      let minutes = this.totalMinutesWorked % 60
       if (minutes < 10) {
-        minutes = "0" + minutes;
+        minutes = '0' + minutes
       }
-      return `${hours}:${minutes}`;
+      return `${hours}:${minutes}`
     },
-    ...mapGetters(["settings"])
+    ...mapGetters(['settings']),
   },
   methods: {
     handleClick() {
-      clicks++;
+      clicks++
       if (clicks === 1) {
         setTimeout(() => {
           if (clicks === 1) {
             // this.singleClick()
           } else {
             // this.doubleClick()
-            ipcRenderer.send("maximize");
+            ipcRenderer.send('maximize')
           }
-          clicks = 0;
-        }, 250);
+          clicks = 0
+        }, 250)
       }
     },
-    ...mapActions(["loadSettings"]),
+    ...mapActions(['loadSettings']),
     minuteCalc(mins) {
-      this.totalMinutesWorked = mins;
-    }
+      this.totalMinutesWorked = mins
+    },
   },
   created() {},
   mounted() {
-    this.loadSettings();
+    this.loadSettings()
   },
   data() {
     return {
-      totalMinutesWorked: 0
-    };
-  }
-};
+      totalMinutesWorked: 0,
+    }
+  },
+}
 </script>

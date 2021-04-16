@@ -51,8 +51,10 @@
   </div>
 </template>
 
-<script>
+<script lang="ts">
 import { ipcRenderer } from 'electron'
+import { Vue, Options } from 'vue-class-component'
+import { Prop } from 'vue-property-decorator'
 
 import { fabric } from 'fabric'
 import dateFormat from 'dateformat'
@@ -63,235 +65,266 @@ const timeColor = '#1BC98E'
 let canvas
 let rect
 
-export default {
-  props: {
-    times: Array,
-    value: Number,
-    firstImageIndex: Number,
-    lastImageIndex: Number,
-    day: Date
-  },
+@Options({
   components: {
     Datepicker
-  },
-  computed: {
-    timelineReadyStyle() {
-      console.log('ready', this.isReady)
-      if (this.isReady) {
-        return 'opacity:1;'
-      }
-      return 'opacity:0;'
-    },
-    bgColor() {
-      return '#F6F6F6'
-    },
-    timesWhereIsWholeHour() {
-      let wholeHours = this.times.filter((t) => {
-        var actualDate = new Date(t.date)
-        if (actualDate.getMinutes() === 0) {
-          return true
-        }
-        return false
-      })
-      console.log('whole hours', wholeHours)
-      return wholeHours
-    }
-  },
-  created() {
-    setTimeout(() => {
-      this.redrawCanvas()
-    }, 1)
-  },
-  methods: {
-    datePickerOpened() {
-      this.highlighted = {
-        dates: [new Date()]
-      }
-    },
-    prevDay() {
-      var newDate = new Date(this.day).setDate(this.day.getDate() - 1)
-      this.dayChanged(newDate, true)
-    },
-    nextDay() {
-      var newDate = new Date(this.day).setDate(this.day.getDate() + 1)
-      this.dayChanged(newDate)
-    },
-    today() {
-      var newDate = new Date()
-      this.dayChanged(newDate, true)
-    },
-    dayChanged(date, skipToEnd) {
-      canvas.clear()
-      this.$emit('day-change', { date, skipToEnd })
-    },
-    prevMinute() {
-      this.minuteChangeIncrement = -1
-    },
-    nextMinute() {
-      this.minuteChangeIncrement = +1
-    },
-    prevMinuteOff() {
-      this.minuteChangeIncrement = 0
-    },
-    nextMinuteOff() {
-      this.minuteChangeIncrement = 0
-    },
-    // minuteChanged (index, isMouseEvent) {
-    minuteChanged(index) {
-      // if (!isMouseEvent) {
-      //   if (index > this.times.length - 1 || (index > this.lastImageIndex && this.minuteChangeIncrement === +1)) { // we are going forwards so its okay to go to the prev day
-      //     // this.nextDay()
-      //   }
-      //   if (index < 1 || (index < this.firstImageIndex && this.minuteChangeIncrement === -1)) { // we are going backwards so its okay to go to the prev day
-      //     // this.prevDay()
-      //   }
-      // }
-      this.moveMinuteLinePosition(index)
-      this.$emit('minute-index-change', index)
-    },
+  }
+})
+export default class Timeline extends Vue {
+  @Prop()
+  times!: any
 
-    moveMinuteLinePosition(index) {
-      var xPos = this.getLinePoint(index)
-      rect.set({ left: xPos })
-      canvas.renderAll()
-    },
-    markerStyle(index) {
-      let percent = (index / (this.timesWhereIsWholeHour.length - 1)) * 100
-      return `left: ${percent}%;`
-    },
-    isWholeHour(date) {
-      var actualDate = new Date(date)
+  @Prop()
+  value!: number
+
+  @Prop()
+  firstImageIndex!: number
+
+  @Prop()
+  lastImageIndex!: number
+
+  @Prop()
+  day!: Date
+
+  isMouseDown = false
+  minuteChangeIncrement = 0
+  isReady = false
+  highlighted = {
+    dates: [new Date()],
+  }
+
+  get timelineReadyStyle() {
+    console.log('ready', this.isReady)
+    if (this.isReady) {
+      return 'opacity:1;'
+    }
+    return 'opacity:0;'
+  }
+
+  get bgColor() {
+    return '#F6F6F6'
+  }
+
+  get timesWhereIsWholeHour() {
+    const wholeHours = this.times.filter((t) => {
+      var actualDate = new Date(t.date)
       if (actualDate.getMinutes() === 0) {
         return true
       }
       return false
-    },
-    getLinePoint(index) {
-      // console.log(canvas.width, index, this.times.length)
-      var linePoint = (canvas.width * ((index / this.times.length) * 100)) / 100
-      return linePoint
-    },
-    currentTime() {
-      let currentTime = this.times[this.value]
-      if (currentTime) {
-        return this.formatDate(currentTime.date)
-      }
-      return ''
-    },
-    mouseout() {
-      // this.isMouseDown = false
-    },
-    formatDate(date) {
-      if (date) {
-        return dateFormat(date, 'h:MMTT')
-      }
-      return ''
-    },
-    formatDateSmall(date) {
-      if (date) {
-        return dateFormat(date, 'hTT')
-      }
-      return ''
-    },
-    redrawCanvas() {
-      canvas.setDimensions({ width: window.innerWidth - 330, height: 30 })
-      // clear it
-      canvas.clear()
+    })
+    return wholeHours
+  }
 
-      // recalc line widths to be used for indicator and time rectanges
-      let lineWidth = (canvas.width * ((1 / this.times.length) * 100)) / 100
+  datePickerOpened() {
+    this.highlighted = {
+      dates: [new Date()],
+    }
+  }
 
-      // draw the times, one rect for each solid block of work (i.e. isReal) toggle between isReal and !isReal to create full rects
-      var currentOnOffness = false
-      var lastRectIndex = 0
-      for (var i = 0; i < this.times.length; i++) {
-        var time = this.times[i] // eslint-disable-line no-unused-vars
-        var left = this.getLinePoint(i)
-        if (i === 0) {
-          currentOnOffness = time.isReal
-          lastRectIndex = left
-        } else if (currentOnOffness !== time.isReal) {
-          // we have toggled so now we need to draw a new rect
-          // DEBUG - ()
-          // console.log('left', left)
-          // console.log('lastrectindex', lastRectIndex)
-          // console.log('lineWidth', lineWidth)
-          // console.log('how wide should I be', (left - lastRectIndex))
-          // END DEBUG
-          canvas.add(
-            new fabric.Rect({
-              width: left - lastRectIndex,
-              height: 40,
-              left: lastRectIndex,
-              top: 0,
-              stroke: !time.isReal ? timeColor : this.bgColor, // reversed because its not real
-              fill: !time.isReal ? timeColor : this.bgColor, // reversed because its not real
-              selectable: false
-            })
-          )
-          lastRectIndex = left
-          currentOnOffness = time.isReal
-        } else if (i === this.times.length - 1) {
-          canvas.add(
-            new fabric.Rect({
-              width: left - lastRectIndex,
-              height: 40,
-              left: lastRectIndex,
-              top: 0,
-              stroke: time.isReal ? timeColor : this.bgColor, // this is the actualness :)
-              fill: time.isReal ? timeColor : this.bgColor, // this is the actualness :)
-              selectable: false
-            })
-          )
+  prevDay() {
+    const newDate = new Date(this.day)
+    newDate.setDate(this.day.getDate() - 1)
+    this.dayChanged(newDate, true)
+  }
+
+  nextDay() {
+    const newDate = new Date(this.day)
+    newDate.setDate(this.day.getDate() + 1)
+    this.dayChanged(newDate, false)
+  }
+
+  today() {
+    const newDate = new Date()
+    this.dayChanged(newDate, true)
+  }
+
+  dayChanged(date: Date, skipToEnd:boolean) {
+    canvas.clear()
+    this.$emit('day-change', { date, skipToEnd })
+  }
+
+  prevMinute() {
+    this.minuteChangeIncrement = -1
+  }
+
+  nextMinute() {
+    this.minuteChangeIncrement = +1
+  }
+
+  prevMinuteOff() {
+    this.minuteChangeIncrement = 0
+  }
+
+  nextMinuteOff() {
+    this.minuteChangeIncrement = 0
+  }
+
+  minuteChanged(index: number) {
+    this.moveMinuteLinePosition(index)
+    this.$emit('minute-index-change', index)
+  }
+
+  moveMinuteLinePosition(index: number) {
+    var xPos = this.getLinePoint(index)
+    rect.set({ left: xPos })
+    canvas.renderAll()
+  }
+
+  markerStyle(index: number) {
+    let percent = (index / (this.timesWhereIsWholeHour.length - 1)) * 100
+    return `left: ${percent}%;`
+  }
+
+  isWholeHour(date) {
+    var actualDate = new Date(date)
+    if (actualDate.getMinutes() === 0) {
+      return true
+    }
+
+    return false
+  }
+
+  getLinePoint(index: number) {
+    // console.log(canvas.width, index, this.times.length)
+    var linePoint = (canvas.width * ((index / this.times.length) * 100)) / 100
+    return linePoint
+  }
+
+  currentTime() {
+    let currentTime = this.times[this.value]
+    if (currentTime) {
+      return this.formatDate(currentTime.date)
+    }
+
+    return ''
+  }
+
+  mouseout() {
+    // this.isMouseDown = false
+  }
+
+  formatDate(date) {
+    if (date) {
+      return dateFormat(date, 'h:MMTT')
+    }
+
+    return ''
+  }
+
+  formatDateSmall(date) {
+    if (date) {
+      return dateFormat(date, 'hTT')
+    }
+    return ''
+  }
+
+  redrawCanvas() {
+    canvas.setDimensions({ width: window.innerWidth - 330, height: 30 })
+    // clear it
+    canvas.clear()
+
+    // recalc line widths to be used for indicator and time rectanges
+    let lineWidth = (canvas.width * ((1 / this.times.length) * 100)) / 100
+
+    // draw the times, one rect for each solid block of work (i.e. isReal) toggle between isReal and !isReal to create full rects
+    var currentOnOffness = false
+    var lastRectIndex = 0
+    for (var i = 0; i < this.times.length; i++) {
+      var time = this.times[i] // eslint-disable-line no-unused-vars
+      var left = this.getLinePoint(i)
+      if (i === 0) {
+        currentOnOffness = time.isReal
+        lastRectIndex = left
+      } else if (currentOnOffness !== time.isReal) {
+        // we have toggled so now we need to draw a new rect
+        // DEBUG - ()
+        // console.log('left', left)
+        // console.log('lastrectindex', lastRectIndex)
+        // console.log('lineWidth', lineWidth)
+        // console.log('how wide should I be', (left - lastRectIndex))
+        // END DEBUG
+        canvas.add(
+          new fabric.Rect({
+            width: left - lastRectIndex,
+            height: 40,
+            left: lastRectIndex,
+            top: 0,
+            stroke: !time.isReal ? timeColor : this.bgColor, // reversed because its not real
+            fill: !time.isReal ? timeColor : this.bgColor, // reversed because its not real
+            selectable: false,
+          })
+        )
+        lastRectIndex = left
+        currentOnOffness = time.isReal
+      } else if (i === this.times.length - 1) {
+        canvas.add(
+          new fabric.Rect({
+            width: left - lastRectIndex,
+            height: 40,
+            left: lastRectIndex,
+            top: 0,
+            stroke: time.isReal ? timeColor : this.bgColor, // this is the actualness :)
+            fill: time.isReal ? timeColor : this.bgColor, // this is the actualness :)
+            selectable: false,
+          })
+        )
+      }
+    }
+
+    console.log('this.value', this.value)
+
+    // draw the indicator for what time we are currently on
+    rect = new fabric.Rect({
+      width: lineWidth,
+      height: 60,
+      left: this.getLinePoint(this.value),
+      top: 0,
+      stroke: '#F65C26',
+      fill: '#F65C26',
+      selectable: false,
+    })
+    console.log('happened', rect)
+    canvas.add(rect)
+
+    this.isReady = true
+  }
+
+  @Watch('times')
+  onChangeTimes() {
+    this.redrawCanvas()
+  }
+
+  @Watch('minuteChangeIncrement')
+  onChangeMinuteIncrement() {
+    let callCountIncrement = 0
+    let changeMinute = () => {
+      if (this.minuteChangeIncrement !== 0) {
+        // we have the mouse down
+        var newValue = this.value + this.minuteChangeIncrement
+        this.minuteChanged(newValue)
+        callCountIncrement++
+        if (callCountIncrement > 30) {
+          setTimeout(changeMinute, 45)
+        } else if (callCountIncrement > 20) {
+          setTimeout(changeMinute, 75)
+        } else if (callCountIncrement > 10) {
+          setTimeout(changeMinute, 90)
+        } else {
+          setTimeout(changeMinute, 140)
         }
       }
-
-      console.log('this.value', this.value)
-
-      // draw the indicator for what time we are currently on
-      rect = new fabric.Rect({
-        width: lineWidth,
-        height: 60,
-        left: this.getLinePoint(this.value),
-        top: 0,
-        stroke: '#F65C26',
-        fill: '#F65C26',
-        selectable: false
-      })
-      console.log('happened', rect)
-      canvas.add(rect)
-
-      this.isReady = true
     }
-  },
-  watch: {
-    times: function () {
+    changeMinute()
+  }
+
+  created() {
+    setTimeout(() => {
       this.redrawCanvas()
-    },
-    minuteChangeIncrement: function () {
-      var self = this
-      var callCountIncrement = 0
-      var changeMinute = function () {
-        if (self.minuteChangeIncrement !== 0) {
-          // we have the mouse down
-          var newValue = self.value + self.minuteChangeIncrement
-          self.minuteChanged(newValue)
-          callCountIncrement++
-          if (callCountIncrement > 30) {
-            setTimeout(changeMinute, 45)
-          } else if (callCountIncrement > 20) {
-            setTimeout(changeMinute, 75)
-          } else if (callCountIncrement > 10) {
-            setTimeout(changeMinute, 90)
-          } else {
-            setTimeout(changeMinute, 140)
-          }
-        }
-      }
-      changeMinute()
-    }
-  },
-  mounted: function () {
+    }, 1)
+  }
+
+  mounted() {
     let self = this
     let panning = false
 
@@ -377,16 +410,6 @@ export default {
         }
       }
     })
-  },
-  data: function () {
-    return {
-      isMouseDown: false,
-      minuteChangeIncrement: 0,
-      isReady: false,
-      highlighted: {
-        dates: [new Date()]
-      }
-    }
   }
 }
 </script>
