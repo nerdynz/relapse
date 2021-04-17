@@ -10,35 +10,39 @@ import { store } from './index'
 class RelapseModule extends VuexModule {
   screenshotDaysDuration = 30
   screenshotCapturePath = ''
+  isHelpShown = false
+
   settingsMessage = {
     msg: '',
     msgType: ''
   }
+
   day: DayInfo = {
     fullDate: '',
     files: [],
     skipToEnd: false
   }
-  isHelpShown = false
 
-  get currentDay() {
+  get currentDay () {
     return this.day
   }
-  get settings(): any {
-    let settings = {
+
+  get settings (): any {
+    return {
       screenshotDaysDuration: this.screenshotDaysDuration,
       capturePath: this.capturePath
     }
-    return settings
   }
-  get capturePath() {
+
+  get capturePath () {
     return this.settings.screenshotCapturePath
   }
 
   @Mutation
-  updateCapturePath(capturePath: string) {
+  updateCapturePath (capturePath: string) {
     this.screenshotCapturePath = capturePath
   }
+
   // @Mutation
   // updateSettings(settings: RelapseSettings) {
   //   this = settings
@@ -47,8 +51,9 @@ class RelapseModule extends VuexModule {
   // updateSettingsMessage(msg: any) {
   //   state.settingsMessage = msg
   // }
+
   @Mutation
-  setDay(day: DayInfo) {
+  setDay (day: DayInfo) {
     if (!day.files) {
       day.files = []
     }
@@ -63,17 +68,17 @@ class RelapseModule extends VuexModule {
   // }
 
   @Action
-  loadSettings() {
+  loadSettings () {
     ipcRenderer.send('load-settings')
   }
 
   @Action
-  saveSettings(settings: RelapseSettings) {
+  saveSettings (settings: RelapseSettings) {
     ipcRenderer.send('change-settings', settings)
   }
 
   @Action
-  closeSettings() {
+  closeSettings () {
     ipcRenderer.send('close-settings')
   }
 
@@ -90,7 +95,7 @@ class RelapseModule extends VuexModule {
   // }
 
   @Action
-  changeDay(day: DayInfo) {
+  changeDay (day: DayInfo) {
     this.setDay(day)
   }
 
@@ -101,17 +106,18 @@ class RelapseModule extends VuexModule {
   // }
 
   @Action
-  loadDayFromServer({ date, skipToEnd }: any) {
-    // console.log('skip', skipToEnd)
+  loadDayFromServer ({ date, skipToEnd }: any) {
+    // console.log("skip", skipToEnd);
     ipcRenderer.send('load-day', date, skipToEnd)
   }
 
   @Action
-  openDialogBox() {
+  openDialogBox () {
     ipcRenderer.send('open-dialog')
   }
+
   @Action
-  openCapturePath() {
+  openCapturePath () {
     ipcRenderer.send('open-capture-path')
   }
 

@@ -54,16 +54,13 @@
 <script lang="ts">
 import { ipcRenderer } from 'electron'
 import { Vue, Options } from 'vue-class-component'
-import { Prop } from 'vue-property-decorator'
+import { Watch, Prop } from 'vue-property-decorator'
 
 import { fabric } from 'fabric'
 import dateFormat from 'dateformat'
 import Datepicker from './DatePicker.vue'
 
 const timeColor = '#1BC98E'
-
-let canvas
-let rect
 
 @Options({
   components: {
@@ -86,14 +83,18 @@ export default class Timeline extends Vue {
   @Prop()
   day!: Date
 
+  canvas!: fabric.Canvas
+  rect!: fabric.Rect
+  hoverRect!: fabric.Rect
+
   isMouseDown = false
   minuteChangeIncrement = 0
   isReady = false
   highlighted = {
-    dates: [new Date()],
+    dates: [new Date()]
   }
 
-  get timelineReadyStyle() {
+  get timelineReadyStyle () {
     console.log('ready', this.isReady)
     if (this.isReady) {
       return 'opacity:1;'
@@ -101,12 +102,12 @@ export default class Timeline extends Vue {
     return 'opacity:0;'
   }
 
-  get bgColor() {
+  get bgColor () {
     return '#F6F6F6'
   }
 
-  get timesWhereIsWholeHour() {
-    const wholeHours = this.times.filter((t) => {
+  get timesWhereIsWholeHour () {
+    const wholeHours = this.times.filter((t: any) => {
       var actualDate = new Date(t.date)
       if (actualDate.getMinutes() === 0) {
         return true
@@ -116,67 +117,78 @@ export default class Timeline extends Vue {
     return wholeHours
   }
 
-  datePickerOpened() {
+  datePickerOpened () {
     this.highlighted = {
-      dates: [new Date()],
+      dates: [new Date()]
     }
   }
 
-  prevDay() {
+  prevDay () {
     const newDate = new Date(this.day)
     newDate.setDate(this.day.getDate() - 1)
     this.dayChanged(newDate, true)
   }
 
-  nextDay() {
+  nextDay () {
     const newDate = new Date(this.day)
     newDate.setDate(this.day.getDate() + 1)
     this.dayChanged(newDate, false)
   }
 
-  today() {
+  today () {
     const newDate = new Date()
     this.dayChanged(newDate, true)
   }
 
-  dayChanged(date: Date, skipToEnd:boolean) {
-    canvas.clear()
+  dayChanged (date: Date, skipToEnd: boolean) {
+    this.canvas.clear()
     this.$emit('day-change', { date, skipToEnd })
   }
 
-  prevMinute() {
+  prevMinute () {
     this.minuteChangeIncrement = -1
   }
 
-  nextMinute() {
+  nextMinute () {
     this.minuteChangeIncrement = +1
   }
 
-  prevMinuteOff() {
+  prevMinuteOff () {
     this.minuteChangeIncrement = 0
   }
 
-  nextMinuteOff() {
+  nextMinuteOff () {
     this.minuteChangeIncrement = 0
   }
 
-  minuteChanged(index: number) {
+  minuteChanged (index: number) {
     this.moveMinuteLinePosition(index)
     this.$emit('minute-index-change', index)
   }
 
-  moveMinuteLinePosition(index: number) {
+  moveMinuteLinePosition (index: number) {
     var xPos = this.getLinePoint(index)
-    rect.set({ left: xPos })
-    canvas.renderAll()
+    this.rect.set({ left: xPos })
+    this.canvas.renderAll()
   }
 
-  markerStyle(index: number) {
+  moveMinuteHoverLinePosition (index: number) {
+    var xPos = this.getLinePoint(index)
+    this.hoverRect.set({ left: xPos, height: 60 })
+    this.canvas.renderAll()
+  }
+
+  hideMinuteHoverLine () {
+    this.hoverRect.set({ height: 0 })
+    this.canvas.renderAll()
+  }
+
+  markerStyle (index: number) {
     let percent = (index / (this.timesWhereIsWholeHour.length - 1)) * 100
     return `left: ${percent}%;`
   }
 
-  isWholeHour(date) {
+  isWholeHour (date: Date) {
     var actualDate = new Date(date)
     if (actualDate.getMinutes() === 0) {
       return true
@@ -185,13 +197,16 @@ export default class Timeline extends Vue {
     return false
   }
 
-  getLinePoint(index: number) {
-    // console.log(canvas.width, index, this.times.length)
-    var linePoint = (canvas.width * ((index / this.times.length) * 100)) / 100
+  getLinePoint (index: number) {
+    // console.log(this.canvas.width, index, this.times.length)
+    var linePoint = 0
+    if (this.canvas && this.canvas.width) {
+      return (this.canvas.width * ((index / this.times.length) * 100)) / 100
+    }
     return linePoint
   }
 
-  currentTime() {
+  currentTime () {
     let currentTime = this.times[this.value]
     if (currentTime) {
       return this.formatDate(currentTime.date)
@@ -200,11 +215,11 @@ export default class Timeline extends Vue {
     return ''
   }
 
-  mouseout() {
+  mouseout () {
     // this.isMouseDown = false
   }
 
-  formatDate(date) {
+  formatDate (date: Date) {
     if (date) {
       return dateFormat(date, 'h:MMTT')
     }
@@ -212,20 +227,23 @@ export default class Timeline extends Vue {
     return ''
   }
 
-  formatDateSmall(date) {
+  formatDateSmall (date: Date) {
     if (date) {
       return dateFormat(date, 'hTT')
     }
     return ''
   }
 
-  redrawCanvas() {
-    canvas.setDimensions({ width: window.innerWidth - 330, height: 30 })
+  redrawCanvas () {
+    this.canvas.setDimensions({ width: window.innerWidth - 330, height: 30 })
     // clear it
-    canvas.clear()
+    this.canvas.clear()
 
     // recalc line widths to be used for indicator and time rectanges
-    let lineWidth = (canvas.width * ((1 / this.times.length) * 100)) / 100
+    let lineWidth = 0
+    if (this.canvas && this.canvas.width) {
+      lineWidth = (this.canvas.width * ((1 / this.times.length) * 100)) / 100
+    }
 
     // draw the times, one rect for each solid block of work (i.e. isReal) toggle between isReal and !isReal to create full rects
     var currentOnOffness = false
@@ -244,7 +262,7 @@ export default class Timeline extends Vue {
         // console.log('lineWidth', lineWidth)
         // console.log('how wide should I be', (left - lastRectIndex))
         // END DEBUG
-        canvas.add(
+        this.canvas.add(
           new fabric.Rect({
             width: left - lastRectIndex,
             height: 40,
@@ -252,13 +270,13 @@ export default class Timeline extends Vue {
             top: 0,
             stroke: !time.isReal ? timeColor : this.bgColor, // reversed because its not real
             fill: !time.isReal ? timeColor : this.bgColor, // reversed because its not real
-            selectable: false,
+            selectable: false
           })
         )
         lastRectIndex = left
         currentOnOffness = time.isReal
       } else if (i === this.times.length - 1) {
-        canvas.add(
+        this.canvas.add(
           new fabric.Rect({
             width: left - lastRectIndex,
             height: 40,
@@ -266,7 +284,7 @@ export default class Timeline extends Vue {
             top: 0,
             stroke: time.isReal ? timeColor : this.bgColor, // this is the actualness :)
             fill: time.isReal ? timeColor : this.bgColor, // this is the actualness :)
-            selectable: false,
+            selectable: false
           })
         )
       }
@@ -275,28 +293,38 @@ export default class Timeline extends Vue {
     console.log('this.value', this.value)
 
     // draw the indicator for what time we are currently on
-    rect = new fabric.Rect({
+    this.rect = new fabric.Rect({
       width: lineWidth,
       height: 60,
       left: this.getLinePoint(this.value),
       top: 0,
       stroke: '#F65C26',
       fill: '#F65C26',
-      selectable: false,
+      selectable: false
     })
-    console.log('happened', rect)
-    canvas.add(rect)
+
+    this.hoverRect = new fabric.Rect({
+      width: lineWidth * 1,
+      height: 60,
+      left: this.getLinePoint(this.value),
+      top: 0,
+      stroke: '#71ff60',
+      fill: '#71ff60',
+      selectable: false
+    })
+    this.canvas.add(this.rect)
+    this.canvas.add(this.hoverRect)
 
     this.isReady = true
   }
 
   @Watch('times')
-  onChangeTimes() {
+  onChangeTimes () {
     this.redrawCanvas()
   }
 
   @Watch('minuteChangeIncrement')
-  onChangeMinuteIncrement() {
+  onChangeMinuteIncrement () {
     let callCountIncrement = 0
     let changeMinute = () => {
       if (this.minuteChangeIncrement !== 0) {
@@ -318,30 +346,29 @@ export default class Timeline extends Vue {
     changeMinute()
   }
 
-  created() {
+  created () {
     setTimeout(() => {
       this.redrawCanvas()
     }, 1)
   }
 
-  mounted() {
-    let self = this
+  mounted () {
     let panning = false
 
-    canvas = new fabric.Canvas('timeline-viewer')
-    canvas.selection = false
-    canvas.setDimensions({ width: window.innerWidth - 40, height: 40 })
+    this.canvas = new fabric.Canvas('timeline-viewer')
+    this.canvas.selection = false
+    this.canvas.setDimensions({ width: window.innerWidth - 40, height: 40 })
 
-    window.addEventListener('resize', function () {
-      self.redrawCanvas()
+    window.addEventListener('resize', () => {
+      this.redrawCanvas()
     })
 
-    var calcCursorPos = function (e) {
+    var calcCursorPos = (e: any) => {
       let canvasX = e.e.layerX
-      var clickPercent = canvasX / canvas.width // dont * by 100 because we need the decimal percent
-      var val = Math.round(clickPercent * self.times.length)
-      if (val >= self.times.length - 1) {
-        val = self.times.length - 2
+      var clickPercent = canvasX / this.canvas.width! // dont * by 100 because we need the decimal percent
+      var val = Math.round(clickPercent * this.times.length)
+      if (val >= this.times.length - 1) {
+        val = this.times.length - 2
       }
       if (val <= 0) {
         val = 0
@@ -349,46 +376,52 @@ export default class Timeline extends Vue {
       return val
     }
 
-    canvas.on('mouse:up', function (e) {
-      canvas.defaultCursor = 'pointer'
-      self.minuteChanged(calcCursorPos(e), true)
+    this.canvas.on('mouse:up', e => {
+      this.minuteChanged(calcCursorPos(e))
       panning = false
     })
 
-    canvas.on('mouse:down', function (e) {
-      canvas.defaultCursor = '-webkit-grabbing'
-      self.minuteChanged(calcCursorPos(e), true)
+    this.canvas.on('mouse:down', e => {
+      this.minuteChanged(calcCursorPos(e))
       panning = true
     })
+    this.canvas.on('mouse:out', e => {
+      console.log('mouse went in')
+      this.hideMinuteHoverLine()
+    })
 
-    canvas.on('mouse:move', function (e) {
-      if (panning && e && e.e) {
-        self.minuteChanged(calcCursorPos(e), true)
-        // var units = 10
-        // var delta = new fabric.Point(e.e.movementX, e.e.movementY)
+    this.canvas.on('mouse:move', e => {
+      if (e && e.e) {
+        if (panning) {
+          this.minuteChanged(calcCursorPos(e))
+          // var units = 10
+          // var delta = new fabric.Point(e.e.movementX, e.e.movementY)
+        } else {
+          this.moveMinuteHoverLinePosition(calcCursorPos(e))
+        }
       }
     })
 
     let lastKeyboardEvent = 0
     let eventDebounce = 100
 
-    var goleft = function () {
-      self.prevMinute()
-      self.$nextTick(function () {
+    var goleft = () => {
+      this.prevMinute()
+      this.$nextTick(() => {
         // DOM updated
-        self.prevMinuteOff()
+        this.prevMinuteOff()
       })
     }
 
-    var goRight = function () {
-      self.nextMinute()
-      self.$nextTick(function () {
+    var goRight = () => {
+      this.nextMinute()
+      this.$nextTick(() => {
         // DOM updated
-        self.nextMinuteOff()
+        this.nextMinuteOff()
       })
     }
 
-    ipcRenderer.on('arrow-pressed', function (ev, direction) {
+    ipcRenderer.on('arrow-pressed', (ev, direction) => {
       if (lastKeyboardEvent + eventDebounce < Number(+new Date())) {
         lastKeyboardEvent = Number(+new Date())
         if (direction === 'left') {
@@ -398,15 +431,15 @@ export default class Timeline extends Vue {
         }
       }
     })
-    ipcRenderer.on('day-function', function (ev, direction) {
+    ipcRenderer.on('day-function', (ev, direction) => {
       if (lastKeyboardEvent + eventDebounce < Number(+new Date())) {
         lastKeyboardEvent = Number(+new Date())
         if (direction === 'prevDay') {
-          self.prevDay()
+          this.prevDay()
         } else if (direction === 'nextDay') {
-          self.nextDay()
+          this.nextDay()
         } else {
-          self.today()
+          this.today()
         }
       }
     })
@@ -514,6 +547,7 @@ export default class Timeline extends Vue {
 
   canvas {
     -webkit-app-region: no-drag;
+    cursor: none !important;
   }
 
   .canvas-bg {

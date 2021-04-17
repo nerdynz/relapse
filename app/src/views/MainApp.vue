@@ -5,58 +5,93 @@
   <div class="content">Hours worked: {{ totalHoursWorked }}</div>
 </template>
 
-<script>
-import ScreenshotViewer from '@/components/ScreenshotViewer'
-// import HelpView from './HelpView'
-import { mapActions, mapGetters } from 'vuex'
-import { ipcRenderer } from 'electron'
+<script lang="ts">
+import ScreenshotViewer from '@/components/ScreenshotViewer.vue'
+import { relapseModule } from '@/store/relapseModule'
 
-let clicks = 0
-export default {
-  name: 'main-app',
+import { ipcRenderer } from 'electron'
+import { Vue, Options } from 'vue-class-component'
+
+@Options({
   components: {
-    ScreenshotViewer,
-    // HelpView
-  },
-  computed: {
-    totalHoursWorked() {
-      let hours = Math.floor(this.totalMinutesWorked / 60)
-      let minutes = this.totalMinutesWorked % 60
-      if (minutes < 10) {
-        minutes = '0' + minutes
-      }
-      return `${hours}:${minutes}`
-    },
-    ...mapGetters(['settings']),
-  },
-  methods: {
-    handleClick() {
-      clicks++
-      if (clicks === 1) {
-        setTimeout(() => {
-          if (clicks === 1) {
-            // this.singleClick()
-          } else {
-            // this.doubleClick()
-            ipcRenderer.send('maximize')
-          }
-          clicks = 0
-        }, 250)
-      }
-    },
-    ...mapActions(['loadSettings']),
-    minuteCalc(mins) {
-      this.totalMinutesWorked = mins
-    },
-  },
-  created() {},
-  mounted() {
-    this.loadSettings()
-  },
-  data() {
-    return {
-      totalMinutesWorked: 0,
+    ScreenshotViewer
+  }
+})
+export default class MainApp extends Vue {
+  clicks = 0
+  totalMinutesWorked = 0
+
+  get settings () {
+    return relapseModule.settings
+  }
+
+  get totalHoursWorked (): string {
+    const hours = Math.floor(this.totalMinutesWorked / 60)
+    const minutes = this.totalMinutesWorked % 60
+    let minuteStr = '' + minutes
+    if (minutes < 10) {
+      minuteStr = '0' + minutes
     }
-  },
+    return `${hours}:${minuteStr}`
+  }
+
+  handleClick () {
+    this.clicks++
+    if (this.clicks === 1) {
+      setTimeout(() => {
+        if (this.clicks === 1) {
+          // this.singleClick()
+        } else {
+          // this.doubleClick()
+          ipcRenderer.send('maximize')
+        }
+        this.clicks = 0
+      }, 250)
+    }
+  }
+
+  minuteCalc (mins: number) {
+    this.totalMinutesWorked = mins
+  }
+
+  created () {
+    // console.log('server event hooks registered')
+
+    // day loaded event
+    ipcRenderer.on('loaded-day', function (ev, { doc }) {
+      console.log('doc', doc)
+      relapseModule.changeDay(doc)
+      // store.dispatch('changeDay', doc)
+    })
+
+    // ipcRenderer.on('update-log', function (ev, log) {
+    //   // console.log('updat', log)
+    //   store.dispatch('updateLog', log)
+    // })
+
+    // ipcRenderer.on('loaded-settings', function (ev, settings) {
+    //   store.dispatch('updateSettings', settings)
+    // })
+
+    // ipcRenderer.on('changed-settings', function (ev, msg, settings) {
+    //   store.dispatch('updateSettings', settings)
+    //   if (typeof msg === 'object') {
+    //     store.dispatch('updateSettingsMessage', msg)
+    //   }
+    // })
+
+    // ipcRenderer.on('screenshot-created', function (ev, day) {
+    //   console.log(day)
+    //   if (day) {
+    //     store.dispatch('addScreenshot', day)
+    //   }
+    // })
+
+    // ipcRenderer.on('filepath-changed', function (ev, filepath) {
+    //   if (filepath) {
+    //     store.dispatch('filePathChanged', filepath)
+    //   }
+    // })
+  }
 }
 </script>

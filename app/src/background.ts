@@ -48,7 +48,7 @@ let client: RelapseClient
 let tray
 let trayContextMenu
 
-async function createWindow() {
+async function createWindow () {
   // Create the browser window.
   mainWindow = new BrowserWindow({
     title: 'Relapse',
@@ -62,8 +62,7 @@ async function createWindow() {
     webPreferences: {
       // Use pluginOptions.nodeIntegration, leave this alone
       // See nklayman.github.io/vue-cli-plugin-electron-builder/guide/security.html#node-integration for more info
-      nodeIntegration: (process.env
-        .ELECTRON_NODE_INTEGRATION as unknown) as boolean
+      nodeIntegration: true
     }
   })
 
@@ -122,7 +121,7 @@ app.on('ready', async () => {
 // Exit cleanly on request from parent process in development mode.
 if (isDevelopment) {
   if (process.platform === 'win32') {
-    process.on('message', (data) => {
+    process.on('message', data => {
       if (data === 'graceful-exit') {
         app.quit()
       }
@@ -134,7 +133,7 @@ if (isDevelopment) {
   }
 }
 
-function createTrayAndMenusAndShortcuts() {
+function createTrayAndMenusAndShortcuts () {
   let show = function () {
     if (!mainWindow) {
       createWindow()
@@ -269,7 +268,7 @@ function createTrayAndMenusAndShortcuts() {
     })
   }
 
-  function showPreferencesScreen() {
+  function showPreferencesScreen () {
     if (settingsWindow) {
       settingsWindow.show()
       return // already open
@@ -541,7 +540,9 @@ app.on('ready', () => {
   child.stderr.setEncoding('utf8')
   child.stderr.on('data', function (data: string) {
     if (data.startsWith('CaptureDayTimeSeconds_')) {
-      let startOfDay = moment(currentSelectedDateTime).startOf('day').unix()
+      let startOfDay = moment(currentSelectedDateTime)
+        .startOf('day')
+        .unix()
 
       console.log(data, ' compared to ', startOfDay)
       let startOfDayFromDaemon = data.split('CaptureDayTimeSeconds_')[0]
@@ -586,7 +587,7 @@ app.on('ready', () => {
     shell.openExternal(link)
   })
 
-  ipcMain.on('close-settings', (event) => {
+  ipcMain.on('close-settings', event => {
     if (settingsWindow) {
       settingsWindow.close()
     }
@@ -635,12 +636,12 @@ app.on('activate', () => {
   }
 })
 
-function image(imageName: string) {
+function image (imageName: string) {
   console.log('imagePath', imagePath)
   return imagePath + '/' + imageName
 }
 
-function loadDay(skipToEnd: boolean) {
+function loadDay (skipToEnd: boolean) {
   var mDate = moment(currentSelectedDateTime)
   let dayInfo: DayInfo = {
     fullDate: mDate.format('DD-MMM-YYYY'),
@@ -659,7 +660,9 @@ function loadDay(skipToEnd: boolean) {
       if (resp) {
         let captures = resp.getCapturesList()
         if (captures) {
-          dayInfo.files = captures
+          dayInfo.files = captures.map(cap => {
+            return cap.toObject(false)
+          })
         }
       }
       if (mainWindow) {
