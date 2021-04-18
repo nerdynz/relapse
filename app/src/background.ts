@@ -15,21 +15,22 @@ import moment from 'moment'
 import { createProtocol } from 'vue-cli-plugin-electron-builder/lib'
 import { RelapseClient } from './grpc/relapse_grpc_pb'
 import { DayRequest, DayResponse } from './grpc/relapse_pb'
-
+import { spawn } from 'child_process'
+import path from 'path'
 const isDevelopment = process.env.NODE_ENV !== 'production'
-const { spawn } = require('child_process')
+// const { spawn } = require('child_process')
 // const BrowserWindow = electron.BrowserWindow
 // const dialog = electron.dialog
 // const ipcMain = electron.ipcMain
 // const Menu = electron.Menu
 // const shell = electron.shell
 // const Tray = electron.Tray
-const path = require('path')
+// const path = require('path')
 // const moment = require('moment')
 
 const binPath = path.resolve(__dirname, '../src/bin/')
 const imagePath = path.resolve(__dirname, '../src/assets/')
-const winURL = `http://localhost:8080`
+const winURL = "http://localhost:8080"
 
 // const PROTO_PATH = path.resolve(__dirname, '../src/') + '/relapse.proto'
 // const protoLoader = require('@grpc/proto-loader')
@@ -55,7 +56,7 @@ async function createWindow () {
     height: 900,
     width: 1440,
     // backgroundColor: '#252830',
-    // icon: image('Timesheet.png'),
+    icon: image('Relapse.icns'),
     // transparent: true,
     titleBarStyle: 'hiddenInset',
     vibrancy: 'appearance-based',
@@ -69,7 +70,7 @@ async function createWindow () {
   if (process.env.WEBPACK_DEV_SERVER_URL) {
     // Load the url of the dev server if in development mode
     await mainWindow.loadURL(process.env.WEBPACK_DEV_SERVER_URL as string)
-    if (!process.env.IS_TEST) mainWindow.webContents.openDevTools()
+    // if (!process.env.IS_TEST) mainWindow.webContents.openDevTools()
   } else {
     createProtocol('app')
     // Load the index.html when not in development
@@ -429,8 +430,8 @@ function createTrayAndMenusAndShortcuts () {
 
   Menu.setApplicationMenu(mainMenu)
 
-  tray = new Tray(image('Rewind.png'))
-  tray.setPressedImage(image('Rewind.png'))
+  tray = new Tray(image('TrayIcon@2x.png'))
+  tray.setPressedImage(image('TrayIcon@2x.png'))
   trayContextMenu = Menu.buildFromTemplate([
     { label: 'Show Window', type: 'normal', click: show },
     { type: 'separator' },
@@ -557,7 +558,7 @@ app.on('ready', () => {
   console.log(client)
 
   createWindow()
-  // createTrayAndMenusAndShortcuts()
+  createTrayAndMenusAndShortcuts()
 
   // communication with app. think of this as the router
   ipcMain.on('maximize', () => {

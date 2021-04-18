@@ -57,10 +57,11 @@ import { Vue, Options } from 'vue-class-component'
 import { Watch, Prop } from 'vue-property-decorator'
 
 import { fabric } from 'fabric'
+import { IEvent } from 'fabric/fabric-impl'
 import dateFormat from 'dateformat'
 import Datepicker from './DatePicker.vue'
 
-const timeColor = '#1BC98E'
+const timeColor = '#99f9b3'
 
 @Options({
   components: {
@@ -298,18 +299,18 @@ export default class Timeline extends Vue {
       height: 60,
       left: this.getLinePoint(this.value),
       top: 0,
-      stroke: '#F65C26',
-      fill: '#F65C26',
+      stroke: '#f2ae57',
+      fill: '#f2ae57',
       selectable: false
     })
 
     this.hoverRect = new fabric.Rect({
       width: lineWidth * 1,
-      height: 60,
+      height: 0,
       left: this.getLinePoint(this.value),
-      top: 0,
-      stroke: '#71ff60',
-      fill: '#71ff60',
+      top: -1,
+      stroke: '#F65C26',
+      fill: '#F65C26',
       selectable: false
     })
     this.canvas.add(this.rect)
@@ -376,21 +377,21 @@ export default class Timeline extends Vue {
       return val
     }
 
-    this.canvas.on('mouse:up', e => {
+    this.canvas.on('mouse:up', (e: IEvent) => {
       this.minuteChanged(calcCursorPos(e))
       panning = false
     })
 
-    this.canvas.on('mouse:down', e => {
+    this.canvas.on('mouse:down', (e: IEvent) => {
       this.minuteChanged(calcCursorPos(e))
       panning = true
     })
-    this.canvas.on('mouse:out', e => {
+    this.canvas.on('mouse:out', (e: IEvent) => {
       console.log('mouse went in')
       this.hideMinuteHoverLine()
     })
 
-    this.canvas.on('mouse:move', e => {
+    this.canvas.on('mouse:move', (e: IEvent) => {
       if (e && e.e) {
         if (panning) {
           this.minuteChanged(calcCursorPos(e))

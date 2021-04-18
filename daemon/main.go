@@ -106,15 +106,20 @@ func main() {
 }
 
 func startCapturing() error {
+
 	stopChan = make(chan bool)
-	err := doCapture()
-	if err != nil {
-		logrus.Error(err)
-		return err
-	}
+	// err := doCapture()
+	// if err != nil {
+	// 	logrus.Error(err)
+	// 	return err
+	// }
 
 	go func() {
+		for time.Now().Second() != 59 && time.Now().Second() != 29 {
+			time.Sleep(time.Second)
+		}
 		ticker := time.NewTicker(time.Second * 30)
+
 		for {
 			select {
 			case <-stopChan:
@@ -308,7 +313,12 @@ func doCapture() error {
 	if !strings.HasSuffix(capturePath, "/") {
 		capturePath += "/"
 	}
-	captureTime := time.Now()
+	now := time.Now()
+	// seconds := 0
+	// if now.Second() > 30 {
+	// 	seconds := 30
+	// }
+	captureTime := time.Date(now.Year(), now.Month(), now.Day(), now.Hour(), now.Minute(), now.Second(), 0, now.Location())
 	logrus.Infof("Capturing at %s", captureTime.Format("Mon Jan 2 2006 15:04:05 -0700 MST "))
 
 	filepath, fullPathIncFile, err := captureImage(capturePath, captureTime)
@@ -341,6 +351,6 @@ func doCapture() error {
 	if err != nil {
 		return fmt.Errorf("DB trans commit failed: %v", err)
 	}
-	logrus.Infof("CaptureDayTimeSeconds_"+strconv.FormatInt(cap.CaptureDayTimeSeconds, 10))
+	logrus.Infof("CaptureDayTimeSeconds_" + strconv.FormatInt(cap.CaptureDayTimeSeconds, 10))
 	return nil
 }
