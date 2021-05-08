@@ -22,6 +22,7 @@ type RelapseClient interface {
 	GetSetting(ctx context.Context, in *Setting, opts ...grpc.CallOption) (*Setting, error)
 	SetSetting(ctx context.Context, in *Setting, opts ...grpc.CallOption) (*Setting, error)
 	GetCapturesForADay(ctx context.Context, in *DayRequest, opts ...grpc.CallOption) (*DayResponse, error)
+	ListenForCaptures(ctx context.Context, in *ListenRequest, opts ...grpc.CallOption) (Relapse_ListenForCapturesClient, error)
 	StartCapture(ctx context.Context, in *StartRequest, opts ...grpc.CallOption) (*StartResponse, error)
 	StopCapture(ctx context.Context, in *StopRequest, opts ...grpc.CallOption) (*StopResponse, error)
 }
@@ -70,6 +71,38 @@ func (c *relapseClient) GetCapturesForADay(ctx context.Context, in *DayRequest, 
 	return out, nil
 }
 
+func (c *relapseClient) ListenForCaptures(ctx context.Context, in *ListenRequest, opts ...grpc.CallOption) (Relapse_ListenForCapturesClient, error) {
+	stream, err := c.cc.NewStream(ctx, &Relapse_ServiceDesc.Streams[0], "/relapse_proto.Relapse/ListenForCaptures", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &relapseListenForCapturesClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type Relapse_ListenForCapturesClient interface {
+	Recv() (*DayResponse, error)
+	grpc.ClientStream
+}
+
+type relapseListenForCapturesClient struct {
+	grpc.ClientStream
+}
+
+func (x *relapseListenForCapturesClient) Recv() (*DayResponse, error) {
+	m := new(DayResponse)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
 func (c *relapseClient) StartCapture(ctx context.Context, in *StartRequest, opts ...grpc.CallOption) (*StartResponse, error) {
 	out := new(StartResponse)
 	err := c.cc.Invoke(ctx, "/relapse_proto.Relapse/StartCapture", in, out, opts...)
@@ -96,6 +129,7 @@ type RelapseServer interface {
 	GetSetting(context.Context, *Setting) (*Setting, error)
 	SetSetting(context.Context, *Setting) (*Setting, error)
 	GetCapturesForADay(context.Context, *DayRequest) (*DayResponse, error)
+	ListenForCaptures(*ListenRequest, Relapse_ListenForCapturesServer) error
 	StartCapture(context.Context, *StartRequest) (*StartResponse, error)
 	StopCapture(context.Context, *StopRequest) (*StopResponse, error)
 	mustEmbedUnimplementedRelapseServer()
@@ -116,6 +150,9 @@ func (UnimplementedRelapseServer) SetSetting(context.Context, *Setting) (*Settin
 }
 func (UnimplementedRelapseServer) GetCapturesForADay(context.Context, *DayRequest) (*DayResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetCapturesForADay not implemented")
+}
+func (UnimplementedRelapseServer) ListenForCaptures(*ListenRequest, Relapse_ListenForCapturesServer) error {
+	return status.Errorf(codes.Unimplemented, "method ListenForCaptures not implemented")
 }
 func (UnimplementedRelapseServer) StartCapture(context.Context, *StartRequest) (*StartResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method StartCapture not implemented")
@@ -208,6 +245,27 @@ func _Relapse_GetCapturesForADay_Handler(srv interface{}, ctx context.Context, d
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Relapse_ListenForCaptures_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(ListenRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(RelapseServer).ListenForCaptures(m, &relapseListenForCapturesServer{stream})
+}
+
+type Relapse_ListenForCapturesServer interface {
+	Send(*DayResponse) error
+	grpc.ServerStream
+}
+
+type relapseListenForCapturesServer struct {
+	grpc.ServerStream
+}
+
+func (x *relapseListenForCapturesServer) Send(m *DayResponse) error {
+	return x.ServerStream.SendMsg(m)
+}
+
 func _Relapse_StartCapture_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(StartRequest)
 	if err := dec(in); err != nil {
@@ -276,6 +334,12 @@ var Relapse_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _Relapse_StopCapture_Handler,
 		},
 	},
-	Streams:  []grpc.StreamDesc{},
+	Streams: []grpc.StreamDesc{
+		{
+			StreamName:    "ListenForCaptures",
+			Handler:       _Relapse_ListenForCaptures_Handler,
+			ServerStreams: true,
+		},
+	},
 	Metadata: "relapse.proto",
 }

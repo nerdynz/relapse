@@ -34,12 +34,14 @@ message StartResponse {}
 message StopRequest {}
 message StopResponse {}
 message SettingsRequest {}
+message ListenRequest {}
 
 service Relapse {
   rpc GetSettings(SettingsRequest) returns (Settings) {}
   rpc GetSetting(Setting) returns (Setting) {}
   rpc SetSetting(Setting) returns (Setting) {}
   rpc GetCapturesForADay(DayRequest) returns (DayResponse) {}
+  rpc ListenForCaptures(ListenRequest) returns (stream DayResponse) {}
   rpc StartCapture(StartRequest) returns (StartResponse) {}
   rpc StopCapture(StopRequest) returns (StopResponse) {}
 }

@@ -5,6 +5,7 @@ go 1.16
 replace github.com/nerdynz/relapse/daemon/relapse_proto => ./relapse_proto
 
 require (
+	github.com/chai2010/webp v1.1.0 // indirect
 	github.com/davecgh/go-spew v1.1.1
 	github.com/fsnotify/fsnotify v1.4.9 // indirect
 	github.com/gen2brain/shm v0.0.0-20200228170931-49f9650110c5 // indirect
@@ -15,6 +16,7 @@ require (
 	github.com/nerdynz/relapse/daemon/relapse_proto v0.0.0-00010101000000-000000000000
 	github.com/nfnt/resize v0.0.0-20180221191011-83c6a9932646
 	github.com/pelletier/go-toml v1.9.0 // indirect
+	github.com/progrium/macdriver v0.1.0 // indirect
 	github.com/sirupsen/logrus v1.7.0
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.7.1

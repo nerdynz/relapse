@@ -219,3 +219,19 @@ export namespace SettingsRequest {
   }
 }
 
+export class ListenRequest extends jspb.Message {
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): ListenRequest.AsObject;
+  static toObject(includeInstance: boolean, msg: ListenRequest): ListenRequest.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: ListenRequest, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): ListenRequest;
+  static deserializeBinaryFromReader(message: ListenRequest, reader: jspb.BinaryReader): ListenRequest;
+}
+
+export namespace ListenRequest {
+  export type AsObject = {
+  }
+}
+

@@ -5,22 +5,23 @@ import (
 	"errors"
 	"fmt"
 	"image"
-	"image/jpeg"
 	"log"
 	"math"
 	"net"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/chai2010/webp"
 	"github.com/jmoiron/sqlx"
 	"github.com/kbinani/screenshot"
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/nerdynz/relapse/daemon/relapse_proto"
 	"github.com/nfnt/resize"
+	"github.com/progrium/macdriver/core"
+	"github.com/progrium/macdriver/objc"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
@@ -33,7 +34,7 @@ const schema = `
 CREATE TABLE IF NOT EXISTS capture (
 	capture_id							INTEGER PRIMARY KEY,
 	app_name								TEXT DEFAULT '',
-	window_title						TEXT DEFAULT '',
+	app_path								TEXT DEFAULT '',
 	filepath								TEXT DEFAULT '',
 	fullpath								TEXT DEFAULT '',
 	capture_time_seconds			INTEGER,
@@ -41,11 +42,16 @@ CREATE TABLE IF NOT EXISTS capture (
 );
 `
 
+var NSWorkspace_ = NSWorkspace{objc.Get("NSWorkspace")}
+
 var capturePath string
 var db *sqlx.DB
 var stopChan chan bool
+var workspace NSWorkspace
 
 func main() {
+	workspace = NSWorkspaceShared()
+
 	viper.SetDefault("capture-path", "./")
 	viper.SetDefault("userdata-path", "./")
 
@@ -67,7 +73,7 @@ func main() {
 		capturePath = "./"
 	}
 	userDataPath := viper.GetString("userdata-path")
-	databaseFilePath := userDataPath + "relapse.db"
+	databaseFilePath := userDataPath + "relapse-captures.db"
 
 	var err error
 	db, err = sqlx.Connect("sqlite3", databaseFilePath)
@@ -90,7 +96,9 @@ func main() {
 		return
 	}
 
-	lis, err := net.Listen("tcp", ":3333")
+	port := ":3333"
+
+	lis, err := net.Listen("tcp", port)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -98,8 +106,7 @@ func main() {
 	srv := &server{}
 	s := grpc.NewServer()
 	relapse_proto.RegisterRelapseServer(s, srv)
-	logrus.Info("running grpc")
-
+	logrus.Info("running grpc on port ", port)
 	if err := s.Serve(lis); err != nil {
 		log.Fatalln(err)
 	}
@@ -108,11 +115,11 @@ func main() {
 func startCapturing() error {
 
 	stopChan = make(chan bool)
-	// err := doCapture()
-	// if err != nil {
-	// 	logrus.Error(err)
-	// 	return err
-	// }
+	err := doCapture()
+	if err != nil {
+		logrus.Error(err)
+		return err
+	}
 
 	go func() {
 		for time.Now().Second() != 59 && time.Now().Second() != 29 {
@@ -178,7 +185,7 @@ func (srv *server) GetCapturesForADay(ctx context.Context, req *relapse_proto.Da
 	}
 
 	caps := make([]*relapse_proto.Capture, 0)
-	rows, err := tx.Query(`select capture_id, app_name, window_title, filepath,fullpath, capture_time_seconds, capture_day_time_seconds from capture where capture_day_time_seconds = :1`, req.CaptureDayTimeSeconds)
+	rows, err := tx.Query(`select capture_id, app_name, app_path, filepath,fullpath, capture_time_seconds, capture_day_time_seconds from capture where capture_day_time_seconds = :1`, req.CaptureDayTimeSeconds)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "Failed to select rows %v", err)
 	}
@@ -201,50 +208,70 @@ func (srv *server) GetCapturesForADay(ctx context.Context, req *relapse_proto.Da
 type Capture struct {
 	CaptureID             int64  `db:"capture_id"`
 	AppName               string `db:"app_name"`
-	WindowTitle           string `db:"window_title"`
+	AppPath               string `db:"app_path"`
 	Filepath              string `db:"filepath"`
 	Fullpath              string `db:"fullpath"`
 	CaptureTimeSeconds    int64  `db:"capture_time_seconds"`
 	CaptureDayTimeSeconds int64  `db:"capture_day_time_seconds"`
 }
 
-func captureWindowTitle() (appname string, windowTitle string, err error) {
-	cmd := exec.Command("/usr/bin/osascript", "-e", `
+func captureWindowTitle() (appname string, appPath string, err error) {
+	appname = ""
+	appPath = ""
+	// cmd := exec.Command("/usr/bin/osascript", "-e", `
 
-	global frontApp, frontAppName, windowTitle
+	// global frontApp, frontAppName, windowTitle
 
-	set windowTitle to ""
-	tell application "System Events"
-			set frontApp to first application process whose frontmost is true
-			set frontAppName to name of frontApp
-			tell process frontAppName
-					tell (1st window whose value of attribute "AXMain" is true)
-							set windowTitle to value of attribute "AXTitle"
-					end tell
-			end tell
-	end tell
+	// set windowTitle to ""
+	// tell application "System Events"
+	// 		set frontApp to first application process whose frontmost is true
+	// 		set frontAppName to name of frontApp
+	// 		tell process frontAppName
+	// 				tell (1st window whose value of attribute "AXMain" is true)
+	// 						set windowTitle to value of attribute "AXTitle"
+	// 				end tell
+	// 		end tell
+	// end tell
 
-	return {frontAppName, windowTitle}
-	
-	`)
-	b, err := cmd.Output()
-	if err != nil {
-		return "", "", fmt.Errorf("Unable to call osascript to get window title err: %v", err)
+	// return {frontAppName, windowTitle}
+
+	// `)
+	// b, err := cmd.Output()
+	// if err != nil {
+	// 	return "", "", fmt.Errorf("Unable to call osascript to get window title err: %v", err)
+	// }
+	// str := string(b)
+	// spl := strings.Split(str, ",")
+
+	// if len(spl) == 2 {
+	// 	return strings.Trim(spl[0], " "), strings.Trim(spl[1], " "), nil
+	// } else if len(spl) == 1 {
+	// 	return strings.Trim(spl[0], " "), "", nil
+	// }
+
+	res := workspace.ActiveApplication()
+	for _, v := range strings.Split(res.String(), "\n") {
+		if strings.Contains(v, " = ") {
+			split := strings.Split(v, " = ")
+			if strings.Contains(split[0], "NSApplicationName") {
+				appname = split[1]
+				appname = strings.Split(appname, ";")[0]
+			}
+			logrus.Info(split)
+			if strings.Contains(split[0], "NSApplicationPath") {
+				appPath = split[1]
+				appPath = strings.Split(appPath, ";")[0]
+			}
+			logrus.Info(split)
+		}
 	}
-	str := string(b)
-	spl := strings.Split(str, ",")
-
-	if len(spl) == 2 {
-		return strings.Trim(spl[0], " "), strings.Trim(spl[1], " "), nil
-	} else if len(spl) == 1 {
-		return strings.Trim(spl[0], " "), "", nil
-	}
-	return "", "", errors.New("Unable to get the app information")
+	logrus.Info("appname", appname, " appPath ", appPath)
+	return appname, appPath, errors.New("Unable to get the app information")
 }
 
 func captureImage(capturePath string, captureTime time.Time) (string, string, error) {
 	fullpath := filepath.Join(capturePath, "/"+captureTime.Format("2006_Jan_02")+"/")
-	fileName := fmt.Sprintf("%s.jpg", captureTime.Format("20060102_150405"))
+	fileName := fmt.Sprintf("%s.webp", captureTime.Format("20060102_150405"))
 	fullPathIncFile := filepath.Join(fullpath, "/", fileName)
 
 	err := os.MkdirAll(fullpath, os.ModePerm)
@@ -300,12 +327,18 @@ func captureImage(capturePath string, captureTime time.Time) (string, string, er
 		return fileName, fullPathIncFile, err
 	}
 	defer file.Close()
-	err = jpeg.Encode(file, newImage, &jpeg.Options{
-		Quality: 30,
-	})
+	// Encode lossless webp
+	err = webp.Encode(file, newImage, &webp.Options{Lossless: false, Quality: 50})
 	if err != nil {
 		return fileName, fullPathIncFile, err
 	}
+
+	// err = jpeg.Encode(file, newImage, &jpeg.Options{
+	// 	Quality: 30,
+	// })
+	// if err != nil {
+	// 	return fileName, fullPathIncFile, err
+	// }
 	return fileName, fullPathIncFile, nil
 }
 
@@ -325,14 +358,14 @@ func doCapture() error {
 	if err != nil {
 		return fmt.Errorf("Capture image failed: %v", err)
 	}
-	appname, windowTitle, err := captureWindowTitle()
+	appname, appPath, err := captureWindowTitle()
 	// if err != nil { // ignore this err
 	// 	return fmt.Errorf("Capture window title failed: %v", err)
 	// }
 
 	cap := &Capture{
 		AppName:               appname,
-		WindowTitle:           windowTitle,
+		AppPath:               appPath,
 		Filepath:              filepath,
 		Fullpath:              fullPathIncFile,
 		CaptureTimeSeconds:    captureTime.Unix(),
@@ -343,7 +376,7 @@ func doCapture() error {
 		return fmt.Errorf("DB trans begin failed: %v", err)
 
 	}
-	_, err = tx.NamedExec("INSERT INTO capture (app_name, window_title, filepath,fullpath, capture_time_seconds, capture_day_time_seconds) VALUES (:app_name,:window_title,:filepath, :fullpath,:capture_time_seconds,:capture_day_time_seconds)", cap)
+	_, err = tx.NamedExec("INSERT INTO capture (app_name, app_path, filepath,fullpath, capture_time_seconds, capture_day_time_seconds) VALUES (:app_name,:app_path,:filepath, :fullpath,:capture_time_seconds,:capture_day_time_seconds)", cap)
 	if err != nil {
 		return fmt.Errorf("Capture db insert failed : %v", err)
 	}
@@ -353,4 +386,22 @@ func doCapture() error {
 	}
 	logrus.Infof("CaptureDayTimeSeconds_" + strconv.FormatInt(cap.CaptureDayTimeSeconds, 10))
 	return nil
+}
+
+type NSWorkspace struct {
+	objc.Object
+}
+
+func NSWorkspaceShared() NSWorkspace {
+	return NSWorkspace{NSWorkspace_.Send("sharedWorkspace")}
+}
+
+func (ws NSWorkspace) ActiveApplication() core.NSDictionary {
+	return core.NSDictionary{ws.Send("activeApplication")}
+}
+
+type Details struct {
+	NSApplicationName              string
+	NSApplicationPath              string
+	NSApplicationProcessIdentifier int64
 }

@@ -24,3 +24,11 @@ pnpm-debug.log*
 
 #Electron-builder output
 /dist_electron
+/daemon/**/*.jpg
+/daemon/**/*.webp
+/daemon/tmp
+/app/relapse-darwin-x64/
+/daemon/*.db
+app/src/bin/daemon
+
+app/dist_electron/

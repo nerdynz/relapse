@@ -647,7 +647,7 @@ function image (imageName: string) {
 }
 
 function loadDay (skipToEnd: boolean) {
-  var mDate = moment(currentSelectedDateTime)
+  let mDate = moment(currentSelectedDateTime)
   let dayInfo: DayInfo = {
     fullDate: mDate.format('DD-MMM-YYYY'),
     skipToEnd: skipToEnd
