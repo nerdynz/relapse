@@ -313,7 +313,7 @@ img {
 
 .screenshot-viewer {
   position: relative;
-  background-color: black;
+  background-color: red;
 }
 
 .zoom {

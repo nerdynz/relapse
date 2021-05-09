@@ -1,7 +1,7 @@
 // package: relapse_proto
 // file: relapse.proto
 
-import * as jspb from "google-protobuf";
+import * as jspb from 'google-protobuf';
 
 export class Capture extends jspb.Message {
   getCaptureid(): number;

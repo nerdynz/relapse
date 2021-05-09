@@ -90,20 +90,18 @@ func main() {
 
 	logrus.Infof("Capture started at %s", time.Now().Format("Mon Jan 2 2006 15:04:05 -0700 MST"))
 	logrus.Infof("Capture filepath: %s", capturePath)
-	err = startCapturing()
-	if err != nil {
-		logrus.Error("Failed to start capture", err)
-		return
-	}
+	// if err != nil {
+	// 	logrus.Error("Failed to start capture", err)
+	// 	return
+	// }
 
 	port := ":3333"
-
 	lis, err := net.Listen("tcp", port)
 	if err != nil {
 		log.Fatalln(err)
 	}
 
-	srv := &server{}
+	srv := NewServer()
 	s := grpc.NewServer()
 	relapse_proto.RegisterRelapseServer(s, srv)
 	logrus.Info("running grpc on port ", port)
@@ -112,41 +110,63 @@ func main() {
 	}
 }
 
-func startCapturing() error {
-
-	stopChan = make(chan bool)
+func startCapturing(server relapse_proto.Relapse_ListenForCapturesServer) error {
 	err := doCapture()
 	if err != nil {
-		logrus.Error(err)
 		return err
 	}
 
-	go func() {
-		for time.Now().Second() != 59 && time.Now().Second() != 29 {
-			time.Sleep(time.Second)
-		}
-		ticker := time.NewTicker(time.Second * 30)
+	ticker := time.NewTicker(time.Second * 30)
+	for {
+		select {
+		case <-server.Context().Done():
+			logrus.Warn("Stopping capture")
+			return nil
+		case <-ticker.C:
+			err := doCapture()
+			if err != nil {
+				logrus.Error(err)
+				continue
+			}
 
-		for {
-			select {
-			case <-stopChan:
-				logrus.Warn("Stopping capture")
-				return
-			case <-ticker.C:
-				err := doCapture()
-				if err != nil {
-					logrus.Error(err)
-					continue
-				}
+			dayCap, err := getCapturesForADay(server.Context(), Bod(time.Now()).Unix())
+			if err != nil {
+				logrus.Error(err)
+				continue
+			}
+
+			err = server.Send(dayCap)
+			if err != nil {
+				logrus.Error(err)
+				continue
 			}
 		}
-	}()
-	return nil
+	}
 }
 
 type server struct {
 	relapse_proto.UnsafeRelapseServer
 }
+
+func NewServer() *server {
+	return &server{}
+}
+
+// func (streamer *CaptureStreamer) SendCapture(m Capture) {
+// 	streamer.subscribers.Range(func(key, v interface{}) bool {
+// 		sub, ok := v.(relapse_proto.Relapse_ListenForCapturesServer)
+// 		if !ok {
+// 			log.Printf("Failed to cast subscriber value: %T", v)
+// 			return false
+// 		}
+// 		logrus.Info("sending something")
+// 		err := sub.Send(&relapse_proto.DayResponse{
+// 			CaptureDayTimeSeconds: Bod(time.Now()).Unix(),
+// 		})
+// 		logrus.Info("err", err)
+// 		return true
+// 	})
+// }
 
 func (srv *server) GetSettings(ctx context.Context, req *relapse_proto.SettingsRequest) (*relapse_proto.Settings, error) {
 	return &relapse_proto.Settings{
@@ -163,10 +183,10 @@ func (srv *server) SetSetting(ctx context.Context, req *relapse_proto.Setting) (
 }
 
 func (srv *server) StartCapture(ctx context.Context, req *relapse_proto.StartRequest) (*relapse_proto.StartResponse, error) {
-	err := startCapturing()
-	if err != nil {
-		return nil, status.Errorf(codes.Internal, "Failed to do initial capture %v", err)
-	}
+	// err := startCapturing()
+	// if err != nil {
+	// 	return nil, status.Errorf(codes.Internal, "Failed to do initial capture %v", err)
+	// }
 	return &relapse_proto.StartResponse{}, nil
 }
 
@@ -175,17 +195,26 @@ func (srv *server) StopCapture(ctx context.Context, req *relapse_proto.StopReque
 	return &relapse_proto.StopResponse{}, nil
 }
 
+func (srv *server) ListenForCaptures(req *relapse_proto.ListenRequest, server relapse_proto.Relapse_ListenForCapturesServer) error {
+	return startCapturing(server)
+}
+
 func (srv *server) GetCapturesForADay(ctx context.Context, req *relapse_proto.DayRequest) (*relapse_proto.DayResponse, error) {
-	if req.CaptureDayTimeSeconds <= 0 {
+	return getCapturesForADay(ctx, req.CaptureDayTimeSeconds)
+}
+
+func getCapturesForADay(ctx context.Context, captureDayTimeSeconds int64) (*relapse_proto.DayResponse, error) {
+	if captureDayTimeSeconds <= 0 {
 		return nil, status.Errorf(codes.InvalidArgument, "CaptureDayTimeSeconds is invalid")
 	}
 	tx, err := db.BeginTxx(ctx, nil)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "Failed to begin sql tx %v", err)
 	}
+	defer tx.Commit()
 
 	caps := make([]*relapse_proto.Capture, 0)
-	rows, err := tx.Query(`select capture_id, app_name, app_path, filepath,fullpath, capture_time_seconds, capture_day_time_seconds from capture where capture_day_time_seconds = :1`, req.CaptureDayTimeSeconds)
+	rows, err := tx.Query(`select capture_id, app_name, app_path, filepath,fullpath, capture_time_seconds, capture_day_time_seconds from capture where capture_day_time_seconds = :1`, captureDayTimeSeconds)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "Failed to select rows %v", err)
 	}
@@ -200,7 +229,7 @@ func (srv *server) GetCapturesForADay(ctx context.Context, req *relapse_proto.Da
 	}
 
 	return &relapse_proto.DayResponse{
-		CaptureDayTimeSeconds: req.CaptureDayTimeSeconds,
+		CaptureDayTimeSeconds: captureDayTimeSeconds,
 		Captures:              caps,
 	}, nil
 }
@@ -257,15 +286,12 @@ func captureWindowTitle() (appname string, appPath string, err error) {
 				appname = split[1]
 				appname = strings.Split(appname, ";")[0]
 			}
-			logrus.Info(split)
 			if strings.Contains(split[0], "NSApplicationPath") {
 				appPath = split[1]
 				appPath = strings.Split(appPath, ";")[0]
 			}
-			logrus.Info(split)
 		}
 	}
-	logrus.Info("appname", appname, " appPath ", appPath)
 	return appname, appPath, errors.New("Unable to get the app information")
 }
 
@@ -328,7 +354,7 @@ func captureImage(capturePath string, captureTime time.Time) (string, string, er
 	}
 	defer file.Close()
 	// Encode lossless webp
-	err = webp.Encode(file, newImage, &webp.Options{Lossless: false, Quality: 50})
+	err = webp.Encode(file, newImage, &webp.Options{Lossless: false, Quality: 50, Exact: true})
 	if err != nil {
 		return fileName, fullPathIncFile, err
 	}
@@ -385,6 +411,7 @@ func doCapture() error {
 		return fmt.Errorf("DB trans commit failed: %v", err)
 	}
 	logrus.Infof("CaptureDayTimeSeconds_" + strconv.FormatInt(cap.CaptureDayTimeSeconds, 10))
+
 	return nil
 }
 
@@ -404,4 +431,9 @@ type Details struct {
 	NSApplicationName              string
 	NSApplicationPath              string
 	NSApplicationProcessIdentifier int64
+}
+
+func Bod(t time.Time) time.Time {
+	year, month, day := t.Date()
+	return time.Date(year, month, day, 0, 0, 0, 0, t.Location())
 }
