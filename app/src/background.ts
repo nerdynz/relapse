@@ -531,32 +531,32 @@ app.on('ready', () => {
   console.log('capturePath: ', capturePath)
   console.log('userDataPath: ', userDataPath)
 
-  let child = spawn(binPath + '/daemon', [
-    '--capture-path',
-    capturePath,
-    '--userdata-path',
-    userDataPath
-  ])
-  child.stdout.setEncoding('utf8')
-  child.stdout.on('data', function (data: string) {
-    console.log('stdout: ' + data)
-  })
+  // let child = spawn(binPath + '/daemon', [
+  //   '--capture-path',
+  //   capturePath,
+  //   '--userdata-path',
+  //   userDataPath
+  // ])
+  // child.stdout.setEncoding('utf8')
+  // child.stdout.on('data', function (data: string) {
+  //   console.log('stdout: ' + data)
+  // })
 
-  child.stderr.setEncoding('utf8')
-  child.stderr.on('data', function (data: string) {
-    if (data.startsWith('CaptureDayTimeSeconds_')) {
-      let startOfDay = moment(currentSelectedDateTime)
-        .startOf('day')
-        .unix()
+  // child.stderr.setEncoding('utf8')
+  // child.stderr.on('data', function (data: string) {
+  //   if (data.startsWith('CaptureDayTimeSeconds_')) {
+  //     let startOfDay = moment(currentSelectedDateTime)
+  //       .startOf('day')
+  //       .unix()
 
-      console.log(data, ' compared to ', startOfDay)
-      let startOfDayFromDaemon = data.split('CaptureDayTimeSeconds_')[0]
-      if (Number(startOfDayFromDaemon) === startOfDay) {
-        console.log('WOOOTOTOTOTOOTOT')
-      }
-    }
-    console.log('stderr: ' + data)
-  })
+  //     console.log(data, ' compared to ', startOfDay)
+  //     let startOfDayFromDaemon = data.split('CaptureDayTimeSeconds_')[0]
+  //     if (Number(startOfDayFromDaemon) === startOfDay) {
+  //       console.log('WOOOTOTOTOTOOTOT')
+  //     }
+  //   }
+  //   console.log('stderr: ' + data)
+  // })
 
   client = new RelapseClient('localhost:3333', credentials.createInsecure())
 

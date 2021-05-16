@@ -29,6 +29,8 @@ pnpm-debug.log*
 /daemon/tmp
 /app/relapse-darwin-x64/
 /daemon/*.db
-app/src/bin/daemon
+# app/src/bin/daemon
 
 app/dist_electron/
+
+daemon/settings.json
