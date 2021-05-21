@@ -1,84 +1,127 @@
 <template>
   <div class="datepicker" :class="wrapperClass">
     <input
-        :type="inline ? 'hidden' : 'text'"
-        :class="inputClass"
-        :name="name"
-        :id="id"
-        @click="showCalendar()"
-        :value="formattedValue"
-        :placeholder="placeholder"
-        :clear-button="clearButton"
-        readonly>
-    <i class="datepicker-clear-button" v-if="clearButton" @click="clearDate()">&times;</i>
-        <div class="calendar" v-show="showDayView" v-bind:style="calendarStyle">
-            <header>
-                <span
-                  @click="previousMonth"
-                  class="prev"
-                  v-bind:class="{ 'disabled' : previousMonthDisabled(currDate) }">
-                    <fa-icon icon="arrow-left" />
-                  </span>
-                <span @click="showMonthCalendar" class="up">{{ currMonthName }} {{ currYear }}</span>
-                <span
-                  @click="nextMonth"
-                  class="next"
-                  v-bind:class="{ 'disabled' : nextMonthDisabled(currDate) }">
-                    <fa-icon icon="arrow-right" />
-                  </span>
-            </header>
-            <span class="cell day-header" v-for="(d, i) in daysOfWeek" :key="i">{{ d }}</span>
-            <span class="cell day blank" v-for="(d, i) in blankDays" :key="i">{{ d }}</span><!--
-            --><span class="cell day"
-                v-for="(day, index) in days"
-                :key="index"
-                track-by="timestamp"
-                v-bind:class="{ 'selected':day.isSelected, 'disabled':day.isDisabled, 'highlighted': day.isHighlighted}"
-                @click="selectDate(day)">{{ day.date }}</span>
-        </div>
-        <div class="calendar" v-show="showMonthView" v-bind:style="calendarStyleSecondary">
-            <header>
-                <span
-                    @click="previousYear"
-                    class="prev"
-                    v-bind:class="{ 'disabled' : previousYearDisabled(currDate) }">
-                      <fa-icon icon="arrow-left" />
-                    </span>
-                <span @click="showYearCalendar" class="up">{{ getYear() }}</span>
-                <span
-                    @click="nextYear"
-                    class="next"
-                    v-bind:class="{ 'disabled' : nextYearDisabled(currDate) }">
-                      <fa-icon icon="arrow-right" />
-                    </span>
-            </header>
-            <span class="cell month"
-                v-for="(month, index) in months"
-                :key="index"
-                track-by="timestamp"
-                v-bind:class="{ 'selected': month.isSelected, 'disabled': month.isDisabled }"
-                @click.stop="selectMonth(month)">{{ month.month }}</span>
-        </div>
-        <div class="calendar" v-show="showYearView" v-bind:style="calendarStyleSecondary">
-            <header>
-                <span @click="previousDecade" class="prev"
-                  v-bind:class="{ 'disabled' : previousDecadeDisabled(currDate) }">
-                    <fa-icon icon="arrow-left" />
-                  </span>
-                <span>{{ getDecade() }}</span>
-                <span @click="nextDecade" class="next"
-                  v-bind:class="{ 'disabled' : nextMonthDisabled(currDate) }">
-                    <fa-icon icon="arrow-right" />
-                  </span>
-            </header>
-            <span
-                class="cell year"
-                v-for="(year, index) in years"
-                :key="index"
-                track-by="timestamp"
-                v-bind:class="{ 'selected': year.isSelected, 'disabled': year.isDisabled }"
-                @click.stop="selectYear(year)">{{ year.year }}</span>
-        </div>
+      :type="inline ? 'hidden' : 'text'"
+      :class="inputClass"
+      :name="name"
+      :id="id"
+      @click="showCalendar()"
+      :value="formattedValue"
+      :placeholder="placeholder"
+      :clear-button="clearButton"
+      readonly
+    />
+    <i class="datepicker-clear-button" v-if="clearButton" @click="clearDate()"
+      >&times;</i
+    >
+    <div class="calendar" v-show="showDayView" v-bind:style="calendarStyle">
+      <header>
+        <span
+          @click="previousMonth"
+          class="prev"
+          v-bind:class="{ disabled: previousMonthDisabled(currDate) }"
+        >
+          <ico icon="arrow-left" />
+        </span>
+        <span @click="showMonthCalendar" class="up"
+          >{{ currMonthName }} {{ currYear }}</span
+        >
+        <span
+          @click="nextMonth"
+          class="next"
+          v-bind:class="{ disabled: nextMonthDisabled(currDate) }"
+        >
+          <ico icon="arrow-right" />
+        </span>
+      </header>
+      <span class="cell day-header" v-for="(d, i) in daysOfWeek" :key="i">{{
+        d
+      }}</span>
+      <span class="cell day blank" v-for="(d, i) in blankDays" :key="i">{{
+        d
+      }}</span
+      ><!--
+            --><span
+        class="cell day"
+        v-for="(day, index) in days"
+        :key="index"
+        track-by="timestamp"
+        v-bind:class="{
+          selected: day.isSelected,
+          disabled: day.isDisabled,
+          highlighted: day.isHighlighted
+        }"
+        @click="selectDate(day)"
+        >{{ day.date }}</span
+      >
+    </div>
+    <div
+      class="calendar"
+      v-show="showMonthView"
+      v-bind:style="calendarStyleSecondary"
+    >
+      <header>
+        <span
+          @click="previousYear"
+          class="prev"
+          v-bind:class="{ disabled: previousYearDisabled(currDate) }"
+        >
+          <ico icon="arrow-left" />
+        </span>
+        <span @click="showYearCalendar" class="up">{{ getYear() }}</span>
+        <span
+          @click="nextYear"
+          class="next"
+          v-bind:class="{ disabled: nextYearDisabled(currDate) }"
+        >
+          <ico icon="arrow-right" />
+        </span>
+      </header>
+      <span
+        class="cell month"
+        v-for="(month, index) in months"
+        :key="index"
+        track-by="timestamp"
+        v-bind:class="{
+          selected: month.isSelected,
+          disabled: month.isDisabled
+        }"
+        @click.stop="selectMonth(month)"
+        >{{ month.month }}</span
+      >
+    </div>
+    <div
+      class="calendar"
+      v-show="showYearView"
+      v-bind:style="calendarStyleSecondary"
+    >
+      <header>
+        <span
+          @click="previousDecade"
+          class="prev"
+          v-bind:class="{ disabled: previousDecadeDisabled(currDate) }"
+        >
+          <ico icon="arrow-left" />
+        </span>
+        <span>{{ getDecade() }}</span>
+        <span
+          @click="nextDecade"
+          class="next"
+          v-bind:class="{ disabled: nextMonthDisabled(currDate) }"
+        >
+          <ico icon="arrow-right" />
+        </span>
+      </header>
+      <span
+        class="cell year"
+        v-for="(year, index) in years"
+        :key="index"
+        track-by="timestamp"
+        v-bind:class="{ selected: year.isSelected, disabled: year.isDisabled }"
+        @click.stop="selectYear(year)"
+        >{{ year.year }}</span
+      >
+    </div>
   </div>
 </template>
 
@@ -140,7 +183,11 @@ export default {
        * This represents the first day of the current viewing month
        * {Number}
        */
-      currDate: new Date(new Date().getFullYear(), new Date().getMonth(), 1).getTime(),
+      currDate: new Date(
+        new Date().getFullYear(),
+        new Date().getMonth(),
+        1
+      ).getTime(),
       /*
        * Selected Date
        * {Date}
@@ -169,14 +216,21 @@ export default {
       if (!this.selectedDate) {
         return null
       }
-      return DateUtils.formatDate(new Date(this.selectedDate), this.format, this.translation)
+      return DateUtils.formatDate(
+        new Date(this.selectedDate),
+        this.format,
+        this.translation
+      )
     },
     translation () {
       return DateLanguages.translations[this.language]
     },
     currMonthName () {
       const d = new Date(this.currDate)
-      return DateUtils.getMonthNameAbbr(d.getMonth(), this.translation.months.abbr)
+      return DateUtils.getMonthNameAbbr(
+        d.getMonth(),
+        this.translation.months.abbr
+      )
     },
     currYear () {
       const d = new Date(this.currDate)
@@ -189,7 +243,13 @@ export default {
      */
     blankDays () {
       const d = new Date(this.currDate)
-      let dObj = new Date(d.getFullYear(), d.getMonth(), 1, d.getHours(), d.getMinutes())
+      let dObj = new Date(
+        d.getFullYear(),
+        d.getMonth(),
+        1,
+        d.getHours(),
+        d.getMinutes()
+      )
       if (this.mondayFirst) {
         return dObj.getDay() > 0 ? dObj.getDay() - 1 : 6
       }
@@ -207,8 +267,17 @@ export default {
       const d = new Date(this.currDate)
       let days = []
       // set up a new date object to the beginning of the current 'page'
-      let dObj = new Date(d.getFullYear(), d.getMonth(), 1, d.getHours(), d.getMinutes())
-      let daysInMonth = DateUtils.daysInMonth(dObj.getFullYear(), dObj.getMonth())
+      let dObj = new Date(
+        d.getFullYear(),
+        d.getMonth(),
+        1,
+        d.getHours(),
+        d.getMinutes()
+      )
+      let daysInMonth = DateUtils.daysInMonth(
+        dObj.getFullYear(),
+        dObj.getMonth()
+      )
       for (let i = 0; i < daysInMonth; i++) {
         days.push({
           date: dObj.getDate(),
@@ -225,7 +294,13 @@ export default {
       const d = new Date(this.currDate)
       let months = []
       // set up a new date object to the beginning of the current 'page'
-      let dObj = new Date(d.getFullYear(), 0, d.getDate(), d.getHours(), d.getMinutes())
+      let dObj = new Date(
+        d.getFullYear(),
+        0,
+        d.getDate(),
+        d.getHours(),
+        d.getMinutes()
+      )
       for (let i = 0; i < 12; i++) {
         months.push({
           month: DateUtils.getMonthName(i, this.translation.months.original),
@@ -241,7 +316,13 @@ export default {
       const d = new Date(this.currDate)
       let years = []
       // set up a new date object to the beginning of the current 'page'
-      let dObj = new Date(Math.floor(d.getFullYear() / 10) * 10, d.getMonth(), d.getDate(), d.getHours(), d.getMinutes())
+      let dObj = new Date(
+        Math.floor(d.getFullYear() / 10) * 10,
+        d.getMonth(),
+        d.getDate(),
+        d.getHours(),
+        d.getMinutes()
+      )
       for (let i = 0; i < 10; i++) {
         years.push({
           year: dObj.getFullYear(),
@@ -266,7 +347,7 @@ export default {
       // if the calendar doesn't fit on the window without scrolling position it above the input
       if (heightNeeded > window.innerHeight) {
         styles = {
-          'bottom': elSize.height + 'px'
+          bottom: elSize.height + 'px'
         }
       }
       if (this.isInline()) {
@@ -275,7 +356,7 @@ export default {
       return styles
     },
     calendarStyleSecondary () {
-      return (this.isInline()) ? { 'position': 'static' } : {}
+      return this.isInline() ? { position: 'static' } : {}
     }
   },
   methods: {
@@ -283,10 +364,17 @@ export default {
       this.showDayView = this.showMonthView = this.showYearView = false
     },
     getDefaultDate () {
-      return new Date(new Date().getFullYear(), new Date().getMonth(), 1).getTime()
+      return new Date(
+        new Date().getFullYear(),
+        new Date().getMonth(),
+        1
+      ).getTime()
     },
     resetDefaultDate () {
-      this.currDate = (this.selectedDate === null) ? this.getDefaultDate() : this.selectedDate.getTime()
+      this.currDate =
+        this.selectedDate === null
+          ? this.getDefaultDate()
+          : this.selectedDate.getTime()
     },
     isOpen () {
       return this.showDayView || this.showMonthView || this.showYearView
@@ -318,7 +406,11 @@ export default {
     },
     setDate (timestamp) {
       this.selectedDate = new Date(timestamp)
-      this.currDate = new Date(this.selectedDate.getFullYear(), this.selectedDate.getMonth(), 1).getTime()
+      this.currDate = new Date(
+        this.selectedDate.getFullYear(),
+        this.selectedDate.getMonth(),
+        1
+      ).getTime()
       this.$emit('selected', new Date(timestamp))
       this.$emit('input', new Date(timestamp))
     },
@@ -380,7 +472,7 @@ export default {
     getDecade () {
       let d = new Date(this.currDate)
       let sD = Math.floor(d.getFullYear() / 10) * 10
-      return sD + '\'s'
+      return sD + "'s"
     },
     previousMonth () {
       if (this.previousMonthDisabled()) {
@@ -392,7 +484,11 @@ export default {
       this.$emit('changedMonth', d)
     },
     previousMonthDisabled () {
-      if (typeof this.disabled === 'undefined' || typeof this.disabled.to === 'undefined' || !this.disabled.to) {
+      if (
+        typeof this.disabled === 'undefined' ||
+        typeof this.disabled.to === 'undefined' ||
+        !this.disabled.to
+      ) {
         return false
       }
       let d = new Date(this.currDate)
@@ -415,7 +511,11 @@ export default {
       this.$emit('changedMonth', d)
     },
     nextMonthDisabled () {
-      if (typeof this.disabled === 'undefined' || typeof this.disabled.from === 'undefined' || !this.disabled.from) {
+      if (
+        typeof this.disabled === 'undefined' ||
+        typeof this.disabled.from === 'undefined' ||
+        !this.disabled.from
+      ) {
         return false
       }
       let d = new Date(this.currDate)
@@ -437,7 +537,11 @@ export default {
       this.$emit('changedYear')
     },
     previousYearDisabled () {
-      if (typeof this.disabled === 'undefined' || typeof this.disabled.to === 'undefined' || !this.disabled.to) {
+      if (
+        typeof this.disabled === 'undefined' ||
+        typeof this.disabled.to === 'undefined' ||
+        !this.disabled.to
+      ) {
         return false
       }
       let d = new Date(this.currDate)
@@ -456,7 +560,11 @@ export default {
       this.$emit('changedYear')
     },
     nextYearDisabled () {
-      if (typeof this.disabled === 'undefined' || typeof this.disabled.from === 'undefined' || !this.disabled.from) {
+      if (
+        typeof this.disabled === 'undefined' ||
+        typeof this.disabled.from === 'undefined' ||
+        !this.disabled.from
+      ) {
         return false
       }
       let d = new Date(this.currDate)
@@ -475,11 +583,18 @@ export default {
       this.$emit('changedDecade')
     },
     previousDecadeDisabled () {
-      if (typeof this.disabled === 'undefined' || typeof this.disabled.to === 'undefined' || !this.disabled.to) {
+      if (
+        typeof this.disabled === 'undefined' ||
+        typeof this.disabled.to === 'undefined' ||
+        !this.disabled.to
+      ) {
         return false
       }
       let d = new Date(this.currDate)
-      if (Math.floor(this.disabled.to.getFullYear() / 10) * 10 >= Math.floor(d.getFullYear() / 10) * 10) {
+      if (
+        Math.floor(this.disabled.to.getFullYear() / 10) * 10 >=
+        Math.floor(d.getFullYear() / 10) * 10
+      ) {
         return true
       }
       return false
@@ -494,11 +609,18 @@ export default {
       this.$emit('changedDecade')
     },
     nextDecadeDisabled () {
-      if (typeof this.disabled === 'undefined' || typeof this.disabled.from === 'undefined' || !this.disabled.from) {
+      if (
+        typeof this.disabled === 'undefined' ||
+        typeof this.disabled.from === 'undefined' ||
+        !this.disabled.from
+      ) {
         return false
       }
       let d = new Date(this.currDate)
-      if (Math.ceil(this.disabled.from.getFullYear() / 10) * 10 <= Math.ceil(d.getFullYear() / 10) * 10) {
+      if (
+        Math.ceil(this.disabled.from.getFullYear() / 10) * 10 <=
+        Math.ceil(d.getFullYear() / 10) * 10
+      ) {
         return true
       }
       return false
@@ -509,7 +631,10 @@ export default {
      * @return {Boolean}
      */
     isSelectedDate (dObj) {
-      return this.selectedDate && this.selectedDate.toDateString() === dObj.toDateString()
+      return (
+        this.selectedDate &&
+        this.selectedDate.toDateString() === dObj.toDateString()
+      )
     },
     /**
      * Whether a day is disabled
@@ -522,20 +647,31 @@ export default {
         return false
       }
       if (typeof this.disabled.dates !== 'undefined') {
-        this.disabled.dates.forEach((d) => {
+        this.disabled.dates.forEach(d => {
           if (date.toDateString() === d.toDateString()) {
             disabled = true
             return true
           }
         })
       }
-      if (typeof this.disabled.to !== 'undefined' && this.disabled.to && date < this.disabled.to) {
+      if (
+        typeof this.disabled.to !== 'undefined' &&
+        this.disabled.to &&
+        date < this.disabled.to
+      ) {
         disabled = true
       }
-      if (typeof this.disabled.from !== 'undefined' && this.disabled.from && date > this.disabled.from) {
+      if (
+        typeof this.disabled.from !== 'undefined' &&
+        this.disabled.from &&
+        date > this.disabled.from
+      ) {
         disabled = true
       }
-      if (typeof this.disabled.days !== 'undefined' && this.disabled.days.indexOf(date.getDay()) !== -1) {
+      if (
+        typeof this.disabled.days !== 'undefined' &&
+        this.disabled.days.indexOf(date.getDay()) !== -1
+      ) {
         disabled = true
       }
       return disabled
@@ -554,17 +690,24 @@ export default {
         return false
       }
       if (typeof this.highlighted.dates !== 'undefined') {
-        this.highlighted.dates.forEach((d) => {
+        this.highlighted.dates.forEach(d => {
           if (date.toDateString() === d.toDateString()) {
             highlighted = true
             return true
           }
         })
       }
-      if (this.isDefined(this.highlighted.from) && this.isDefined(this.highlighted.to)) {
-        highlighted = date >= this.highlighted.from && date <= this.highlighted.to
+      if (
+        this.isDefined(this.highlighted.from) &&
+        this.isDefined(this.highlighted.to)
+      ) {
+        highlighted =
+          date >= this.highlighted.from && date <= this.highlighted.to
       }
-      if (typeof this.highlighted.days !== 'undefined' && this.highlighted.days.indexOf(date.getDay()) !== -1) {
+      if (
+        typeof this.highlighted.days !== 'undefined' &&
+        this.highlighted.days.indexOf(date.getDay()) !== -1
+      ) {
         highlighted = true
       }
       return highlighted
@@ -583,9 +726,11 @@ export default {
      * @return {Boolean}
      */
     isSelectedMonth (date) {
-      return (this.selectedDate &&
+      return (
+        this.selectedDate &&
         this.selectedDate.getFullYear() === date.getFullYear() &&
-        this.selectedDate.getMonth() === date.getMonth())
+        this.selectedDate.getMonth() === date.getMonth()
+      )
     },
     /**
      * Whether a month is disabled
@@ -599,7 +744,8 @@ export default {
       }
       if (typeof this.disabled.to !== 'undefined' && this.disabled.to) {
         if (
-          (date.getMonth() < this.disabled.to.getMonth() && date.getFullYear() <= this.disabled.to.getFullYear()) ||
+          (date.getMonth() < this.disabled.to.getMonth() &&
+            date.getFullYear() <= this.disabled.to.getFullYear()) ||
           date.getFullYear() < this.disabled.to.getFullYear()
         ) {
           disabled = true
@@ -607,8 +753,9 @@ export default {
       }
       if (typeof this.disabled.from !== 'undefined' && this.disabled.from) {
         if (
-          this.disabled.from &&
-          (date.getMonth() > this.disabled.from.getMonth() && date.getFullYear() >= this.disabled.from.getFullYear()) ||
+          (this.disabled.from &&
+            date.getMonth() > this.disabled.from.getMonth() &&
+            date.getFullYear() >= this.disabled.from.getFullYear()) ||
           date.getFullYear() > this.disabled.from.getFullYear()
         ) {
           disabled = true
@@ -622,7 +769,10 @@ export default {
      * @return {Boolean}
      */
     isSelectedYear (date) {
-      return this.selectedDate && this.selectedDate.getFullYear() === date.getFullYear()
+      return (
+        this.selectedDate &&
+        this.selectedDate.getFullYear() === date.getFullYear()
+      )
     },
     /**
      * Whether a month is disabled
@@ -672,17 +822,23 @@ export default {
         this.showDayCalendar()
       }
       this.$nextTick(() => {
-        this.calendarHeight = this.$el.querySelector('.calendar').getBoundingClientRect().height
+        this.calendarHeight = this.$el
+          .querySelector('.calendar')
+          .getBoundingClientRect().height
       })
-      document.addEventListener('click', (e) => {
-        if (this.$el && !this.$el.contains(e.target)) {
-          if (this.isInline()) {
-            return this.showDayCalendar()
+      document.addEventListener(
+        'click',
+        e => {
+          if (this.$el && !this.$el.contains(e.target)) {
+            if (this.isInline()) {
+              return this.showDayCalendar()
+            }
+            this.resetDefaultDate()
+            this.close()
           }
-          this.resetDefaultDate()
-          this.close()
-        }
-      }, false)
+        },
+        false
+      )
     }
   },
   /**
@@ -704,121 +860,120 @@ export default {
 $width: 300px;
 
 .datepicker {
-  position relative
-    * {
-      box-sizing: border-box;
-    }
+  position relative * {
+    box-sizing: border-box;
+  }
 }
 
 .calendar {
-    position: absolute;
-    z-index: 100;
-    background: white;
-    width: $width;
-    -webkit-user-select: none;
-    user-select: none;
-    -webkit-app-region: no-drag;
+  position: absolute;
+  z-index: 100;
+  background: white;
+  width: $width;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-app-region: no-drag;
 
-    border: 2px solid $light-theme-input-bg;
+  border: 2px solid $light-theme-input-bg;
 
-    color: $light-theme-text-color;
-    background: $light-theme-input-bg;
-    border-color: $light-theme-input-bg;
+  color: $light-theme-text-color;
+  background: $light-theme-input-bg;
+  border-color: $light-theme-input-bg;
 
-    top: 31px;
-    left: -1px;
+  top: 31px;
+  left: -1px;
 
-    header {
-        display: block;
-        line-height: 40px;
-        span {
-          display: inline-block;
-          text-align: center;
-          width: (100 - (100/7)*2) * 1%;
-        }
-        .prev,
-        .next {
-            width: (100/7) * 1%;
-            float: left;
-            position: relative;
-        }
-        .prev{
-          &.disabled:after {
-            border-right: 10px solid #ddd;
-          }
-        }
-        .next {
-          &:after {
-            border-left: 10px solid #000;
-            margin-left: 5px;
-          }
-          &.disabled:after {
-            border-left: 10px solid #ddd;
-          }
-        }
-        .prev:not(.disabled),
-        .next:not(.disabled),
-        .up:not(.disabled){
-          cursor: pointer;
-          &:hover {
-            background-color: $light-theme-input-active-bg;
-          }
-        }
-    }
-
-    .disabled {
-      color: #ddd;
-      cursor: default;
-    }
-    .cell {
+  header {
+    display: block;
+    line-height: 40px;
+    span {
       display: inline-block;
-      padding: 0 5px;
-      width: (100/7) * 1%;
-      height: 40px;
-      line-height: 40px;
       text-align: center;
-      vertical-align: middle;
-      border: 1px solid transparent;
-      border-radius: $standard-border-radius;
-      &:not(.blank):not(.disabled).day,
-      &:not(.blank):not(.disabled).month,
-      &:not(.blank):not(.disabled).year {
-        cursor: pointer;
-        &:hover {
-          background: $light-theme-input-active-bg;
-        }
+      width: (100 - (100/7) * 2) * 1%;
+    }
+    .prev,
+    .next {
+      width: (100/7) * 1%;
+      float: left;
+      position: relative;
+    }
+    .prev {
+      &.disabled:after {
+        border-right: 10px solid #ddd;
       }
-      &.selected {
+    }
+    .next {
+      &:after {
+        border-left: 10px solid #000;
+        margin-left: 5px;
+      }
+      &.disabled:after {
+        border-left: 10px solid #ddd;
+      }
+    }
+    .prev:not(.disabled),
+    .next:not(.disabled),
+    .up:not(.disabled) {
+      cursor: pointer;
+      &:hover {
+        background-color: $light-theme-input-active-bg;
+      }
+    }
+  }
+
+  .disabled {
+    color: #ddd;
+    cursor: default;
+  }
+  .cell {
+    display: inline-block;
+    padding: 0 5px;
+    width: (100/7) * 1%;
+    height: 40px;
+    line-height: 40px;
+    text-align: center;
+    vertical-align: middle;
+    border: 1px solid transparent;
+    border-radius: $standard-border-radius;
+    &:not(.blank):not(.disabled).day,
+    &:not(.blank):not(.disabled).month,
+    &:not(.blank):not(.disabled).year {
+      cursor: pointer;
+      &:hover {
         background: $light-theme-input-active-bg;
-          &:hover {
-            background: $light-theme-input-active-bg;
-          }
-          &.highlighted {
-            background: $light-theme-input-active-bg;
-          }
+      }
+    }
+    &.selected {
+      background: $light-theme-input-active-bg;
+      &:hover {
+        background: $light-theme-input-active-bg;
       }
       &.highlighted {
-        background: #cae5ed;
-      }
-      &.grey {
-        color: #888;
-        &:hover {
-          background: inherit;
-        }
-      }
-      &.day-header {
-        font-size: 75%;
-        white-space: no-wrap;
-        cursor: inherit;
-        &:hover {
-          background: inherit;
-        }
+        background: $light-theme-input-active-bg;
       }
     }
-    .month,
-    .year {
-      width: 33.333%;
+    &.highlighted {
+      background: #cae5ed;
     }
+    &.grey {
+      color: #888;
+      &:hover {
+        background: inherit;
+      }
+    }
+    &.day-header {
+      font-size: 75%;
+      white-space: no-wrap;
+      cursor: inherit;
+      &:hover {
+        background: inherit;
+      }
+    }
+  }
+  .month,
+  .year {
+    width: 33.333%;
+  }
 }
 
 .datepicker-clear-button {

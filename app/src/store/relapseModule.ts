@@ -96,6 +96,7 @@ class RelapseModule extends VuexModule {
 
   @Action
   changeDay (day: DayInfo) {
+    console.log('day', day)
     this.setDay(day)
   }
 

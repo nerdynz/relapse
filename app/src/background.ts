@@ -1,5 +1,5 @@
 // const electron = require('electron')
-import { DayInfo } from '@/interfaces/dayInfo.interface'
+import { spawn } from 'child_process'
 import {
   app,
   BrowserWindow,
@@ -9,14 +9,12 @@ import {
   shell,
   Tray
 } from 'electron'
-import installExtension, { VUEJS_DEVTOOLS } from 'electron-devtools-installer'
-import { ClientReadableStream, credentials, ServiceError } from 'grpc'
+import { credentials, ServiceError } from 'grpc'
 import moment from 'moment'
+import path from 'path'
 import { createProtocol } from 'vue-cli-plugin-electron-builder/lib'
 import { RelapseClient } from './grpc/relapse_grpc_pb'
 import { DayRequest, DayResponse, ListenRequest } from './grpc/relapse_pb'
-import { spawn } from 'child_process'
-import path from 'path'
 const isDevelopment = process.env.NODE_ENV !== 'production'
 // const { spawn } = require('child_process')
 // const BrowserWindow = electron.BrowserWindow
@@ -45,11 +43,11 @@ const winURL = 'http://localhost:8080'
 let mainWindow: Electron.BrowserWindow | null
 let aboutWindow: Electron.BrowserWindow | null
 let settingsWindow: Electron.BrowserWindow | null
-let client: RelapseClient
+// let client: RelapseClient
 let tray
 let trayContextMenu
 
-async function createWindow() {
+async function createWindow () {
   // Create the browser window.
   mainWindow = new BrowserWindow({
     title: 'Relapse',
@@ -63,7 +61,8 @@ async function createWindow() {
     webPreferences: {
       // Use pluginOptions.nodeIntegration, leave this alone
       // See nklayman.github.io/vue-cli-plugin-electron-builder/guide/security.html#node-integration for more info
-      nodeIntegration: true
+      nodeIntegration: true,
+      disableBlinkFeatures: 'OutOfBlinkCors'
     }
   })
 
@@ -108,19 +107,18 @@ app.on('activate', () => {
   if (BrowserWindow.getAllWindows().length === 0) createWindow()
 })
 
-// This method will be called when Electron has finished
-// initialization and is ready to create browser windows.
-// Some APIs can only be used after this event occurs.
-app.on('ready', async () => {
-  if (isDevelopment && !process.env.IS_TEST) {
-    // Install Vue Devtools
-    try {
-      await installExtension(VUEJS_DEVTOOLS)
-    } catch (e) {
-      console.error('Vue Devtools failed to install:', e.toString())
-    }
+app.on(
+  'certificate-error',
+  (event, webContents, url, error, certificate, callback) => {
+    console.log(certificate)
+    // On certificate error we disable default behaviour (stop loading the page)
+    // and we then say "it is all fine - true" to the callback
+    event.preventDefault()
+    callback(true)
   }
-  createWindow()
+)
+app.on('select-client-certificate', (event, url, certificates, callback) => {
+  console.log(certificates)
 })
 
 // Exit cleanly on request from parent process in development mode.
@@ -138,8 +136,8 @@ if (isDevelopment) {
   }
 }
 
-function createTrayAndMenusAndShortcuts() {
-  let show = function() {
+function createTrayAndMenusAndShortcuts () {
+  let show = function () {
     if (!mainWindow) {
       createWindow()
     } else {
@@ -147,7 +145,7 @@ function createTrayAndMenusAndShortcuts() {
     }
   }
 
-  let toggleCapture = function() {
+  let toggleCapture = function () {
     // getSettings((err, settings) => {
     //   if (err) {
     //     log(err)
@@ -175,57 +173,57 @@ function createTrayAndMenusAndShortcuts() {
     // })
   }
 
-  let quit = function() {
+  let quit = function () {
     app.quit()
   }
 
-  let resetZoom = function() {
+  let resetZoom = function () {
     if (mainWindow) {
       mainWindow.webContents.send('zoom-function', 'reset')
     }
   }
 
-  let zoomIn = function() {
+  let zoomIn = function () {
     if (mainWindow) {
       mainWindow.webContents.send('zoom-function', 'in')
     }
   }
 
-  let zoomOut = function() {
+  let zoomOut = function () {
     if (mainWindow) {
       mainWindow.webContents.send('zoom-function', 'out')
     }
   }
 
-  let today = function() {
+  let today = function () {
     if (mainWindow) {
       mainWindow.webContents.send('day-function', 'today')
     }
   }
-  let nextDay = function() {
+  let nextDay = function () {
     if (mainWindow) {
       mainWindow.webContents.send('day-function', 'nextDay')
     }
   }
-  let prevDay = function() {
+  let prevDay = function () {
     if (mainWindow) {
       mainWindow.webContents.send('day-function', 'prevDay')
     }
   }
 
-  let launchWebsite = function() {
+  let launchWebsite = function () {
     shell.openExternal('http://relapse.nerdy.co.nz/')
   }
   // var launchWebsiteHelp = function () {
   //   shell.openExternal('http://relapse.nerdy.co.nz/help')
   // }
-  let launchWebsiteFAQ = function() {
+  let launchWebsiteFAQ = function () {
     shell.openExternal('http://relapse.nerdy.co.nz/faq')
   }
-  let launchReport = function() {
+  let launchReport = function () {
     shell.openExternal('http://relapse.nerdy.co.nz/feedback')
   }
-  let showTips = function() {
+  let showTips = function () {
     // getSettings((err, settings) => {
     //   if (err) {
     //     log(err)
@@ -238,19 +236,19 @@ function createTrayAndMenusAndShortcuts() {
     // })
   }
 
-  let goLeft = function() {
+  let goLeft = function () {
     if (mainWindow) {
       mainWindow.webContents.send('arrow-pressed', 'left')
     }
   }
 
-  let goRight = function() {
+  let goRight = function () {
     if (mainWindow) {
       mainWindow.webContents.send('arrow-pressed', 'right')
     }
   }
 
-  let showAboutScreen = function() {
+  let showAboutScreen = function () {
     if (aboutWindow) {
       aboutWindow.show()
       return // already open
@@ -273,7 +271,7 @@ function createTrayAndMenusAndShortcuts() {
     })
   }
 
-  function showPreferencesScreen() {
+  function showPreferencesScreen () {
     if (settingsWindow) {
       settingsWindow.show()
       return // already open
@@ -449,6 +447,15 @@ function createTrayAndMenusAndShortcuts() {
     { label: 'Quit', type: 'normal', click: quit, accelerator: 'Command+Q' }
   ])
 
+  // if (isDevelopment && !process.env.IS_TEST) {
+  //   // Install Vue Devtools
+  //   try {
+  //     await installExtension(VUEJS_DEVTOOLS)
+  //   } catch (e) {
+  //     console.error('Vue Devtools failed to install:', e.toString())
+  //   }
+  // }
+
   tray.setContextMenu(trayContextMenu)
 }
 
@@ -567,11 +574,13 @@ app.on('ready', () => {
       console.log('updating app')
       sendDayInfoToApp(resp, currentSelectedDateTime, false)
     } else {
-      console.log('wrong day to update', resp.getCapturedaytimeseconds(), startOfDay.unix())
+      console.log(
+        'wrong day to update',
+        resp.getCapturedaytimeseconds(),
+        startOfDay.unix()
+      )
     }
   })
-
-
 
   createTrayAndMenusAndShortcuts()
 
@@ -651,11 +660,11 @@ app.on('activate', () => {
   }
 })
 
-function image(imageName: string) {
+function image (imageName: string) {
   return imagePath + '/' + imageName
 }
 
-function loadDay(date: Date, skipToEnd: boolean) {
+function loadDay (date: Date, skipToEnd: boolean) {
   currentSelectedDateTime = date
   let dayReq = new DayRequest()
   dayReq.setCapturedaytimeseconds(
@@ -677,7 +686,7 @@ function loadDay(date: Date, skipToEnd: boolean) {
   )
 }
 
-function sendDayInfoToApp(resp: DayResponse, date: Date, skipToEnd: boolean) {
+function sendDayInfoToApp (resp: DayResponse, date: Date, skipToEnd: boolean) {
   let dayInfo: DayInfo = {
     fullDate: moment(date).format('DD-MMM-YYYY'),
     skipToEnd: skipToEnd
