@@ -10,15 +10,15 @@
 import { ipcRenderer } from 'electron'
 export default {
   props: {
-    href: String,
+    href: String
   },
   methods: {
-    linkClicked() {
+    linkClicked () {
       ipcRenderer.send('link-clicked', this.href)
-    },
+    }
   },
   data: function () {
     return {}
-  },
+  }
 }
 </script>

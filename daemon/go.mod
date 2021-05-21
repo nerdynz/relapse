@@ -7,8 +7,10 @@ replace github.com/nerdynz/relapse/daemon/relapse_proto => ./relapse_proto
 require (
 	github.com/chai2010/webp v1.1.0 // indirect
 	github.com/davecgh/go-spew v1.1.1
+	github.com/desertbit/timer v0.0.0-20180107155436-c41aec40b27f // indirect
 	github.com/fsnotify/fsnotify v1.4.9 // indirect
 	github.com/gen2brain/shm v0.0.0-20200228170931-49f9650110c5 // indirect
+	github.com/improbable-eng/grpc-web v0.14.0
 	github.com/jmoiron/sqlx v1.2.0
 	github.com/kbinani/screenshot v0.0.0-20191211154542-3a185f1ce18f
 	github.com/lxn/win v0.0.0-20201111105847-2a20daff6a55 // indirect
@@ -20,9 +22,12 @@ require (
 	github.com/sirupsen/logrus v1.7.0
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.7.1
+	github.com/urfave/negroni v1.0.0
+	golang.org/x/net v0.0.0-20190620200207-3b0461eec859
 	golang.org/x/sys v0.0.0-20210403161142-5e06dd20ab57 // indirect
 	google.golang.org/grpc v1.34.0
 	google.golang.org/protobuf v1.26.0 // indirect
 	gopkg.in/stretchr/testify.v1 v1.2.2
 	gopkg.in/yaml.v2 v2.3.0 // indirect
+	nhooyr.io/websocket v1.8.7 // indirect
 )

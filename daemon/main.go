@@ -16,7 +16,6 @@ import (
 
 	"github.com/chai2010/webp"
 	"github.com/jmoiron/sqlx"
-	"github.com/kbinani/screenshot"
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/nerdynz/relapse/daemon/relapse_proto"
 	"github.com/nfnt/resize"
@@ -25,9 +24,8 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
+	"golang.org/x/net/http2"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
 const schema = `
@@ -88,6 +86,12 @@ func main() {
 	}
 	defer db.Close()
 
+	// lis, err := net.Listen("tcp", ":3333")
+	// if err != nil {
+	// 	log.Fatalln(err)
+	// }
+
+	srv := &server{}
 	logrus.Infof("Capture started at %s", time.Now().Format("Mon Jan 2 2006 15:04:05 -0700 MST"))
 	logrus.Infof("Capture filepath: %s", capturePath)
 	// if err != nil {
@@ -144,9 +148,22 @@ func startCapturing(server relapse_proto.Relapse_ListenForCapturesServer) error 
 	}
 }
 
-type server struct {
-	relapse_proto.UnsafeRelapseServer
-}
+	hSrv := &http.Server{Addr: ":3335", Handler: }
+	log.Printf("Serving on https://0.0.0.0:3335")
+	log.Fatal(hSrv.ListenAndServe())
+	// n := negroni.New()
+	// n.Use(c)
+	// // n.UseHandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
+	// // 	logrus.Info("hi")
+	// // 	if wrappedGrpc.IsGrpcWebRequest(req) {
+	// // 		wrappedGrpc.ServeHTTP(rw, req)
+	// // 		return
+	// // 	}
+	// // 	// // Fall back to other servers.
+	// // 	// http.DefaultServeMux.ServeHTTP(resp, req)
+	// // })
+	// n.UseHandler(h2c.NewHandler(handler, h2s))
+	// n.Run(":3335")
 
 func NewServer() *server {
 	return &server{}
@@ -174,12 +191,15 @@ func (srv *server) GetSettings(ctx context.Context, req *relapse_proto.SettingsR
 	}, errors.New("Not implemented yet")
 }
 
-func (srv *server) GetSetting(ctx context.Context, req *relapse_proto.Setting) (*relapse_proto.Setting, error) {
-	return &relapse_proto.Setting{}, errors.New("Not implemented yet")
+	// Start the server with TLS, since we are running HTTP/2 it must be
+	// run with TLS.
+	// Exactly how you would run an HTTP/1.1 server with TLS connection.
+	// log.Fatal(hSrv.ListenAndServeTLS("server.crt", "server.key"))
 }
 
-func (srv *server) SetSetting(ctx context.Context, req *relapse_proto.Setting) (*relapse_proto.Setting, error) {
-	return req, errors.New("Not implemented yet")
+func checkOrigin(origin string) bool {
+	logrus.Info("origin")
+	return true
 }
 
 func (srv *server) StartCapture(ctx context.Context, req *relapse_proto.StartRequest) (*relapse_proto.StartResponse, error) {

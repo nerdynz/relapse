@@ -12,7 +12,7 @@
     <zoom
       :value="currentZoomLevel"
       @input="zoomLevelChanged"
-      @middle-clicked="redrawCanvas"
+      @middle-clicked="test ? test() : redrawCanvas()"
     ></zoom>
     <canvas
       ref="canvasEl"
@@ -32,6 +32,10 @@ import { Watch } from 'vue-property-decorator'
 import { DayInfo, Capture } from '@/interfaces/dayInfo.interface'
 import { fabric } from 'fabric'
 import { IEvent } from 'fabric/fabric-impl'
+import { grpc } from '@improbable-eng/grpc-web'
+import { RelapseClient } from '@/grpc/relapse_pb_service'
+import { DayRequest } from '@/grpc/relapse_pb'
+import moment from 'moment'
 
 let canvas: fabric.Canvas
 let canvasX: number
@@ -132,6 +136,21 @@ export default class ScreenshotViewer extends Vue {
       this.currentZoomLevel = newZoom
       canvas.zoomToPoint(new fabric.Point(canvasX, canvasY), newZoom)
     }
+  }
+
+  test () {
+    console.log('test code was old code')
+    let client = new RelapseClient('http://localhost:3335')
+    let dayReq = new DayRequest()
+    let dayStart = moment()
+      .startOf('day')
+      .unix()
+    dayReq.setCapturedaytimeseconds(dayStart)
+    client.getCapturesForADay(dayReq, (err, resp) => {
+      console.error(err)
+      console.log(resp)
+    })
+    console.log('below was old code')
   }
 
   redrawCanvas () {
@@ -267,11 +286,13 @@ export default class ScreenshotViewer extends Vue {
 
     canvas = new fabric.Canvas('screenshot-viewer')
     canvas.on('mouse:up', (e: IEvent) => {
+      console.log('mouse:up', e)
       canvas.defaultCursor = '-webkit-grab'
       panning = false
     })
 
     canvas.on('mouse:down', (e: IEvent) => {
+      console.log('mouse:down', e)
       canvas.defaultCursor = '-webkit-grabbing'
       panning = true
     })
@@ -297,7 +318,9 @@ export default class ScreenshotViewer extends Vue {
     })
 
     // mousewheel & trackpad zoom
-    // document.addEventListener('mousewheel', this.onMouseWheel, false)
+
+    // @ts-ignore
+    document.addEventListener('mousewheel', this.onMouseWheel, false)
 
     this.redrawCanvas()
     this.loadNewDay()
