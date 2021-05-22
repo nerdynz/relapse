@@ -10,8 +10,8 @@ export class Capture extends jspb.Message {
   getAppname(): string;
   setAppname(value: string): void;
 
-  getWindowtitle(): string;
-  setWindowtitle(value: string): void;
+  getApppath(): string;
+  setApppath(value: string): void;
 
   getFilepath(): string;
   setFilepath(value: string): void;
@@ -24,6 +24,12 @@ export class Capture extends jspb.Message {
 
   getCapturedaytimeseconds(): number;
   setCapturedaytimeseconds(value: number): void;
+
+  getCapturesizebytes(): number;
+  setCapturesizebytes(value: number): void;
+
+  getIspurged(): boolean;
+  setIspurged(value: boolean): void;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): Capture.AsObject;
@@ -39,11 +45,49 @@ export namespace Capture {
   export type AsObject = {
     captureid: number,
     appname: string,
-    windowtitle: string,
+    apppath: string,
     filepath: string,
     fullpath: string,
     capturetimeseconds: number,
     capturedaytimeseconds: number,
+    capturesizebytes: number,
+    ispurged: boolean,
+  }
+}
+
+export class CaptureDaySummary extends jspb.Message {
+  getCapturedaytimeseconds(): number;
+  setCapturedaytimeseconds(value: number): void;
+
+  getTotalcapturedtimeseconds(): number;
+  setTotalcapturedtimeseconds(value: number): void;
+
+  getTotalcapturesforday(): number;
+  setTotalcapturesforday(value: number): void;
+
+  getTotalcapturesizebytes(): number;
+  setTotalcapturesizebytes(value: number): void;
+
+  getIspurged(): boolean;
+  setIspurged(value: boolean): void;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): CaptureDaySummary.AsObject;
+  static toObject(includeInstance: boolean, msg: CaptureDaySummary): CaptureDaySummary.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: CaptureDaySummary, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): CaptureDaySummary;
+  static deserializeBinaryFromReader(message: CaptureDaySummary, reader: jspb.BinaryReader): CaptureDaySummary;
+}
+
+export namespace CaptureDaySummary {
+  export type AsObject = {
+    capturedaytimeseconds: number,
+    totalcapturedtimeseconds: number,
+    totalcapturesforday: number,
+    totalcapturesizebytes: number,
+    ispurged: boolean,
   }
 }
 
@@ -76,6 +120,11 @@ export class DayResponse extends jspb.Message {
   setCapturesList(value: Array<Capture>): void;
   addCaptures(value?: Capture, index?: number): Capture;
 
+  hasSummary(): boolean;
+  clearSummary(): void;
+  getSummary(): CaptureDaySummary | undefined;
+  setSummary(value?: CaptureDaySummary): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): DayResponse.AsObject;
   static toObject(includeInstance: boolean, msg: DayResponse): DayResponse.AsObject;
@@ -90,14 +139,18 @@ export namespace DayResponse {
   export type AsObject = {
     capturedaytimeseconds: number,
     capturesList: Array<Capture.AsObject>,
+    summary?: CaptureDaySummary.AsObject,
   }
 }
 
 export class Settings extends jspb.Message {
-  clearSettingsList(): void;
-  getSettingsList(): Array<Setting>;
-  setSettingsList(value: Array<Setting>): void;
-  addSettings(value?: Setting, index?: number): Setting;
+  getIsenabled(): boolean;
+  setIsenabled(value: boolean): void;
+
+  clearRejectionsList(): void;
+  getRejectionsList(): Array<string>;
+  setRejectionsList(value: Array<string>): void;
+  addRejections(value: string, index?: number): string;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): Settings.AsObject;
@@ -111,115 +164,143 @@ export class Settings extends jspb.Message {
 
 export namespace Settings {
   export type AsObject = {
-    settingsList: Array<Setting.AsObject>,
+    isenabled: boolean,
+    rejectionsList: Array<string>,
   }
 }
 
-export class Setting extends jspb.Message {
-  getKey(): string;
-  setKey(value: string): void;
-
-  getValue(): string;
-  setValue(value: string): void;
+export class SettingsOptions extends jspb.Message {
+  clearCapturedapplicationsList(): void;
+  getCapturedapplicationsList(): Array<ApplicationInfo>;
+  setCapturedapplicationsList(value: Array<ApplicationInfo>): void;
+  addCapturedapplications(value?: ApplicationInfo, index?: number): ApplicationInfo;
 
   serializeBinary(): Uint8Array;
-  toObject(includeInstance?: boolean): Setting.AsObject;
-  static toObject(includeInstance: boolean, msg: Setting): Setting.AsObject;
+  toObject(includeInstance?: boolean): SettingsOptions.AsObject;
+  static toObject(includeInstance: boolean, msg: SettingsOptions): SettingsOptions.AsObject;
   static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
   static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
-  static serializeBinaryToWriter(message: Setting, writer: jspb.BinaryWriter): void;
-  static deserializeBinary(bytes: Uint8Array): Setting;
-  static deserializeBinaryFromReader(message: Setting, reader: jspb.BinaryReader): Setting;
+  static serializeBinaryToWriter(message: SettingsOptions, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): SettingsOptions;
+  static deserializeBinaryFromReader(message: SettingsOptions, reader: jspb.BinaryReader): SettingsOptions;
 }
 
-export namespace Setting {
+export namespace SettingsOptions {
   export type AsObject = {
-    key: string,
-    value: string,
+    capturedapplicationsList: Array<ApplicationInfo.AsObject>,
   }
 }
 
-export class StartRequest extends jspb.Message {
+export class ApplicationInfo extends jspb.Message {
+  getAppname(): string;
+  setAppname(value: string): void;
+
+  getApppath(): string;
+  setApppath(value: string): void;
+
   serializeBinary(): Uint8Array;
-  toObject(includeInstance?: boolean): StartRequest.AsObject;
-  static toObject(includeInstance: boolean, msg: StartRequest): StartRequest.AsObject;
+  toObject(includeInstance?: boolean): ApplicationInfo.AsObject;
+  static toObject(includeInstance: boolean, msg: ApplicationInfo): ApplicationInfo.AsObject;
   static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
   static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
-  static serializeBinaryToWriter(message: StartRequest, writer: jspb.BinaryWriter): void;
-  static deserializeBinary(bytes: Uint8Array): StartRequest;
-  static deserializeBinaryFromReader(message: StartRequest, reader: jspb.BinaryReader): StartRequest;
+  static serializeBinaryToWriter(message: ApplicationInfo, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): ApplicationInfo;
+  static deserializeBinaryFromReader(message: ApplicationInfo, reader: jspb.BinaryReader): ApplicationInfo;
 }
 
-export namespace StartRequest {
+export namespace ApplicationInfo {
   export type AsObject = {
+    appname: string,
+    apppath: string,
   }
 }
 
-export class StartResponse extends jspb.Message {
+export class DaySummariesRequest extends jspb.Message {
   serializeBinary(): Uint8Array;
-  toObject(includeInstance?: boolean): StartResponse.AsObject;
-  static toObject(includeInstance: boolean, msg: StartResponse): StartResponse.AsObject;
+  toObject(includeInstance?: boolean): DaySummariesRequest.AsObject;
+  static toObject(includeInstance: boolean, msg: DaySummariesRequest): DaySummariesRequest.AsObject;
   static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
   static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
-  static serializeBinaryToWriter(message: StartResponse, writer: jspb.BinaryWriter): void;
-  static deserializeBinary(bytes: Uint8Array): StartResponse;
-  static deserializeBinaryFromReader(message: StartResponse, reader: jspb.BinaryReader): StartResponse;
+  static serializeBinaryToWriter(message: DaySummariesRequest, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): DaySummariesRequest;
+  static deserializeBinaryFromReader(message: DaySummariesRequest, reader: jspb.BinaryReader): DaySummariesRequest;
 }
 
-export namespace StartResponse {
-  export type AsObject = {
-  }
-}
-
-export class StopRequest extends jspb.Message {
-  serializeBinary(): Uint8Array;
-  toObject(includeInstance?: boolean): StopRequest.AsObject;
-  static toObject(includeInstance: boolean, msg: StopRequest): StopRequest.AsObject;
-  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
-  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
-  static serializeBinaryToWriter(message: StopRequest, writer: jspb.BinaryWriter): void;
-  static deserializeBinary(bytes: Uint8Array): StopRequest;
-  static deserializeBinaryFromReader(message: StopRequest, reader: jspb.BinaryReader): StopRequest;
-}
-
-export namespace StopRequest {
+export namespace DaySummariesRequest {
   export type AsObject = {
   }
 }
 
-export class StopResponse extends jspb.Message {
+export class DaySummaries extends jspb.Message {
+  clearDaysummariesList(): void;
+  getDaysummariesList(): Array<CaptureDaySummary>;
+  setDaysummariesList(value: Array<CaptureDaySummary>): void;
+  addDaysummaries(value?: CaptureDaySummary, index?: number): CaptureDaySummary;
+
   serializeBinary(): Uint8Array;
-  toObject(includeInstance?: boolean): StopResponse.AsObject;
-  static toObject(includeInstance: boolean, msg: StopResponse): StopResponse.AsObject;
+  toObject(includeInstance?: boolean): DaySummaries.AsObject;
+  static toObject(includeInstance: boolean, msg: DaySummaries): DaySummaries.AsObject;
   static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
   static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
-  static serializeBinaryToWriter(message: StopResponse, writer: jspb.BinaryWriter): void;
-  static deserializeBinary(bytes: Uint8Array): StopResponse;
-  static deserializeBinaryFromReader(message: StopResponse, reader: jspb.BinaryReader): StopResponse;
+  static serializeBinaryToWriter(message: DaySummaries, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): DaySummaries;
+  static deserializeBinaryFromReader(message: DaySummaries, reader: jspb.BinaryReader): DaySummaries;
 }
 
-export namespace StopResponse {
+export namespace DaySummaries {
+  export type AsObject = {
+    daysummariesList: Array<CaptureDaySummary.AsObject>,
+  }
+}
+
+export class SettingsPlusOptionsRequest extends jspb.Message {
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): SettingsPlusOptionsRequest.AsObject;
+  static toObject(includeInstance: boolean, msg: SettingsPlusOptionsRequest): SettingsPlusOptionsRequest.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: SettingsPlusOptionsRequest, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): SettingsPlusOptionsRequest;
+  static deserializeBinaryFromReader(message: SettingsPlusOptionsRequest, reader: jspb.BinaryReader): SettingsPlusOptionsRequest;
+}
+
+export namespace SettingsPlusOptionsRequest {
   export type AsObject = {
   }
 }
 
-export class SettingsRequest extends jspb.Message {
+export class SettingsPlusOptions extends jspb.Message {
+  hasSettings(): boolean;
+  clearSettings(): void;
+  getSettings(): Settings | undefined;
+  setSettings(value?: Settings): void;
+
+  hasSettingsoptions(): boolean;
+  clearSettingsoptions(): void;
+  getSettingsoptions(): SettingsOptions | undefined;
+  setSettingsoptions(value?: SettingsOptions): void;
+
   serializeBinary(): Uint8Array;
-  toObject(includeInstance?: boolean): SettingsRequest.AsObject;
-  static toObject(includeInstance: boolean, msg: SettingsRequest): SettingsRequest.AsObject;
+  toObject(includeInstance?: boolean): SettingsPlusOptions.AsObject;
+  static toObject(includeInstance: boolean, msg: SettingsPlusOptions): SettingsPlusOptions.AsObject;
   static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
   static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
-  static serializeBinaryToWriter(message: SettingsRequest, writer: jspb.BinaryWriter): void;
-  static deserializeBinary(bytes: Uint8Array): SettingsRequest;
-  static deserializeBinaryFromReader(message: SettingsRequest, reader: jspb.BinaryReader): SettingsRequest;
+  static serializeBinaryToWriter(message: SettingsPlusOptions, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): SettingsPlusOptions;
+  static deserializeBinaryFromReader(message: SettingsPlusOptions, reader: jspb.BinaryReader): SettingsPlusOptions;
 }
 
-export namespace SettingsRequest {
+export namespace SettingsPlusOptions {
   export type AsObject = {
+    settings?: Settings.AsObject,
+    settingsoptions?: SettingsOptions.AsObject,
   }
 }
 
 export class ListenRequest extends jspb.Message {
+  getIsperforminginitialcapture(): boolean;
+  setIsperforminginitialcapture(value: boolean): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): ListenRequest.AsObject;
   static toObject(includeInstance: boolean, msg: ListenRequest): ListenRequest.AsObject;
@@ -232,6 +313,7 @@ export class ListenRequest extends jspb.Message {
 
 export namespace ListenRequest {
   export type AsObject = {
+    isperforminginitialcapture: boolean,
   }
 }
 

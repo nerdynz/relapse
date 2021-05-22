@@ -153,7 +153,10 @@ func (cap *captureServer) getDaySummary(captureDayTimeSeconds int64) (*relapse_p
 	if len(summaries) > 0 {
 		return summaries[0], nil
 	}
-	return nil, fmt.Errorf("No summary for capture day %d exists", captureDayTimeSeconds)
+	// return nil, fmt.Errorf("No summary for capture day %d exists", captureDayTimeSeconds)
+	return &relapse_proto.CaptureDaySummary{
+		CaptureDayTimeSeconds: captureDayTimeSeconds,
+	}, nil
 }
 
 func (cap *captureServer) getDaySummaries(ctx context.Context) ([]*relapse_proto.CaptureDaySummary, error) {

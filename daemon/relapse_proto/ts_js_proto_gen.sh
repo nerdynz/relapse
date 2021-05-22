@@ -3,7 +3,7 @@ PROTOC_GEN_TS_PATH="/Users/jaybeecave/.nvm/versions/node/v14.15.4/bin/protoc-gen
 PROTOC_GEN_GRPC_PATH="/Users/jaybeecave/.nvm/versions/node/v14.15.4/bin/grpc_tools_node_protoc_plugin"
 
 # Directory to write generated code to (.js and .d.ts files)
-OUT_DIR="../app/src/grpc"
+OUT_DIR="../../app/src/grpc"
 
 PROTO_FILE="./relapse.proto"
 

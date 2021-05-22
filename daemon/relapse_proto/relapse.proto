@@ -35,7 +35,8 @@ message DayResponse {
 
 message Settings {
 	bool IsEnabled = 1;
-	repeated string Rejections = 2;
+	int32 RetainForXDays = 2;
+	repeated string Rejections = 3;
 }
 
 message SettingsOptions {

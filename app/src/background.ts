@@ -43,7 +43,7 @@ const winURL = 'http://localhost:8080'
 let mainWindow: Electron.BrowserWindow | null
 let aboutWindow: Electron.BrowserWindow | null
 let settingsWindow: Electron.BrowserWindow | null
-// let client: RelapseClient
+let client: RelapseClient
 let tray
 let trayContextMenu
 
@@ -105,20 +105,6 @@ app.on('activate', () => {
   // On macOS it's common to re-create a window in the app when the
   // dock icon is clicked and there are no other windows open.
   if (BrowserWindow.getAllWindows().length === 0) createWindow()
-})
-
-app.on(
-  'certificate-error',
-  (event, webContents, url, error, certificate, callback) => {
-    console.log(certificate)
-    // On certificate error we disable default behaviour (stop loading the page)
-    // and we then say "it is all fine - true" to the callback
-    event.preventDefault()
-    callback(true)
-  }
-)
-app.on('select-client-certificate', (event, url, certificates, callback) => {
-  console.log(certificates)
 })
 
 // Exit cleanly on request from parent process in development mode.
@@ -538,16 +524,16 @@ app.on('ready', () => {
   console.log('capturePath: ', capturePath)
   console.log('userDataPath: ', userDataPath)
 
-  // let child = spawn(binPath + '/daemon', [
-  //   '--capture-path',
-  //   capturePath,
-  //   '--userdata-path',
-  //   userDataPath
-  // ])
-  // child.stdout.setEncoding('utf8')
-  // child.stdout.on('data', function (data: string) {
-  //   console.log('stdout: ' + data)
-  // })
+  let child = spawn(binPath + '/daemon', [
+    '--capture-path',
+    capturePath,
+    '--userdata-path',
+    userDataPath
+  ])
+  child.stdout.setEncoding('utf8')
+  child.stdout.on('data', function (data: string) {
+    console.log('stdout: ' + data)
+  })
 
   // child.stderr.setEncoding('utf8')
   // child.stderr.on('data', function (data: string) {
