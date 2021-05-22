@@ -18,13 +18,11 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type RelapseClient interface {
-	GetSettings(ctx context.Context, in *SettingsRequest, opts ...grpc.CallOption) (*Settings, error)
-	GetSetting(ctx context.Context, in *Setting, opts ...grpc.CallOption) (*Setting, error)
-	SetSetting(ctx context.Context, in *Setting, opts ...grpc.CallOption) (*Setting, error)
+	GetSettings(ctx context.Context, in *SettingsPlusOptionsRequest, opts ...grpc.CallOption) (*SettingsPlusOptions, error)
+	SetSettings(ctx context.Context, in *Settings, opts ...grpc.CallOption) (*Settings, error)
 	GetCapturesForADay(ctx context.Context, in *DayRequest, opts ...grpc.CallOption) (*DayResponse, error)
+	GetDaySummaries(ctx context.Context, in *DaySummariesRequest, opts ...grpc.CallOption) (*DaySummaries, error)
 	ListenForCaptures(ctx context.Context, in *ListenRequest, opts ...grpc.CallOption) (Relapse_ListenForCapturesClient, error)
-	StartCapture(ctx context.Context, in *StartRequest, opts ...grpc.CallOption) (*StartResponse, error)
-	StopCapture(ctx context.Context, in *StopRequest, opts ...grpc.CallOption) (*StopResponse, error)
 }
 
 type relapseClient struct {
@@ -35,8 +33,8 @@ func NewRelapseClient(cc grpc.ClientConnInterface) RelapseClient {
 	return &relapseClient{cc}
 }
 
-func (c *relapseClient) GetSettings(ctx context.Context, in *SettingsRequest, opts ...grpc.CallOption) (*Settings, error) {
-	out := new(Settings)
+func (c *relapseClient) GetSettings(ctx context.Context, in *SettingsPlusOptionsRequest, opts ...grpc.CallOption) (*SettingsPlusOptions, error) {
+	out := new(SettingsPlusOptions)
 	err := c.cc.Invoke(ctx, "/relapse_proto.Relapse/GetSettings", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -44,18 +42,9 @@ func (c *relapseClient) GetSettings(ctx context.Context, in *SettingsRequest, op
 	return out, nil
 }
 
-func (c *relapseClient) GetSetting(ctx context.Context, in *Setting, opts ...grpc.CallOption) (*Setting, error) {
-	out := new(Setting)
-	err := c.cc.Invoke(ctx, "/relapse_proto.Relapse/GetSetting", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *relapseClient) SetSetting(ctx context.Context, in *Setting, opts ...grpc.CallOption) (*Setting, error) {
-	out := new(Setting)
-	err := c.cc.Invoke(ctx, "/relapse_proto.Relapse/SetSetting", in, out, opts...)
+func (c *relapseClient) SetSettings(ctx context.Context, in *Settings, opts ...grpc.CallOption) (*Settings, error) {
+	out := new(Settings)
+	err := c.cc.Invoke(ctx, "/relapse_proto.Relapse/SetSettings", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -65,6 +54,15 @@ func (c *relapseClient) SetSetting(ctx context.Context, in *Setting, opts ...grp
 func (c *relapseClient) GetCapturesForADay(ctx context.Context, in *DayRequest, opts ...grpc.CallOption) (*DayResponse, error) {
 	out := new(DayResponse)
 	err := c.cc.Invoke(ctx, "/relapse_proto.Relapse/GetCapturesForADay", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *relapseClient) GetDaySummaries(ctx context.Context, in *DaySummariesRequest, opts ...grpc.CallOption) (*DaySummaries, error) {
+	out := new(DaySummaries)
+	err := c.cc.Invoke(ctx, "/relapse_proto.Relapse/GetDaySummaries", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -103,35 +101,15 @@ func (x *relapseListenForCapturesClient) Recv() (*DayResponse, error) {
 	return m, nil
 }
 
-func (c *relapseClient) StartCapture(ctx context.Context, in *StartRequest, opts ...grpc.CallOption) (*StartResponse, error) {
-	out := new(StartResponse)
-	err := c.cc.Invoke(ctx, "/relapse_proto.Relapse/StartCapture", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *relapseClient) StopCapture(ctx context.Context, in *StopRequest, opts ...grpc.CallOption) (*StopResponse, error) {
-	out := new(StopResponse)
-	err := c.cc.Invoke(ctx, "/relapse_proto.Relapse/StopCapture", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 // RelapseServer is the server API for Relapse service.
 // All implementations must embed UnimplementedRelapseServer
 // for forward compatibility
 type RelapseServer interface {
-	GetSettings(context.Context, *SettingsRequest) (*Settings, error)
-	GetSetting(context.Context, *Setting) (*Setting, error)
-	SetSetting(context.Context, *Setting) (*Setting, error)
+	GetSettings(context.Context, *SettingsPlusOptionsRequest) (*SettingsPlusOptions, error)
+	SetSettings(context.Context, *Settings) (*Settings, error)
 	GetCapturesForADay(context.Context, *DayRequest) (*DayResponse, error)
+	GetDaySummaries(context.Context, *DaySummariesRequest) (*DaySummaries, error)
 	ListenForCaptures(*ListenRequest, Relapse_ListenForCapturesServer) error
-	StartCapture(context.Context, *StartRequest) (*StartResponse, error)
-	StopCapture(context.Context, *StopRequest) (*StopResponse, error)
 	mustEmbedUnimplementedRelapseServer()
 }
 
@@ -139,26 +117,20 @@ type RelapseServer interface {
 type UnimplementedRelapseServer struct {
 }
 
-func (UnimplementedRelapseServer) GetSettings(context.Context, *SettingsRequest) (*Settings, error) {
+func (UnimplementedRelapseServer) GetSettings(context.Context, *SettingsPlusOptionsRequest) (*SettingsPlusOptions, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetSettings not implemented")
 }
-func (UnimplementedRelapseServer) GetSetting(context.Context, *Setting) (*Setting, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetSetting not implemented")
-}
-func (UnimplementedRelapseServer) SetSetting(context.Context, *Setting) (*Setting, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method SetSetting not implemented")
+func (UnimplementedRelapseServer) SetSettings(context.Context, *Settings) (*Settings, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SetSettings not implemented")
 }
 func (UnimplementedRelapseServer) GetCapturesForADay(context.Context, *DayRequest) (*DayResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetCapturesForADay not implemented")
 }
+func (UnimplementedRelapseServer) GetDaySummaries(context.Context, *DaySummariesRequest) (*DaySummaries, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetDaySummaries not implemented")
+}
 func (UnimplementedRelapseServer) ListenForCaptures(*ListenRequest, Relapse_ListenForCapturesServer) error {
 	return status.Errorf(codes.Unimplemented, "method ListenForCaptures not implemented")
-}
-func (UnimplementedRelapseServer) StartCapture(context.Context, *StartRequest) (*StartResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method StartCapture not implemented")
-}
-func (UnimplementedRelapseServer) StopCapture(context.Context, *StopRequest) (*StopResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method StopCapture not implemented")
 }
 func (UnimplementedRelapseServer) mustEmbedUnimplementedRelapseServer() {}
 
@@ -174,7 +146,7 @@ func RegisterRelapseServer(s grpc.ServiceRegistrar, srv RelapseServer) {
 }
 
 func _Relapse_GetSettings_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(SettingsRequest)
+	in := new(SettingsPlusOptionsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -186,43 +158,25 @@ func _Relapse_GetSettings_Handler(srv interface{}, ctx context.Context, dec func
 		FullMethod: "/relapse_proto.Relapse/GetSettings",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RelapseServer).GetSettings(ctx, req.(*SettingsRequest))
+		return srv.(RelapseServer).GetSettings(ctx, req.(*SettingsPlusOptionsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Relapse_GetSetting_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(Setting)
+func _Relapse_SetSettings_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Settings)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(RelapseServer).GetSetting(ctx, in)
+		return srv.(RelapseServer).SetSettings(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/relapse_proto.Relapse/GetSetting",
+		FullMethod: "/relapse_proto.Relapse/SetSettings",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RelapseServer).GetSetting(ctx, req.(*Setting))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _Relapse_SetSetting_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(Setting)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(RelapseServer).SetSetting(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/relapse_proto.Relapse/SetSetting",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RelapseServer).SetSetting(ctx, req.(*Setting))
+		return srv.(RelapseServer).SetSettings(ctx, req.(*Settings))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -241,6 +195,24 @@ func _Relapse_GetCapturesForADay_Handler(srv interface{}, ctx context.Context, d
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(RelapseServer).GetCapturesForADay(ctx, req.(*DayRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Relapse_GetDaySummaries_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DaySummariesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RelapseServer).GetDaySummaries(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/relapse_proto.Relapse/GetDaySummaries",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RelapseServer).GetDaySummaries(ctx, req.(*DaySummariesRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -266,42 +238,6 @@ func (x *relapseListenForCapturesServer) Send(m *DayResponse) error {
 	return x.ServerStream.SendMsg(m)
 }
 
-func _Relapse_StartCapture_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(StartRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(RelapseServer).StartCapture(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/relapse_proto.Relapse/StartCapture",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RelapseServer).StartCapture(ctx, req.(*StartRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _Relapse_StopCapture_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(StopRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(RelapseServer).StopCapture(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/relapse_proto.Relapse/StopCapture",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RelapseServer).StopCapture(ctx, req.(*StopRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 // Relapse_ServiceDesc is the grpc.ServiceDesc for Relapse service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -314,24 +250,16 @@ var Relapse_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _Relapse_GetSettings_Handler,
 		},
 		{
-			MethodName: "GetSetting",
-			Handler:    _Relapse_GetSetting_Handler,
-		},
-		{
-			MethodName: "SetSetting",
-			Handler:    _Relapse_SetSetting_Handler,
+			MethodName: "SetSettings",
+			Handler:    _Relapse_SetSettings_Handler,
 		},
 		{
 			MethodName: "GetCapturesForADay",
 			Handler:    _Relapse_GetCapturesForADay_Handler,
 		},
 		{
-			MethodName: "StartCapture",
-			Handler:    _Relapse_StartCapture_Handler,
-		},
-		{
-			MethodName: "StopCapture",
-			Handler:    _Relapse_StopCapture_Handler,
+			MethodName: "GetDaySummaries",
+			Handler:    _Relapse_GetDaySummaries_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{

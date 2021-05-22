@@ -107,20 +107,6 @@ app.on('activate', () => {
   if (BrowserWindow.getAllWindows().length === 0) createWindow()
 })
 
-app.on(
-  'certificate-error',
-  (event, webContents, url, error, certificate, callback) => {
-    console.log(certificate)
-    // On certificate error we disable default behaviour (stop loading the page)
-    // and we then say "it is all fine - true" to the callback
-    event.preventDefault()
-    callback(true)
-  }
-)
-app.on('select-client-certificate', (event, url, certificates, callback) => {
-  console.log(certificates)
-})
-
 // Exit cleanly on request from parent process in development mode.
 if (isDevelopment) {
   if (process.platform === 'win32') {
@@ -549,21 +535,21 @@ app.on('ready', () => {
     console.log('stdout: ' + data)
   })
 
-  child.stderr.setEncoding('utf8')
-  child.stderr.on('data', function (data: string) {
-    if (data.startsWith('CaptureDayTimeSeconds_')) {
-      let startOfDay = moment(currentSelectedDateTime)
-        .startOf('day')
-        .unix()
+  // child.stderr.setEncoding('utf8')
+  // child.stderr.on('data', function (data: string) {
+  //   if (data.startsWith('CaptureDayTimeSeconds_')) {
+  //     let startOfDay = moment(currentSelectedDateTime)
+  //       .startOf('day')
+  //       .unix()
 
-      console.log(data, ' compared to ', startOfDay)
-      let startOfDayFromDaemon = data.split('CaptureDayTimeSeconds_')[0]
-      if (Number(startOfDayFromDaemon) === startOfDay) {
-        console.log('WOOOTOTOTOTOOTOT')
-      }
-    }
-    console.log('stderr: ' + data)
-  })
+  //     console.log(data, ' compared to ', startOfDay)
+  //     let startOfDayFromDaemon = data.split('CaptureDayTimeSeconds_')[0]
+  //     if (Number(startOfDayFromDaemon) === startOfDay) {
+  //       console.log('WOOOTOTOTOTOOTOT')
+  //     }
+  //   }
+  //   console.log('stderr: ' + data)
+  // })
 
   client = new RelapseClient('localhost:3333', credentials.createInsecure())
 

@@ -15,5 +15,10 @@ protoc \
     --plugin=protoc-gen-grpc=${PROTOC_GEN_GRPC_PATH} \
  --js_out="import_style=commonjs,binary:${OUT_DIR}" \
     --ts_out="service=grpc-node:${OUT_DIR}" \
- --grpc_out="${OUT_DIR}" \
- users.proto base.proto
+    --grpc_out="${OUT_DIR}" \
+    users.proto base.proto
+
+# TODO Server
+- Logger to file/db
+- All errors to log
+- 

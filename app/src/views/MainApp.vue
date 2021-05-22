@@ -1,5 +1,6 @@
 <template>
   <div class="handlebar" @click="handleClick"></div>
+  <button @click="goToSettings">hi</button>
   <!-- <help-view v-if="settings.isHelpShown"></help-view> -->
   <screenshot-viewer @minutes-calculated="minuteCalc"></screenshot-viewer>
   <div class="content">Hours worked: {{ totalHoursWorked }}</div>
@@ -23,6 +24,10 @@ export default class MainApp extends Vue {
 
   get settings () {
     return relapseModule.settings
+  }
+
+  goToSettings () {
+    this.$router.push({ name: 'Settings' })
   }
 
   get totalHoursWorked (): string {

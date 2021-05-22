@@ -32,10 +32,8 @@ import { Watch } from 'vue-property-decorator'
 import { DayInfo, Capture } from '@/interfaces/dayInfo.interface'
 import { fabric } from 'fabric'
 import { IEvent } from 'fabric/fabric-impl'
-import { grpc } from '@improbable-eng/grpc-web'
-import { RelapseClient } from '@/grpc/relapse_pb_service'
-import { DayRequest } from '@/grpc/relapse_pb'
-import moment from 'moment'
+// import { DayRequest } from '@/grpc/relapse_pb'
+// import moment from 'moment'
 
 let canvas: fabric.Canvas
 let canvasX: number
@@ -322,8 +320,8 @@ export default class ScreenshotViewer extends Vue {
     // @ts-ignore
     document.addEventListener('mousewheel', this.onMouseWheel, false)
 
-    this.redrawCanvas()
     this.loadNewDay()
+    this.redrawCanvas()
   }
 }
 </script>

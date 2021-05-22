@@ -1,0 +1,72 @@
+syntax = "proto3";
+package relapse_proto;
+
+// option go_package="github.com/nerdynz/relapse/daemon/relapse_proto";
+
+message Capture {
+	int64 CaptureID = 1;
+	string AppName = 2;
+	string AppPath = 3;
+	string Filepath = 4;
+	string Fullpath = 5;
+	int64 CaptureTimeSeconds = 6;
+	int64 CaptureDayTimeSeconds = 7;
+	int64 CaptureSizeBytes = 8;
+	bool IsPurged = 9;
+}
+
+message CaptureDaySummary {
+	int64 CaptureDayTimeSeconds = 1;
+	int64 TotalCapturedTimeSeconds = 2;
+	int64 TotalCapturesForDay = 3;
+	int64 TotalCaptureSizeBytes = 4;
+	bool IsPurged = 5;
+}
+
+message DayRequest {
+  int64 CaptureDayTimeSeconds = 1;
+}
+
+message DayResponse {
+  int64 CaptureDayTimeSeconds = 1;
+  repeated Capture Captures = 2;
+	CaptureDaySummary summary = 3;
+}
+
+message Settings {
+	bool IsEnabled = 1;
+	int32 RetainForXDays = 2;
+	repeated string Rejections = 3;
+}
+
+message SettingsOptions {
+	repeated ApplicationInfo CapturedApplications = 1;
+}
+
+message ApplicationInfo {
+	string AppName = 1;
+	string AppPath = 2;
+}
+
+message DaySummariesRequest {}
+message DaySummaries {
+	repeated CaptureDaySummary DaySummaries = 1;
+}
+
+message SettingsPlusOptionsRequest {}
+message SettingsPlusOptions {
+	Settings Settings  = 1;
+	SettingsOptions SettingsOptions  = 2;
+}
+
+message ListenRequest {
+	bool IsPerformingInitialCapture = 1;
+}
+
+service Relapse {
+  rpc GetSettings(SettingsPlusOptionsRequest) returns (SettingsPlusOptions) {}
+  rpc SetSettings(Settings) returns (Settings) {}
+  rpc GetCapturesForADay(DayRequest) returns (DayResponse) {}
+  rpc GetDaySummaries(DaySummariesRequest) returns (DaySummaries) {}
+  rpc ListenForCaptures(ListenRequest) returns (stream DayResponse) {}
+}
