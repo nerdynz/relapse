@@ -1,6 +1,5 @@
 <template>
   <div class="handlebar" @click="handleClick"></div>
-  <button @click="goToSettings">hi</button>
   <!-- <help-view v-if="settings.isHelpShown"></help-view> -->
   <screenshot-viewer @minutes-calculated="minuteCalc"></screenshot-viewer>
   <div class="content">Hours worked: {{ totalHoursWorked }}</div>
@@ -21,10 +20,6 @@ import { Vue, Options } from 'vue-class-component'
 export default class MainApp extends Vue {
   clicks = 0
   totalMinutesWorked = 0
-
-  get settings () {
-    return relapseModule.settings
-  }
 
   goToSettings () {
     this.$router.push({ name: 'Settings' })
@@ -59,44 +54,6 @@ export default class MainApp extends Vue {
     this.totalMinutesWorked = mins
   }
 
-  created () {
-    // console.log('server event hooks registered')
-
-    // day loaded event
-    ipcRenderer.on('loaded-day', function (ev, { doc }) {
-      console.log('doc', doc)
-      relapseModule.changeDay(doc)
-      // store.dispatch('changeDay', doc)
-    })
-
-    // ipcRenderer.on('update-log', function (ev, log) {
-    //   // console.log('updat', log)
-    //   store.dispatch('updateLog', log)
-    // })
-
-    // ipcRenderer.on('loaded-settings', function (ev, settings) {
-    //   store.dispatch('updateSettings', settings)
-    // })
-
-    // ipcRenderer.on('changed-settings', function (ev, msg, settings) {
-    //   store.dispatch('updateSettings', settings)
-    //   if (typeof msg === 'object') {
-    //     store.dispatch('updateSettingsMessage', msg)
-    //   }
-    // })
-
-    // ipcRenderer.on('screenshot-created', function (ev, day) {
-    //   console.log(day)
-    //   if (day) {
-    //     store.dispatch('addScreenshot', day)
-    //   }
-    // })
-
-    // ipcRenderer.on('filepath-changed', function (ev, filepath) {
-    //   if (filepath) {
-    //     store.dispatch('filePathChanged', filepath)
-    //   }
-    // })
-  }
+  // created () {}
 }
 </script>

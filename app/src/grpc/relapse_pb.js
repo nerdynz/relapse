@@ -1039,7 +1039,7 @@ if (goog.DEBUG && !COMPILED) {
  * @private {!Array<number>}
  * @const
  */
-proto.relapse_proto.Settings.repeatedFields_ = [2];
+proto.relapse_proto.Settings.repeatedFields_ = [3];
 
 
 
@@ -1071,7 +1071,8 @@ proto.relapse_proto.Settings.prototype.toObject = function(opt_includeInstance) 
 proto.relapse_proto.Settings.toObject = function(includeInstance, msg) {
   var f, obj = {
     isenabled: jspb.Message.getFieldWithDefault(msg, 1, false),
-    rejectionsList: jspb.Message.getRepeatedField(msg, 2)
+    retainforxdays: jspb.Message.getFieldWithDefault(msg, 2, 0),
+    rejectionsList: jspb.Message.getRepeatedField(msg, 3)
   };
 
   if (includeInstance) {
@@ -1113,6 +1114,10 @@ proto.relapse_proto.Settings.deserializeBinaryFromReader = function(msg, reader)
       msg.setIsenabled(value);
       break;
     case 2:
+      var value = /** @type {number} */ (reader.readInt32());
+      msg.setRetainforxdays(value);
+      break;
+    case 3:
       var value = /** @type {string} */ (reader.readString());
       msg.addRejections(value);
       break;
@@ -1152,10 +1157,17 @@ proto.relapse_proto.Settings.serializeBinaryToWriter = function(message, writer)
       f
     );
   }
+  f = message.getRetainforxdays();
+  if (f !== 0) {
+    writer.writeInt32(
+      2,
+      f
+    );
+  }
   f = message.getRejectionsList();
   if (f.length > 0) {
     writer.writeRepeatedString(
-      2,
+      3,
       f
     );
   }
@@ -1180,17 +1192,32 @@ proto.relapse_proto.Settings.prototype.setIsenabled = function(value) {
 
 
 /**
- * repeated string Rejections = 2;
+ * optional int32 RetainForXDays = 2;
+ * @return {number}
+ */
+proto.relapse_proto.Settings.prototype.getRetainforxdays = function() {
+  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 2, 0));
+};
+
+
+/** @param {number} value */
+proto.relapse_proto.Settings.prototype.setRetainforxdays = function(value) {
+  jspb.Message.setProto3IntField(this, 2, value);
+};
+
+
+/**
+ * repeated string Rejections = 3;
  * @return {!Array<string>}
  */
 proto.relapse_proto.Settings.prototype.getRejectionsList = function() {
-  return /** @type {!Array<string>} */ (jspb.Message.getRepeatedField(this, 2));
+  return /** @type {!Array<string>} */ (jspb.Message.getRepeatedField(this, 3));
 };
 
 
 /** @param {!Array<string>} value */
 proto.relapse_proto.Settings.prototype.setRejectionsList = function(value) {
-  jspb.Message.setField(this, 2, value || []);
+  jspb.Message.setField(this, 3, value || []);
 };
 
 
@@ -1199,7 +1226,7 @@ proto.relapse_proto.Settings.prototype.setRejectionsList = function(value) {
  * @param {number=} opt_index
  */
 proto.relapse_proto.Settings.prototype.addRejections = function(value, opt_index) {
-  jspb.Message.addToRepeatedField(this, 2, value, opt_index);
+  jspb.Message.addToRepeatedField(this, 3, value, opt_index);
 };
 
 

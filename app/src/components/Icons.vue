@@ -1,40 +1,22 @@
 <template>
   <!-- <component v-if="hasIcon" :is="iconName" /> -->
-  <span />
+  <span>
+    <component v-if="hasIcon" :is="iconName" />
+  </span>
 </template>
 
 <script>
-/* eslint-disable vue/no-unused-components */
+import Home from '@/assets/fa-svgs/solid/home.svg'
+import Share from '@/assets/fa-svgs/solid/share.svg'
+import ArrowLeft from '@/assets/fa-svgs/light/arrow-left.svg'
+import ArrowRight from '@/assets/fa-svgs/light/arrow-right.svg'
 
 const icons = (() => {
   let icons = {
-    // 'ico-home': require('@/assets/fa-svgs/solid/home.svg?inline')
-    // 'ico-arrow-left': require('@/assets/fa-svgs/light/arrow-left.svg'),
-    // 'ico-arrow-right': require('@/assets/fa-svgs/light/arrow-right.svg')
-    // 'ico-bold': require('@/assets/fa-svgs/regular/bold.svg?inline'),
-    // 'ico-italic': require('@/assets/fa-svgs/regular/italic.svg?inline'),
-    // 'ico-strike': require('@/assets/fa-svgs/regular/strikethrough.svg?inline'),
-    // 'ico-underline': require('@/assets/fa-svgs/regular/underline.svg?inline'),
-    // 'ico-paragraph': require('@/assets/fa-svgs/regular/paragraph.svg?inline'),
-    // 'ico-code': require('@/assets/fa-svgs/regular/code.svg?inline'),
-    // 'ico-h1': require('@/assets/fa-svgs/regular/h1.svg?inline'),
-    // 'ico-h2': require('@/assets/fa-svgs/regular/h2.svg?inline'),
-    // 'ico-h3': require('@/assets/fa-svgs/regular/h3.svg?inline'),
-    // 'ico-list-ul': require('@/assets/fa-svgs/regular/list-ul.svg?inline'),
-    // 'ico-list-ol': require('@/assets/fa-svgs/regular/list-ol.svg?inline'),
-    // 'ico-quote-left': require('@/assets/fa-svgs/regular/quote-left.svg?inline'),
-    // 'ico-quote-right': require('@/assets/fa-svgs/regular/quote-right.svg?inline'),
-    // 'ico-horizontal-rule': require('@/assets/fa-svgs/regular/horizontal-rule.svg?inline'),
-    // 'ico-undo': require('@/assets/fa-svgs/regular/undo.svg?inline'),
-    // 'ico-undo-alt': require('@/assets/fa-svgs/regular/undo-alt.svg?inline'),
-    // 'ico-redo': require('@/assets/fa-svgs/regular/redo.svg?inline'),
-    // 'ico-redo-alt': require('@/assets/fa-svgs/regular/redo-alt.svg?inline'),
-    // 'ico-edit': require('@/assets/fa-svgs/regular/edit.svg?inline'),
-    // 'ico-save': require('@/assets/fa-svgs/duotone/save.svg?inline'),
-    // 'ico-trash': require('@/assets/fa-svgs/solid/trash.svg?inline'),
-    // 'ico-upload': require('@/assets/fa-svgs/regular/upload.svg?inline'),
-    // 'ico-circle': require('@/assets/fa-svgs/regular/circle.svg?inline'),
-    // 'ico-logout': require('@/assets/fa-svgs/duotone/sign-out.svg?inline')
+    'ico-home': Home,
+    'ico-share': Share,
+    'ico-arrow-left': ArrowLeft,
+    'ico-arrow-right': ArrowRight
   }
 
   let aliases = {

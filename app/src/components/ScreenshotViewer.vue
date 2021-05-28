@@ -12,7 +12,7 @@
     <zoom
       :value="currentZoomLevel"
       @input="zoomLevelChanged"
-      @middle-clicked="test ? test() : redrawCanvas()"
+      @middle-clicked="redrawCanvas()"
     ></zoom>
     <canvas
       ref="canvasEl"
@@ -29,7 +29,7 @@ import Zoom from '@/components/Zoom.vue'
 import { relapseModule } from '@/store/relapseModule'
 import { Vue, Options } from 'vue-class-component'
 import { Watch } from 'vue-property-decorator'
-import { DayInfo, Capture } from '@/interfaces/dayInfo.interface'
+import { CaptureSimple, DayInfo } from '@/interfaces/dayInfo.interface'
 import { fabric } from 'fabric'
 import { IEvent } from 'fabric/fabric-impl'
 // import { DayRequest } from '@/grpc/relapse_pb'
@@ -52,7 +52,7 @@ export default class ScreenshotViewer extends Vue {
   currentDate = new Date()
   firstTime = new Date()
   lastTime = new Date()
-  localTimes: Array<Capture> = []
+  localTimes: Array<CaptureSimple> = []
   firstImageIndex = 0
   lastImageIndex = 0
 
@@ -136,21 +136,6 @@ export default class ScreenshotViewer extends Vue {
     }
   }
 
-  test () {
-    console.log('test code was old code')
-    let client = new RelapseClient('http://localhost:3335')
-    let dayReq = new DayRequest()
-    let dayStart = moment()
-      .startOf('day')
-      .unix()
-    dayReq.setCapturedaytimeseconds(dayStart)
-    client.getCapturesForADay(dayReq, (err, resp) => {
-      console.error(err)
-      console.log(resp)
-    })
-    console.log('below was old code')
-  }
-
   redrawCanvas () {
     this.currentZoomLevel = 0.7
     canvas.setZoom(this.currentZoomLevel)
@@ -164,12 +149,6 @@ export default class ScreenshotViewer extends Vue {
   }
 
   updateLocalTimes () {
-    // var worker = new Worker('../timelineWorker.js')
-    // worker.onmessage = function (e) {
-    //   console.log('Message received from worker')
-    // }
-    // worker.postMessage(['first.value', 'second.value'])
-    // console.log(worker)
     let localTimes = []
     let dateHolder = new Date(this.currentDate)
     // to be fkn sure....
@@ -177,82 +156,96 @@ export default class ScreenshotViewer extends Vue {
     dateHolder.setMinutes(0)
     dateHolder.setSeconds(0)
     dateHolder.setMilliseconds(0)
-    let totalMinutesWorked = 0
 
-    if (this.currentDay && this.currentDay.files) {
-      console.log('is this a thing that is happening', this.currentDay.files)
+    let i = 0
+    if (this.currentDay && this.currentDay.capturesList) {
+      console.log(
+        'is this a thing that is happening',
+        this.currentDay.capturesList
+      )
       this.firstImageIndex = 0
       this.lastImageIndex = 0
 
       // loop all the minutes of a given day
-      for (let i = 0; i < 1441; i++) {
-        let filepath
-        let isReal = false
+      for (let minute = 0; minute < 1441; minute++) {
+        for (let second = 0; second < 60; second = second + 30) {
+          let filepath
+          let isReal = false
 
-        // consistant date for current itteration i.e. i(itteration)Date
-        let iDate = new Date(dateHolder)
-        iDate.setMinutes(i)
+          // consistant date for current itteration i.e. i(itteration)Date
+          let iDate = new Date(dateHolder)
+          iDate.setMinutes(minute)
+          iDate.setSeconds(second)
+          iDate.setMilliseconds(0)
 
-        // loop all the files and check if any belong to this minute
-        for (let j = 0; j < this.currentDay.files.length; j++) {
-          let file = this.currentDay.files[j]
+          // loop all the files and check if any belong to this minute
+          for (let j = 0; j < this.currentDay.capturesList.length; j++) {
+            let file = this.currentDay.capturesList[j]
+            // console.log('file', file)
+            let ms = Number(file.capturetimeseconds) * 1000
+            // make those suckers consistant
+            let fileDate = new Date(ms)
+            // fileDate.setSeconds(second)
+            fileDate.setMilliseconds(0)
+            // console.log('ffff ->', file.CaptureID + "_CAPTURE", fileDate, " comparison", iDate, fileDate)
 
-          let ms = Number(file.capturetimeseconds) * 1000
-          // make those suckers consistant
-          let fileDate = new Date(ms)
-          fileDate.setSeconds(0)
-          fileDate.setMilliseconds(0)
-          // console.log('ffff ->', file.CaptureID + "_CAPTURE", fileDate, " comparison", iDate, fileDate)
-
-          if (+iDate === +fileDate) {
-            // WE ARE A REAL NUM
-            // console.log('yep we have some')
-            if (this.firstImageIndex === 0) {
-              this.firstImageIndex = i
+            if (+iDate === +fileDate) {
+              // WE ARE A REAL NUM
+              // console.log('yep we have some')
+              if (this.firstImageIndex === 0) {
+                this.firstImageIndex = i
+              }
+              this.lastImageIndex = i // always update this because we dont get into this piece of logic unless its real
+              if (this.currentImageIndex === 0) {
+                // if (this.currentImageIndex === 0 || this.currentDay.skipToEnd) {
+                this.currentImageIndex = i
+              }
+              isReal = true
+              filepath = file.fullpath
+              break
             }
-            this.lastImageIndex = i // always update this because we dont get into this piece of logic unless its real
-            if (this.currentImageIndex === 0 || this.currentDay.skipToEnd) {
-              this.currentImageIndex = i
-            }
-            isReal = true
-            filepath = file.fullpath
-            totalMinutesWorked++
-            break
           }
-        }
 
-        localTimes.push({
-          date: iDate,
-          isReal: isReal,
-          filepath: filepath
-        })
+          localTimes.push({
+            date: iDate,
+            isReal: isReal,
+            filepath: filepath
+          })
+          i++
+        }
       }
     } else {
       // same but slightly more performant then 1440 if checks
       for (let i = 0; i < 1441; i++) {
-        let date = new Date(dateHolder)
-        date.setMinutes(i)
-        localTimes.push({
-          date: date,
-          isReal: false
-        })
+        for (let second = 0; second < 60; second = second + 30) {
+          let date = new Date(dateHolder)
+          date.setMinutes(i)
+          date.setSeconds(second)
+          localTimes.push({
+            date: date,
+            isReal: false
+          })
+        }
       }
     }
-
     // @ts-ignore
     this.localTimes = localTimes
-    this.$emit('minutes-calculated', totalMinutesWorked)
-    console.log('localTimes -> ', localTimes)
+    // return localTimes
   }
 
   @Watch('currentDay')
   onChangeCurrentDay () {
     // this.currentImageIndex = 0
-    this.currentDate = this.currentDay.fullDate
-      ? new Date(this.currentDay.fullDate)
-      : new Date()
+    let date = new Date()
+    if (this.currentDay) {
+      let ms = this.currentDay.capturedaytimeseconds * 1000
+      date = new Date(ms)
+    }
+    this.currentDate = date
+    console.log('happened', this.currentDate)
     setTimeout(() => {
       this.updateLocalTimes()
+      this.currentImageIndexChanged(this.currentImageIndex)
     }, 10)
   }
 
@@ -321,6 +314,7 @@ export default class ScreenshotViewer extends Vue {
     document.addEventListener('mousewheel', this.onMouseWheel, false)
 
     this.loadNewDay()
+    this.updateLocalTimes()
     this.redrawCanvas()
   }
 }
@@ -334,7 +328,7 @@ img {
 
 .screenshot-viewer {
   position: relative;
-  background-color: red;
+  background-color: black;
 }
 
 .zoom {

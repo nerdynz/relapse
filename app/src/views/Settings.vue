@@ -1,88 +1,55 @@
 <template>
   <div class="settings">
-    <!-- <div class='settings'>
-      <h1>Preferences</h1>
+    <div class="title-bar">
+      <h4 class="title-top">Relapse Preferences</h4>
+    </div>
+    <div v-if="isLoaded" class="settings-content">
+      <ico icon="home" />
+      {{ appSettings }}
       <div class="form-field">
         <label>Screenshot Capture Path</label>
         <file-picker :value="path"></file-picker>
       </div>
       <div class="form-field">
-        <label>Delete screenshots older than X days</label>
-        <numeric :min='0' :max='61' v-model="screenshotDuration"></numeric>
+        <label>Retain screenshots for </label>
+        <numeric
+          :min="10"
+          :max="61"
+          :value="appSettings.retainforxdays"
+        ></numeric>
       </div>
-      <div :class="'msg '+settingsMessage.msgType+'-msg'" >
-        {{settingsMessage.msg}}
-      </div>
-      <div class="form-field">
-        <button class="btn save-btn" @click="doSave">Save</button>
-        <button class="btn cancel-btn" @click="doCancel">Cancel</button>
-      </div>
-    </div> -->
+    </div>
   </div>
 </template>
 
 <script>
 // import FilePicker from './FilePicker'
-// import Numeric from './Numeric'
+import Numeric from '@/components/Numeric'
 // import {mapGetters, mapActions} from 'vuex'
+import { relapseModule } from '@/store/relapseModule'
 import { Vue, Options } from 'vue-class-component'
 
 @Options({
-  components: {}
+  components: {
+    Numeric
+  }
 })
-export default class Settings extends Vue {}
+export default class Settings extends Vue {
+  get isLoaded () {
+    if (relapseModule.appSettings) {
+      return true
+    }
+    return false
+  }
 
-//   computed: {
-//     ...mapGetters([
-//       'settings',
-//       'settingsMessage',
-//       'capturePath'
-//     ])
-//   },
-//   watch: {
-//     'capturePath': function () {
-//       console.log('happening')
-//       this.path = this.capturePath
-//     },
-//     'settings': function () {
-//       if (this.settings.screenshotDaysDuration) {
-//         this.screenshotDuration = this.settings.screenshotDaysDuration
-//       }
-//     }
-//   },
-//   methods: {
-//     ...mapActions([
-//       'loadSettings',
-//       'saveSettings',
-//       'closeSettings'
-//     ]),
-//     doSave () {
-//       console.log('duration', this.screenshotDuration)
-//       console.log('this.path', this.path)
-//       let newSettings = {
-//         capturePath: this.path,
-//         screenshotDaysDuration: this.screenshotDuration
-//       }
-//       this.saveSettings(newSettings)
-//     },
-//     doCancel () {
-//       this.closeSettings()
-//       // this.saveSettings({
-//       //   capturePath: this.capturePath,
-//       //   screenshotDaysDuration: this.screenshotDaysDuration
-//       // })
-//     }
-//   },
-//   mounted: function () {
-//     this.loadSettings()
-//   },
-//   data: function () {
-//     return {
-//       path: 'no path selected',
-//       screenshotDuration: 30
-//     }
-//   }
-// }
+  get appSettings () {
+    return relapseModule.appSettings
+  }
+
+  mounted () {
+    relapseModule.loadSettings()
+  }
+}
 </script>
 
 <style lang="scss">
@@ -102,11 +69,21 @@ img {
   height: 100%;
   width: 100%;
   min-width: 460px;
-  color: $color-light-grey;
-  background: $color-bg;
+  background: transparent;
   display: block;
-  padding: 40px;
-  -webkit-app-region: drag;
+  display: flex;
+  flex-direction: column;
+
+  .title-bar {
+    -webkit-app-region: drag;
+    height: 85px;
+    border-bottom: 1px solid $light-theme-lines-between-color;
+  }
+  .settings-content {
+    padding: 30px;
+    // background: $light-theme-bg;
+    flex-grow: 2;
+  }
 
   .msg {
     margin-bottom: 10px;
@@ -197,6 +174,16 @@ img {
     font-weight: normal;
     color: $color-white;
     margin: 10px;
+  }
+
+  h4.title-top {
+    color: $light-theme-text-color;
+    font-weight: bold;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    text-align: center;
   }
 
   label {

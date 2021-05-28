@@ -1,41 +1,42 @@
 <template>
   <div class="timeline" :style="timelineReadyStyle">
-    <div class="picker">
+    <button
+      class="side-btn prev-minute"
+      @mousedown="prevMinute"
+      @mouseup="prevMinuteOff"
+    >
+      <ico icon="share" />
+    </button>
+    <!--
       <button class="side-btn prev-day" @click="prevDay">
         <fa-icon icon="caret-left" />
       </button>
-      <datepicker
-        :value="day"
-        @selected="dayChanged"
-        :highlighted="highlighted"
-        @opened="datePickerOpened"
-      ></datepicker>
       <button class="side-btn next-day" @click="nextDay">
         <fa-icon icon="caret-right" />
       </button>
-    </div>
-    <div class="canvas-bg" :style="timelineReadyStyle">
-      <button
-        class="side-btn prev-minute"
-        @mousedown="prevMinute"
-        @mouseup="prevMinuteOff"
-      >
-        <fa-icon icon="caret-left" />
-      </button>
-      <canvas
-        ref="timelineCanvas"
-        id="timeline-viewer"
-        width="1280"
-        height="40"
-      ></canvas>
       <button
         class="side-btn next-minute"
         @mousedown="nextMinute"
         @mouseup="nextMinuteOff"
       >
         <fa-icon icon="caret-right" />
-      </button>
-      <div class="time">{{ currentTime() }}</div>
+      </button> -->
+    <div class="picker">
+      <datepicker
+        :value="day"
+        @selected="dayChanged"
+        :highlighted="highlighted"
+        @opened="datePickerOpened"
+        :time-override="currentTime"
+      />
+    </div>
+    <div class="canvas-bg" :style="timelineReadyStyle">
+      <canvas
+        ref="timelineCanvas"
+        id="timeline-viewer"
+        width="1280"
+        height="40"
+      ></canvas>
       <div
         v-for="(time, index) in timesWhereIsWholeHour"
         class="tick"
@@ -60,6 +61,7 @@ import { fabric } from 'fabric'
 import { IEvent } from 'fabric/fabric-impl'
 import dateFormat from 'dateformat'
 import Datepicker from './DatePicker.vue'
+import { CaptureSimple } from '@/interfaces/dayInfo.interface'
 
 const timeColor = '#99f9b3'
 
@@ -70,7 +72,7 @@ const timeColor = '#99f9b3'
 })
 export default class Timeline extends Vue {
   @Prop()
-  times!: any
+  times!: Array<CaptureSimple>
 
   @Prop()
   value!: number
@@ -110,7 +112,7 @@ export default class Timeline extends Vue {
   get timesWhereIsWholeHour () {
     const wholeHours = this.times.filter((t: any) => {
       var actualDate = new Date(t.date)
-      if (actualDate.getMinutes() === 0) {
+      if (actualDate.getMinutes() === 0 && actualDate.getSeconds() === 0) {
         return true
       }
       return false
@@ -207,13 +209,13 @@ export default class Timeline extends Vue {
     return linePoint
   }
 
-  currentTime () {
+  get currentTime () {
     let currentTime = this.times[this.value]
     if (currentTime) {
-      return this.formatDate(currentTime.date)
+      return currentTime.date
+      // return dateFormat(currentTime.date, 'h:MM:ss TT')
     }
-
-    return ''
+    return null
   }
 
   mouseout () {
@@ -222,7 +224,7 @@ export default class Timeline extends Vue {
 
   formatDate (date: Date) {
     if (date) {
-      return dateFormat(date, 'h:MMTT')
+      return dateFormat(date, 'h:MM:ss TT')
     }
 
     return ''
@@ -291,8 +293,6 @@ export default class Timeline extends Vue {
       }
     }
 
-    console.log('this.value', this.value)
-
     // draw the indicator for what time we are currently on
     this.rect = new fabric.Rect({
       width: lineWidth,
@@ -347,10 +347,56 @@ export default class Timeline extends Vue {
     changeMinute()
   }
 
+  goleft () {
+    this.prevMinute()
+    this.$nextTick(() => {
+      // DOM updated
+      this.prevMinuteOff()
+    })
+  }
+
+  goRight () {
+    this.nextMinute()
+    this.$nextTick(() => {
+      // DOM updated
+      this.nextMinuteOff()
+    })
+  }
+
+  lastKeyboardEvent = 0
+  eventDebounce = 100
+
+  arrowPressed (ev: any, direction: string) {
+    if (this.lastKeyboardEvent + this.eventDebounce < Number(+new Date())) {
+      this.lastKeyboardEvent = Number(+new Date())
+      if (direction === 'left') {
+        this.goleft()
+      } else if (direction === 'right') {
+        this.goRight()
+      }
+    }
+  }
+
+  dayChanging (ev: any, direction: string) {
+    if (this.lastKeyboardEvent + this.eventDebounce < Number(+new Date())) {
+      this.lastKeyboardEvent = Number(+new Date())
+      if (direction === 'prevDay') {
+        this.prevDay()
+      } else if (direction === 'nextDay') {
+        this.nextDay()
+      } else {
+        this.today()
+      }
+    }
+  }
+
   created () {
     setTimeout(() => {
       this.redrawCanvas()
     }, 1)
+
+    ipcRenderer.on('arrow-pressed', this.arrowPressed)
+    ipcRenderer.on('day-function', this.dayChanging)
   }
 
   mounted () {
@@ -387,7 +433,7 @@ export default class Timeline extends Vue {
       panning = true
     })
     this.canvas.on('mouse:out', (e: IEvent) => {
-      console.log('mouse went in')
+      console.log('mouse went in', e)
       this.hideMinuteHoverLine()
     })
 
@@ -399,48 +445,6 @@ export default class Timeline extends Vue {
           // var delta = new fabric.Point(e.e.movementX, e.e.movementY)
         } else {
           this.moveMinuteHoverLinePosition(calcCursorPos(e))
-        }
-      }
-    })
-
-    let lastKeyboardEvent = 0
-    let eventDebounce = 100
-
-    var goleft = () => {
-      this.prevMinute()
-      this.$nextTick(() => {
-        // DOM updated
-        this.prevMinuteOff()
-      })
-    }
-
-    var goRight = () => {
-      this.nextMinute()
-      this.$nextTick(() => {
-        // DOM updated
-        this.nextMinuteOff()
-      })
-    }
-
-    ipcRenderer.on('arrow-pressed', (ev, direction) => {
-      if (lastKeyboardEvent + eventDebounce < Number(+new Date())) {
-        lastKeyboardEvent = Number(+new Date())
-        if (direction === 'left') {
-          goleft()
-        } else if (direction === 'right') {
-          goRight()
-        }
-      }
-    })
-    ipcRenderer.on('day-function', (ev, direction) => {
-      if (lastKeyboardEvent + eventDebounce < Number(+new Date())) {
-        lastKeyboardEvent = Number(+new Date())
-        if (direction === 'prevDay') {
-          this.prevDay()
-        } else if (direction === 'nextDay') {
-          this.nextDay()
-        } else {
-          this.today()
         }
       }
     })
@@ -527,11 +531,11 @@ export default class Timeline extends Vue {
         text-align: center;
         font-size: 15px;
         height: 30px;
-        background: $light-theme-input-bg;
+        background: $light-theme-input-bg-transparency;
         border: none;
         font-weight: normal;
         color: $light-theme-text-color;
-        width: 110px;
+        width: 200px;
         cursor: pointer;
         -webkit-user-select: none;
         user-select: none;
@@ -555,9 +559,10 @@ export default class Timeline extends Vue {
     opacity: 0;
     -webkit-app-region: no-drag;
     position: absolute;
-    right: 110px;
+    left: 245px;
     top: 2px;
     height: 30px;
+    border-left: 1px solid $light-theme-lines-between-color;
     background-color: $light-theme-input-bg-transparency;
 
     .side-btn {

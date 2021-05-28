@@ -128,8 +128,13 @@
 <script>
 import DateUtils from './utils/DateUtils.js'
 import DateLanguages from './utils/DateLanguages.js'
+import dateFormat from 'dateformat'
+
 export default {
   props: {
+    timeOverride: {
+      type: Date
+    },
     value: {
       validator: function (val) {
         return val === null || val instanceof Date || typeof val === 'string'
@@ -213,6 +218,9 @@ export default {
   },
   computed: {
     formattedValue () {
+      if (this.timeOverride) {
+        return dateFormat(this.timeOverride, 'ddd dd mmm  h:MM:ss TT')
+      }
       if (!this.selectedDate) {
         return null
       }

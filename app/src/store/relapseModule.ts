@@ -1,6 +1,6 @@
-import { DayInfo } from '@/interfaces/dayInfo.interface'
-import { RelapseSettings } from '@/interfaces/state.interface'
+import { DayResponse, SettingsPlusOptions } from '@/grpc/relapse_pb'
 import { ipcRenderer } from 'electron'
+import { IpcRendererEvent } from 'electron/renderer'
 import { Action, Module, Mutation, VuexModule } from 'vuex-class-modules'
 // serverEvents.registerEvents(store)
 // export default store
@@ -8,57 +8,42 @@ import { store } from './index'
 
 @Module
 class RelapseModule extends VuexModule {
-  screenshotDaysDuration = 30
-  screenshotCapturePath = ''
+  // screenshotDaysDuration = 30
+  // screenshotCapturePath = ''
+
   isHelpShown = false
+  day: DayResponse.AsObject | null = null
 
-  settingsMessage = {
-    msg: '',
-    msgType: ''
-  }
-
-  day: DayInfo = {
-    fullDate: '',
-    files: [],
-    skipToEnd: false
-  }
+  settingsPlusOptions: SettingsPlusOptions.AsObject | null = null
 
   get currentDay () {
     return this.day
   }
 
-  get settings (): any {
-    return {
-      screenshotDaysDuration: this.screenshotDaysDuration,
-      capturePath: this.capturePath
+  get appSettings () {
+    if (this.settingsPlusOptions) {
+      return this.settingsPlusOptions?.settings
     }
+    return null
   }
 
-  get capturePath () {
-    return this.settings.screenshotCapturePath
+  get settingsOptions () {
+    if (this.settingsPlusOptions) {
+      return this.settingsPlusOptions?.settingsoptions
+    }
+    return null
   }
 
   @Mutation
-  updateCapturePath (capturePath: string) {
-    this.screenshotCapturePath = capturePath
+  setSettingsPlusOptions (settings: SettingsPlusOptions.AsObject) {
+    this.settingsPlusOptions = settings
+    console.log('this.settingsPlusOptions', this.settingsPlusOptions)
   }
-
-  // @Mutation
-  // updateSettings(settings: RelapseSettings) {
-  //   this = settings
-  // }
   // @Mutation
   // updateSettingsMessage(msg: any) {
   //   state.settingsMessage = msg
   // }
 
-  @Mutation
-  setDay (day: DayInfo) {
-    if (!day.files) {
-      day.files = []
-    }
-    this.day = day
-  }
   // @Mutation
   // addScreenshot(day) {
   //   // only change if day is the same
@@ -72,10 +57,10 @@ class RelapseModule extends VuexModule {
     ipcRenderer.send('load-settings')
   }
 
-  @Action
-  saveSettings (settings: RelapseSettings) {
-    ipcRenderer.send('change-settings', settings)
-  }
+  // @Action
+  // saveSettings (settings: RelapseSettings) {
+  //   ipcRenderer.send('change-settings', settings)
+  // }
 
   @Action
   closeSettings () {
@@ -95,9 +80,15 @@ class RelapseModule extends VuexModule {
   // }
 
   @Action
-  changeDay (day: DayInfo) {
+  changeDay (day: DayResponse.AsObject) {
     console.log('day', day)
     this.setDay(day)
+  }
+
+  @Mutation
+  setDay (day: DayResponse.AsObject) {
+    this.day = day
+    console.log('this.day', day)
   }
 
   // @Action
@@ -133,3 +124,44 @@ class RelapseModule extends VuexModule {
   // }
 }
 export const relapseModule = new RelapseModule({ store, name: 'relapse' })
+
+ipcRenderer.on(
+  'loaded-settings',
+  (ev: IpcRendererEvent, settings: SettingsPlusOptions.AsObject) => {
+    relapseModule.setSettingsPlusOptions(settings)
+  }
+)
+ipcRenderer.on(
+  'loaded-day',
+  (ev: IpcRendererEvent, day: DayResponse.AsObject) => {
+    relapseModule.changeDay(day)
+  }
+)
+
+//   // console.log('server event hooks registered')
+//   // day loaded event
+//   // ipcRenderer.on('update-log', function (ev, log) {
+//   //   // console.log('updat', log)
+//   //   store.dispatch('updateLog', log)
+//   // })
+//   // ipcRenderer.on('loaded-settings', function (ev, settings) {
+//   //   store.dispatch('updateSettings', settings)
+//   // })
+//   // ipcRenderer.on('changed-settings', function (ev, msg, settings) {
+//   //   store.dispatch('updateSettings', settings)
+//   //   if (typeof msg === 'object') {
+//   //     store.dispatch('updateSettingsMessage', msg)
+//   //   }
+//   // })
+//   // ipcRenderer.on('screenshot-created', function (ev, day) {
+//   //   console.log(day)
+//   //   if (day) {
+//   //     store.dispatch('addScreenshot', day)
+//   //   }
+//   // })
+//   // ipcRenderer.on('filepath-changed', function (ev, filepath) {
+//   //   if (filepath) {
+//   //     store.dispatch('filePathChanged', filepath)
+//   //   }
+//   // })
+// }

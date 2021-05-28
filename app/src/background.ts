@@ -9,12 +9,19 @@ import {
   shell,
   Tray
 } from 'electron'
-import { credentials, ServiceError } from 'grpc'
+import { ClientReadableStream, credentials, ServiceError } from 'grpc'
 import moment from 'moment'
 import path from 'path'
 import { createProtocol } from 'vue-cli-plugin-electron-builder/lib'
 import { RelapseClient } from './grpc/relapse_grpc_pb'
-import { DayRequest, DayResponse, ListenRequest } from './grpc/relapse_pb'
+import {
+  CaptureDaySummary,
+  DayRequest,
+  DayResponse,
+  ListenRequest,
+  SettingsPlusOptions,
+  SettingsPlusOptionsRequest
+} from './grpc/relapse_pb'
 const isDevelopment = process.env.NODE_ENV !== 'production'
 // const { spawn } = require('child_process')
 // const BrowserWindow = electron.BrowserWindow
@@ -41,9 +48,8 @@ const winURL = 'http://localhost:8080'
 // })
 
 let mainWindow: Electron.BrowserWindow | null
-let aboutWindow: Electron.BrowserWindow | null
-let settingsWindow: Electron.BrowserWindow | null
-// let client: RelapseClient
+let client: RelapseClient
+let stream: ClientReadableStream<CaptureDaySummary>
 let tray
 let trayContextMenu
 
@@ -53,7 +59,7 @@ async function createWindow () {
     title: 'Relapse',
     height: 900,
     width: 1440,
-    // backgroundColor: '#252830',
+    // backgroundColor: '#252830',`
     icon: image('Relapse.icns'),
     // transparent: true,
     titleBarStyle: 'hiddenInset',
@@ -61,8 +67,7 @@ async function createWindow () {
     webPreferences: {
       // Use pluginOptions.nodeIntegration, leave this alone
       // See nklayman.github.io/vue-cli-plugin-electron-builder/guide/security.html#node-integration for more info
-      nodeIntegration: true,
-      disableBlinkFeatures: 'OutOfBlinkCors'
+      nodeIntegration: true
     }
   })
 
@@ -235,52 +240,25 @@ function createTrayAndMenusAndShortcuts () {
   }
 
   let showAboutScreen = function () {
-    if (aboutWindow) {
-      aboutWindow.show()
-      return // already open
-    }
-    aboutWindow = new BrowserWindow({
-      title: 'About Relapse',
-      width: 360,
-      height: 300,
-      backgroundColor: '#252830',
-      // transparent: true,
-      titleBarStyle: 'hiddenInset',
-      webPreferences: {
-        webSecurity: false
-      }
-    })
-
-    aboutWindow.loadURL(winURL + '#/about')
-    aboutWindow.on('closed', () => {
-      aboutWindow = null
-    })
-  }
-
-  function showPreferencesScreen () {
-    if (settingsWindow) {
-      settingsWindow.show()
-      return // already open
-    }
-
-    settingsWindow = new BrowserWindow({
-      title: 'Relapse Preferences',
-      width: 460,
-      height: 360,
-      backgroundColor: '#252830',
-      // transparent: true,
-      titleBarStyle: 'hiddenInset',
-      webPreferences: {
-        webSecurity: false
-      }
-    })
-
-    settingsWindow.loadURL(winURL + '#/settings')
-    settingsWindow.on('closed', () => {
-      if (settingsWindow) {
-        settingsWindow = null
-      }
-    })
+    // if (aboutWindow) {
+    //   aboutWindow.show()
+    //   return // already open
+    // }
+    // aboutWindow = new BrowserWindow({
+    //   title: 'About Relapse',
+    //   width: 360,
+    //   height: 300,
+    //   backgroundColor: '#252830',
+    //   // transparent: true,
+    //   titleBarStyle: 'hiddenInset',
+    //   webPreferences: {
+    //     webSecurity: false
+    //   }
+    // })
+    // aboutWindow.loadURL(winURL + '#/about')
+    // aboutWindow.on('closed', () => {
+    //   aboutWindow = null
+    // })
   }
 
   let helpSubMenu: any[] = [
@@ -445,6 +423,48 @@ function createTrayAndMenusAndShortcuts () {
   tray.setContextMenu(trayContextMenu)
 }
 
+let settingsWindow: Electron.BrowserWindow | null
+
+function showPreferencesScreen () {
+  mainWindow!.loadURL(winURL + '#/settings')
+  // if (settingsWindow) {
+  //   settingsWindow.show()
+  //   return // already open
+  // }
+  // settingsWindow = new BrowserWindow({
+  //   title: 'Relapse Preferences',
+  //   width: 460,
+  //   height: 360,
+  //   // transparent: true,
+  //   titleBarStyle: 'hiddenInset',
+  //   vibrancy: 'appearance-based',
+  //   webPreferences: {
+  //     // Use pluginOptions.nodeIntegration, leave this alone
+  //     // See nklayman.github.io/vue-cli-plugin-electron-builder/guide/security.html#node-integration for more info
+  //     nodeIntegration: true
+  //   }
+  // })
+  // let doStuff = () => {
+  //   settingsWindow!.on('closed', () => {
+  //     if (settingsWindow) {
+  //       settingsWindow = null
+  //     }
+  //   })
+  // }
+  // if (process.env.WEBPACK_DEV_SERVER_URL) {
+  //   // Load the url of the dev server if in development mode
+  //   settingsWindow
+  //     .loadURL(process.env.WEBPACK_DEV_SERVER_URL as string)
+  //     .then(doStuff)
+  //   // if (!process.env.IS_TEST) settingsWindow.webContents.openDevTools()
+  // } else {
+  //   createProtocol('app')
+  //   // Load the index.html when not in development
+  //   settingsWindow.loadURL('app://./index.html')
+  //   doStuff()
+  // }
+}
+
 // function createScreenMonitor (capturePath) {
 //   screenCap = new ScreenCapture({
 //     capturePath: capturePath,
@@ -505,22 +525,10 @@ function createTrayAndMenusAndShortcuts () {
 let currentSelectedDateTime = new Date()
 
 app.on('ready', () => {
-  const protocolName = 'relapse-image'
-  protocol.registerFileProtocol(protocolName, (request, callback) => {
-    const url = request.url.replace(`${protocolName}://`, '')
-    try {
-      return callback(decodeURIComponent(url))
-    } catch (error) {
-      // Handle the error as needed
-      console.error(error)
-    }
-  })
-
-  // let relapse_proto = grpc.loadPackageDefinition(packageDefinition).relapse_proto
-
   let capturePath = app.getPath('documents') + '/RelapseScreenshots/'
   let userDataPath = app.getPath('userData') + '/'
-  // console.log('bin: ', binPath + '/daemon')
+  console.log('bin: ', binPath)
+  console.log('imagePath: ', imagePath)
   console.log('capturePath: ', capturePath)
   console.log('userDataPath: ', userDataPath)
 
@@ -535,38 +543,32 @@ app.on('ready', () => {
     console.log('stdout: ' + data)
   })
 
-  // child.stderr.setEncoding('utf8')
-  // child.stderr.on('data', function (data: string) {
-  //   if (data.startsWith('CaptureDayTimeSeconds_')) {
-  //     let startOfDay = moment(currentSelectedDateTime)
-  //       .startOf('day')
-  //       .unix()
-
-  //     console.log(data, ' compared to ', startOfDay)
-  //     let startOfDayFromDaemon = data.split('CaptureDayTimeSeconds_')[0]
-  //     if (Number(startOfDayFromDaemon) === startOfDay) {
-  //       console.log('WOOOTOTOTOTOOTOT')
-  //     }
-  //   }
-  //   console.log('stderr: ' + data)
-  // })
-
-  client = new RelapseClient('localhost:3333', credentials.createInsecure())
-
-  let stream = client.listenForCaptures(new ListenRequest())
-  stream.on('data', (resp: DayResponse) => {
-    let startOfDay = moment(currentSelectedDateTime).startOf('day')
-    if (resp.getCapturedaytimeseconds() === startOfDay.unix()) {
-      console.log('updating app')
-      sendDayInfoToApp(resp, currentSelectedDateTime, false)
-    } else {
-      console.log(
-        'wrong day to update',
-        resp.getCapturedaytimeseconds(),
-        startOfDay.unix()
-      )
+  child.stderr.setEncoding('utf8')
+  child.stderr.on('data', function (data: string) {
+    if (data) {
+      console.log(data)
+      if (
+        data.includes('running grpc on port') ||
+        data.includes('address already in use')
+      ) {
+        console.log('starting client')
+        startClient()
+      }
     }
   })
+
+  const protocolName = 'relapse-image'
+  protocol.registerFileProtocol(protocolName, (request, callback) => {
+    const url = request.url.replace(`${protocolName}://`, '')
+    try {
+      return callback(decodeURIComponent(url))
+    } catch (error) {
+      // Handle the error as needed
+      console.error(error)
+    }
+  })
+
+  // let relapse_proto = grpc.loadPackageDefinition(packageDefinition).relapse_proto
 
   createTrayAndMenusAndShortcuts()
 
@@ -585,13 +587,20 @@ app.on('ready', () => {
     loadDay(date, skipToEnd)
   })
 
-  // ipcMain.on('load-settings', (event) => {
-  //   log('settings....')
-  //   getSettings((err, settings) => {
-  //     if (err) { console.error(err) }
-  //     event.sender.send('loaded-settings', settings)
-  //   })
-  // })
+  ipcMain.on('load-settings', event => {
+    console.log('loading settings')
+    let req = new SettingsPlusOptionsRequest()
+    client.getSettings(
+      req,
+      (err: Error | null, response: SettingsPlusOptions) => {
+        if (err != null) {
+          console.log('error')
+        }
+        console.log('loaded settings')
+        event.sender.send('loaded-settings', response.toObject())
+      }
+    )
+  })
 
   ipcMain.on('link-clicked', (event, link) => {
     shell.openExternal(link)
@@ -650,6 +659,27 @@ function image (imageName: string) {
   return imagePath + '/' + imageName
 }
 
+function startClient () {
+  client = new RelapseClient('localhost:3333', credentials.createInsecure())
+}
+
+function startCapturing () {
+  stream = client.listenForCaptures(new ListenRequest())
+  stream.on('data', (resp: DayResponse) => {
+    let startOfDay = moment(currentSelectedDateTime).startOf('day')
+    if (resp.getCapturedaytimeseconds() === startOfDay.unix()) {
+      console.log('updating app')
+      sendDayInfoToApp(resp, currentSelectedDateTime, false)
+    } else {
+      console.log(
+        'wrong day to update',
+        resp.getCapturedaytimeseconds(),
+        startOfDay.unix()
+      )
+    }
+  })
+}
+
 function loadDay (date: Date, skipToEnd: boolean) {
   currentSelectedDateTime = date
   let dayReq = new DayRequest()
@@ -673,19 +703,18 @@ function loadDay (date: Date, skipToEnd: boolean) {
 }
 
 function sendDayInfoToApp (resp: DayResponse, date: Date, skipToEnd: boolean) {
-  let dayInfo: DayInfo = {
-    fullDate: moment(date).format('DD-MMM-YYYY'),
-    skipToEnd: skipToEnd
-  }
-  let captures = resp.getCapturesList()
-  if (captures) {
-    dayInfo.files = captures.map(cap => {
-      return cap.toObject(false)
-    })
-  }
+  // let dayInfo: DayInfo = {
+  //   fullDate: moment(date).format('DD-MMM-YYYY'),
+  //   skipToEnd: skipToEnd
+  // }
+
+  // let captures = resp.getCapturesList()
+  // if (captures) {
+  //   dayInfo.files = captures.map(cap => {
+  //     return cap.toObject(false)
+  //   })
+  // }
   if (mainWindow) {
-    mainWindow.webContents.send('loaded-day', {
-      doc: dayInfo
-    })
+    mainWindow.webContents.send('loaded-day', resp.toObject())
   }
 }

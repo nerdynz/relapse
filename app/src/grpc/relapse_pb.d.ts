@@ -147,6 +147,9 @@ export class Settings extends jspb.Message {
   getIsenabled(): boolean;
   setIsenabled(value: boolean): void;
 
+  getRetainforxdays(): number;
+  setRetainforxdays(value: number): void;
+
   clearRejectionsList(): void;
   getRejectionsList(): Array<string>;
   setRejectionsList(value: Array<string>): void;
@@ -165,6 +168,7 @@ export class Settings extends jspb.Message {
 export namespace Settings {
   export type AsObject = {
     isenabled: boolean,
+    retainforxdays: number,
     rejectionsList: Array<string>,
   }
 }
