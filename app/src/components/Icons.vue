@@ -1,6 +1,6 @@
 <template>
   <!-- <component v-if="hasIcon" :is="iconName" /> -->
-  <span>
+  <span class="icon">
     <component v-if="hasIcon" :is="iconName" />
   </span>
 </template>
@@ -8,15 +8,31 @@
 <script>
 import Home from '@/assets/fa-svgs/solid/home.svg'
 import Share from '@/assets/fa-svgs/solid/share.svg'
-import ArrowLeft from '@/assets/fa-svgs/light/arrow-left.svg'
-import ArrowRight from '@/assets/fa-svgs/light/arrow-right.svg'
+import ChevronLeft from '@/assets/fa-svgs/duotone/chevron-left.svg'
+import ChevronRight from '@/assets/fa-svgs/duotone/chevron-right.svg'
+import ChevronDoubleLeft from '@/assets/fa-svgs/duotone/chevron-double-left.svg'
+import ChevronDoubleRight from '@/assets/fa-svgs/duotone/chevron-double-right.svg'
+import AngleLeft from '@/assets/fa-svgs/duotone/angle-left.svg'
+import AngleRight from '@/assets/fa-svgs/duotone/angle-right.svg'
+import AngleDoubleLeft from '@/assets/fa-svgs/duotone/angle-double-left.svg'
+import AngleDoubleRight from '@/assets/fa-svgs/duotone/angle-double-right.svg'
+import ArrowFromLeft from '@/assets/fa-svgs/duotone/arrow-from-left.svg'
+import ArrowFromRight from '@/assets/fa-svgs/duotone/arrow-from-right.svg'
 
 const icons = (() => {
   let icons = {
     'ico-home': Home,
     'ico-share': Share,
-    'ico-arrow-left': ArrowLeft,
-    'ico-arrow-right': ArrowRight
+    'ico-chevron-left': ChevronLeft,
+    'ico-chevron-right': ChevronRight,
+    'ico-chevron-double-left': ChevronDoubleLeft,
+    'ico-chevron-double-right': ChevronDoubleRight,
+    'ico-angle-left': AngleLeft,
+    'ico-angle-right': AngleRight,
+    'ico-angle-double-left': AngleDoubleLeft,
+    'ico-angle-double-right': AngleDoubleRight,
+    'ico-arrow-from-left': ArrowFromLeft,
+    'ico-arrow-from-right': ArrowFromRight
   }
 
   let aliases = {

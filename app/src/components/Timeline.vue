@@ -1,11 +1,27 @@
 <template>
   <div class="timeline" :style="timelineReadyStyle">
     <button
+      class="side-btn prev-day"
+      @mousedown="prevMinute"
+      @mouseup="prevMinuteOff"
+    >
+      <ico icon="arrow-from-right" />
+    </button>
+    <div class="splitter" />
+    <button
       class="side-btn prev-minute"
       @mousedown="prevMinute"
       @mouseup="prevMinuteOff"
     >
-      <ico icon="share" />
+      <ico icon="angle-double-left" />
+    </button>
+    <div class="splitter" />
+    <button
+      class="side-btn prev-minute"
+      @mousedown="prevMinute"
+      @mouseup="prevMinuteOff"
+    >
+      <ico icon="angle-left" />
     </button>
     <!--
       <button class="side-btn prev-day" @click="prevDay">
@@ -15,12 +31,13 @@
         <fa-icon icon="caret-right" />
       </button>
       <button
-        class="side-btn next-minute"
+        class="side-btn next-minute"canvas-container
         @mousedown="nextMinute"
         @mouseup="nextMinuteOff"
       >
         <fa-icon icon="caret-right" />
       </button> -->
+    <div class="splitter" />
     <div class="picker">
       <datepicker
         :value="day"
@@ -30,6 +47,7 @@
         :time-override="currentTime"
       />
     </div>
+    <div class="splitter" />
     <div class="canvas-bg" :style="timelineReadyStyle">
       <canvas
         ref="timelineCanvas"
@@ -49,6 +67,30 @@
         </div>
       </div>
     </div>
+    <div class="splitter" />
+    <button
+      class="side-btn next-30-sec"
+      @mousedown="prevMinute"
+      @mouseup="prevMinuteOff"
+    >
+      <ico icon="angle-right" />
+    </button>
+    <div class="splitter" />
+    <button
+      class="side-btn next-minute"
+      @mousedown="prevMinute"
+      @mouseup="prevMinuteOff"
+    >
+      <ico icon="angle-double-right" />
+    </button>
+    <div class="splitter" />
+    <button
+      class="side-btn next-day"
+      @mousedown="prevMinute"
+      @mouseup="prevMinuteOff"
+    >
+      <ico icon="arrow-from-left" />
+    </button>
   </div>
 </template>
 
@@ -97,7 +139,7 @@ export default class Timeline extends Vue {
     dates: [new Date()]
   }
 
-  get timelineReadyStyle () {
+  get timelineReadyStyle() {
     console.log('ready', this.isReady)
     if (this.isReady) {
       return 'opacity:1;'
@@ -105,11 +147,11 @@ export default class Timeline extends Vue {
     return 'opacity:0;'
   }
 
-  get bgColor () {
+  get bgColor() {
     return '#F6F6F6'
   }
 
-  get timesWhereIsWholeHour () {
+  get timesWhereIsWholeHour() {
     const wholeHours = this.times.filter((t: any) => {
       var actualDate = new Date(t.date)
       if (actualDate.getMinutes() === 0 && actualDate.getSeconds() === 0) {
@@ -120,78 +162,78 @@ export default class Timeline extends Vue {
     return wholeHours
   }
 
-  datePickerOpened () {
+  datePickerOpened() {
     this.highlighted = {
       dates: [new Date()]
     }
   }
 
-  prevDay () {
+  prevDay() {
     const newDate = new Date(this.day)
     newDate.setDate(this.day.getDate() - 1)
     this.dayChanged(newDate, true)
   }
 
-  nextDay () {
+  nextDay() {
     const newDate = new Date(this.day)
     newDate.setDate(this.day.getDate() + 1)
     this.dayChanged(newDate, false)
   }
 
-  today () {
+  today() {
     const newDate = new Date()
     this.dayChanged(newDate, true)
   }
 
-  dayChanged (date: Date, skipToEnd: boolean) {
+  dayChanged(date: Date, skipToEnd: boolean) {
     this.canvas.clear()
     this.$emit('day-change', { date, skipToEnd })
   }
 
-  prevMinute () {
+  prevMinute() {
     this.minuteChangeIncrement = -1
   }
 
-  nextMinute () {
+  nextMinute() {
     this.minuteChangeIncrement = +1
   }
 
-  prevMinuteOff () {
+  prevMinuteOff() {
     this.minuteChangeIncrement = 0
   }
 
-  nextMinuteOff () {
+  nextMinuteOff() {
     this.minuteChangeIncrement = 0
   }
 
-  minuteChanged (index: number) {
+  minuteChanged(index: number) {
     this.moveMinuteLinePosition(index)
     this.$emit('minute-index-change', index)
   }
 
-  moveMinuteLinePosition (index: number) {
+  moveMinuteLinePosition(index: number) {
     var xPos = this.getLinePoint(index)
     this.rect.set({ left: xPos })
     this.canvas.renderAll()
   }
 
-  moveMinuteHoverLinePosition (index: number) {
+  moveMinuteHoverLinePosition(index: number) {
     var xPos = this.getLinePoint(index)
     this.hoverRect.set({ left: xPos, height: 60 })
     this.canvas.renderAll()
   }
 
-  hideMinuteHoverLine () {
+  hideMinuteHoverLine() {
     this.hoverRect.set({ height: 0 })
     this.canvas.renderAll()
   }
 
-  markerStyle (index: number) {
+  markerStyle(index: number) {
     let percent = (index / (this.timesWhereIsWholeHour.length - 1)) * 100
     return `left: ${percent}%;`
   }
 
-  isWholeHour (date: Date) {
+  isWholeHour(date: Date) {
     var actualDate = new Date(date)
     if (actualDate.getMinutes() === 0) {
       return true
@@ -200,7 +242,7 @@ export default class Timeline extends Vue {
     return false
   }
 
-  getLinePoint (index: number) {
+  getLinePoint(index: number) {
     // console.log(this.canvas.width, index, this.times.length)
     var linePoint = 0
     if (this.canvas && this.canvas.width) {
@@ -209,7 +251,7 @@ export default class Timeline extends Vue {
     return linePoint
   }
 
-  get currentTime () {
+  get currentTime() {
     let currentTime = this.times[this.value]
     if (currentTime) {
       return currentTime.date
@@ -218,11 +260,11 @@ export default class Timeline extends Vue {
     return null
   }
 
-  mouseout () {
+  mouseout() {
     // this.isMouseDown = false
   }
 
-  formatDate (date: Date) {
+  formatDate(date: Date) {
     if (date) {
       return dateFormat(date, 'h:MM:ss TT')
     }
@@ -230,15 +272,16 @@ export default class Timeline extends Vue {
     return ''
   }
 
-  formatDateSmall (date: Date) {
+  formatDateSmall(date: Date) {
     if (date) {
       return dateFormat(date, 'hTT')
     }
     return ''
   }
 
-  redrawCanvas () {
-    this.canvas.setDimensions({ width: window.innerWidth - 330, height: 30 })
+  redrawCanvas() {
+    // 240 buttons, padding 40, datepicker 180, 7 splliters
+    this.canvas.setDimensions({ width: window.innerWidth - (240 + 40 + 200 + (7 * 1)), height: 34 })
     // clear it
     this.canvas.clear()
 
@@ -320,12 +363,12 @@ export default class Timeline extends Vue {
   }
 
   @Watch('times')
-  onChangeTimes () {
+  onChangeTimes() {
     this.redrawCanvas()
   }
 
   @Watch('minuteChangeIncrement')
-  onChangeMinuteIncrement () {
+  onChangeMinuteIncrement() {
     let callCountIncrement = 0
     let changeMinute = () => {
       if (this.minuteChangeIncrement !== 0) {
@@ -347,7 +390,7 @@ export default class Timeline extends Vue {
     changeMinute()
   }
 
-  goleft () {
+  goleft() {
     this.prevMinute()
     this.$nextTick(() => {
       // DOM updated
@@ -355,7 +398,7 @@ export default class Timeline extends Vue {
     })
   }
 
-  goRight () {
+  goRight() {
     this.nextMinute()
     this.$nextTick(() => {
       // DOM updated
@@ -366,7 +409,7 @@ export default class Timeline extends Vue {
   lastKeyboardEvent = 0
   eventDebounce = 100
 
-  arrowPressed (ev: any, direction: string) {
+  arrowPressed(ev: any, direction: string) {
     if (this.lastKeyboardEvent + this.eventDebounce < Number(+new Date())) {
       this.lastKeyboardEvent = Number(+new Date())
       if (direction === 'left') {
@@ -377,7 +420,7 @@ export default class Timeline extends Vue {
     }
   }
 
-  dayChanging (ev: any, direction: string) {
+  dayChanging(ev: any, direction: string) {
     if (this.lastKeyboardEvent + this.eventDebounce < Number(+new Date())) {
       this.lastKeyboardEvent = Number(+new Date())
       if (direction === 'prevDay') {
@@ -390,7 +433,7 @@ export default class Timeline extends Vue {
     }
   }
 
-  created () {
+  created() {
     setTimeout(() => {
       this.redrawCanvas()
     }, 1)
@@ -399,7 +442,7 @@ export default class Timeline extends Vue {
     ipcRenderer.on('day-function', this.dayChanging)
   }
 
-  mounted () {
+  mounted() {
     let panning = false
 
     this.canvas = new fabric.Canvas('timeline-viewer')
@@ -458,19 +501,41 @@ export default class Timeline extends Vue {
   opacity: 0;
   width: 100%;
   position: fixed;
-  top: 36px;
+  top: 34px;
   left: 0;
-  background: $handlebar-color;
+  padding: 0 20px;
   z-index: 5000;
   -webkit-app-region: no-drag;
+  display: flex;
+
+  .splitter {
+    height: 22px;
+    margin: 7px 0;
+    width: 1px;
+    background-color: $light-theme-input-bg-transparency;
+    // background-color: $light-theme-lines-between-color;
+  }
 
   .side-btn {
     cursor: pointer;
-    position: absolute;
-    height: 30px;
-    width: 25px;
+    height: 34px;
+    width: 40px;
+    display: flex;
+    .icon {
+      height: 34px;
+      width: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      svg {
+        height: 16px;
+        width: 16px;
+      }
+    }
     border: none;
-    background: $light-theme-input-bg-transparency;
+    // background: $light-theme-input-bg-transparency;
+    background-color: $light-theme-input-bg-transparency;
+    // border-right: 1px solid $light-theme-lines-between-color;
     color: $light-theme-text-color;
     top: 0;
     outline: none !important;
@@ -481,12 +546,29 @@ export default class Timeline extends Vue {
     &:active {
       background-color: $light-theme-input-active-bg;
     }
+
+      &.next-30-sec {
+        // border-left: 1px solid $light-theme-lines-between-color;
+        // border-top-right-radius: $standard-border-radius;
+        // border-bottom-right-radius: $standard-border-radius;
+      }
+
+      &.next-day {
+        border-top-right-radius: $standard-border-radius;
+        border-bottom-right-radius: $standard-border-radius;
+        border-right: none;
+      }
+
+      &.prev-day {
+        border-top-left-radius: $standard-border-radius;
+        border-bottom-left-radius: $standard-border-radius;
+      }
   }
 
   .play-btn {
     background: none; // $color-green;
     border: none;
-    height: 30px;
+    height: 34px;
     width: 36px;
     color: $light-theme-text-color;
     position: relative;
@@ -501,14 +583,14 @@ export default class Timeline extends Vue {
   }
 
   .picker {
-    position: absolute;
+    // position: absolute;
     top: 2px;
     left: 20px;
     -webkit-app-region: no-drag;
 
     .side-btn {
       &.next-day {
-        // border-left: 1px solid $light-theme-lines-between-color;
+        border-left: 1px solid $light-theme-lines-between-color;
         left: 135px;
         top: 0;
         border-top-right-radius: 5px;
@@ -517,20 +599,17 @@ export default class Timeline extends Vue {
 
       &.prev-day {
         left: 0;
-        // border-right: 1px solid $light-theme-lines-between-color;
+        border-right: 1px solid $light-theme-lines-between-color;
         border-top-left-radius: 5px;
         border-bottom-left-radius: 5px;
       }
     }
 
     .datepicker {
-      position: absolute;
-      left: 25px;
-
       input[type='text'] {
         text-align: center;
         font-size: 15px;
-        height: 30px;
+        height: 34px;
         background: $light-theme-input-bg-transparency;
         border: none;
         font-weight: normal;
@@ -558,28 +637,11 @@ export default class Timeline extends Vue {
   .canvas-bg {
     opacity: 0;
     -webkit-app-region: no-drag;
-    position: absolute;
-    left: 245px;
-    top: 2px;
-    height: 30px;
-    border-left: 1px solid $light-theme-lines-between-color;
+    position: relative;
+    height: 34px;
+    // border-left: 1px solid $light-theme-lines-between-color;
     background-color: $light-theme-input-bg-transparency;
 
-    .side-btn {
-      &.next-minute {
-        // border-left: 1px solid $light-theme-lines-between-color;
-        right: -25px;
-        border-top-right-radius: 5px;
-        border-bottom-right-radius: 5px;
-      }
-
-      &.prev-minute {
-        left: -25px;
-        // border-right: 1px solid $light-theme-lines-between-color;
-        border-top-left-radius: 5px;
-        border-bottom-left-radius: 5px;
-      }
-    }
     .time {
       position: absolute;
       top: 7px;

@@ -9,6 +9,7 @@ import {
   shell,
   Tray
 } from 'electron'
+import { MenuItem } from 'electron/main'
 import { ClientReadableStream, credentials, ServiceError } from 'grpc'
 import moment from 'moment'
 import path from 'path'
@@ -19,6 +20,7 @@ import {
   DayRequest,
   DayResponse,
   ListenRequest,
+  Settings,
   SettingsPlusOptions,
   SettingsPlusOptionsRequest
 } from './grpc/relapse_pb'
@@ -49,11 +51,11 @@ const winURL = 'http://localhost:8080'
 
 let mainWindow: Electron.BrowserWindow | null
 let client: RelapseClient
-let stream: ClientReadableStream<CaptureDaySummary>
+let stream: ClientReadableStream<CaptureDaySummary> | null
 let tray
 let trayContextMenu
 
-async function createWindow () {
+async function createWindow() {
   // Create the browser window.
   mainWindow = new BrowserWindow({
     title: 'Relapse',
@@ -127,8 +129,13 @@ if (isDevelopment) {
   }
 }
 
-function createTrayAndMenusAndShortcuts () {
-  let show = function () {
+function createTrayAndMenusAndShortcuts(
+  settings: SettingsPlusOptions.AsObject
+) {
+  let isEnabled = settings.settings!.isenabled
+  // let isEnabled = false
+
+  let show = function() {
     if (!mainWindow) {
       createWindow()
     } else {
@@ -136,85 +143,66 @@ function createTrayAndMenusAndShortcuts () {
     }
   }
 
-  let toggleCapture = function () {
-    // getSettings((err, settings) => {
-    //   if (err) {
-    //     log(err)
-    //     return
-    //   }
-    //   if (!settings.isCapturing) {
-    //     settings.isCapturing = true
-    //     setSettings(settings, (err, settings) => {
-    //       if (err) {
-    //         log(err)
-    //         return
-    //       }
-    //       screenCap.start()
-    //     })
-    //   } else {
-    //     settings.isCapturing = false
-    //     setSettings(settings, (err, settings) => {
-    //       if (err) {
-    //         log(err)
-    //         return
-    //       }
-    //       screenCap.stop()
-    //     })
-    //   }
-    // })
+  let toggleCapture = function(val: MenuItem) {
+    getSettings().then((settingsOptions: SettingsPlusOptions.AsObject) => {
+      let setting = settingsOptions.settings!
+      setting.isenabled = val.checked
+      setSettings(setting)
+      toggleCaptures(setting.isenabled)
+    })
   }
 
-  let quit = function () {
+  let quit = function() {
     app.quit()
   }
 
-  let resetZoom = function () {
+  let resetZoom = function() {
     if (mainWindow) {
       mainWindow.webContents.send('zoom-function', 'reset')
     }
   }
 
-  let zoomIn = function () {
+  let zoomIn = function() {
     if (mainWindow) {
       mainWindow.webContents.send('zoom-function', 'in')
     }
   }
 
-  let zoomOut = function () {
+  let zoomOut = function() {
     if (mainWindow) {
       mainWindow.webContents.send('zoom-function', 'out')
     }
   }
 
-  let today = function () {
+  let today = function() {
     if (mainWindow) {
       mainWindow.webContents.send('day-function', 'today')
     }
   }
-  let nextDay = function () {
+  let nextDay = function() {
     if (mainWindow) {
       mainWindow.webContents.send('day-function', 'nextDay')
     }
   }
-  let prevDay = function () {
+  let prevDay = function() {
     if (mainWindow) {
       mainWindow.webContents.send('day-function', 'prevDay')
     }
   }
 
-  let launchWebsite = function () {
+  let launchWebsite = function() {
     shell.openExternal('http://relapse.nerdy.co.nz/')
   }
   // var launchWebsiteHelp = function () {
   //   shell.openExternal('http://relapse.nerdy.co.nz/help')
   // }
-  let launchWebsiteFAQ = function () {
+  let launchWebsiteFAQ = function() {
     shell.openExternal('http://relapse.nerdy.co.nz/faq')
   }
-  let launchReport = function () {
+  let launchReport = function() {
     shell.openExternal('http://relapse.nerdy.co.nz/feedback')
   }
-  let showTips = function () {
+  let showTips = function() {
     // getSettings((err, settings) => {
     //   if (err) {
     //     log(err)
@@ -227,19 +215,19 @@ function createTrayAndMenusAndShortcuts () {
     // })
   }
 
-  let goLeft = function () {
+  let goLeft = function() {
     if (mainWindow) {
       mainWindow.webContents.send('arrow-pressed', 'left')
     }
   }
 
-  let goRight = function () {
+  let goRight = function() {
     if (mainWindow) {
       mainWindow.webContents.send('arrow-pressed', 'right')
     }
   }
 
-  let showAboutScreen = function () {
+  let showAboutScreen = function() {
     // if (aboutWindow) {
     //   aboutWindow.show()
     //   return // already open
@@ -404,7 +392,7 @@ function createTrayAndMenusAndShortcuts () {
     {
       label: 'Capturing Screen',
       type: 'checkbox',
-      checked: true,
+      checked: isEnabled,
       click: toggleCapture
     },
     { type: 'separator' },
@@ -425,7 +413,7 @@ function createTrayAndMenusAndShortcuts () {
 
 let settingsWindow: Electron.BrowserWindow | null
 
-function showPreferencesScreen () {
+function showPreferencesScreen() {
   mainWindow!.loadURL(winURL + '#/settings')
   // if (settingsWindow) {
   //   settingsWindow.show()
@@ -539,12 +527,12 @@ app.on('ready', () => {
     userDataPath
   ])
   child.stdout.setEncoding('utf8')
-  child.stdout.on('data', function (data: string) {
+  child.stdout.on('data', function(data: string) {
     console.log('stdout: ' + data)
   })
 
   child.stderr.setEncoding('utf8')
-  child.stderr.on('data', function (data: string) {
+  child.stderr.on('data', function(data: string) {
     if (data) {
       console.log(data)
       if (
@@ -553,6 +541,11 @@ app.on('ready', () => {
       ) {
         console.log('starting client')
         startClient()
+        getSettings().then((settings: SettingsPlusOptions.AsObject) => {
+          let isEnabled = settings.settings!.isenabled
+          createTrayAndMenusAndShortcuts(settings)
+          toggleCaptures(isEnabled)
+        })
       }
     }
   })
@@ -570,8 +563,7 @@ app.on('ready', () => {
 
   // let relapse_proto = grpc.loadPackageDefinition(packageDefinition).relapse_proto
 
-  createTrayAndMenusAndShortcuts()
-
+  // createTrayAndMenusAndShortcuts()
   // communication with app. think of this as the router
   ipcMain.on('maximize', () => {
     if (mainWindow) {
@@ -589,17 +581,6 @@ app.on('ready', () => {
 
   ipcMain.on('load-settings', event => {
     console.log('loading settings')
-    let req = new SettingsPlusOptionsRequest()
-    client.getSettings(
-      req,
-      (err: Error | null, response: SettingsPlusOptions) => {
-        if (err != null) {
-          console.log('error')
-        }
-        console.log('loaded settings')
-        event.sender.send('loaded-settings', response.toObject())
-      }
-    )
   })
 
   ipcMain.on('link-clicked', (event, link) => {
@@ -655,32 +636,53 @@ app.on('activate', () => {
   }
 })
 
-function image (imageName: string) {
+function image(imageName: string) {
   return imagePath + '/' + imageName
 }
 
-function startClient () {
+function startClient() {
   client = new RelapseClient('localhost:3333', credentials.createInsecure())
 }
 
-function startCapturing () {
-  stream = client.listenForCaptures(new ListenRequest())
-  stream.on('data', (resp: DayResponse) => {
-    let startOfDay = moment(currentSelectedDateTime).startOf('day')
-    if (resp.getCapturedaytimeseconds() === startOfDay.unix()) {
-      console.log('updating app')
-      sendDayInfoToApp(resp, currentSelectedDateTime, false)
+function toggleCaptures(isEnabled: boolean) {
+  console.log('eh? ')
+  if (isEnabled) {
+    if (stream) {
+      console.log('resuming stream')
+      stream.resume()
     } else {
-      console.log(
-        'wrong day to update',
-        resp.getCapturedaytimeseconds(),
-        startOfDay.unix()
-      )
+      stream = client.listenForCaptures(new ListenRequest())
+      console.log('creating stream')
+      stream.on('data', (resp: DayResponse) => {
+        let startOfDay = moment(currentSelectedDateTime).startOf('day')
+        if (resp.getCapturedaytimeseconds() === startOfDay.unix()) {
+          console.log('updating app')
+          sendDayInfoToApp(resp, currentSelectedDateTime, false)
+        } else {
+          console.log(
+            'wrong day to update',
+            resp.getCapturedaytimeseconds(),
+            startOfDay.unix()
+          )
+        }
+      })
+      stream.on('error', (err) => {
+        console.log('stream error' + err)
+      })
     }
-  })
+  } else {
+    if (stream) {
+      console.log('pausing stream')
+      // might not be defined yet
+      stream.cancel()
+      stream = null
+    } else {
+      console.log('stream not enabled yet')
+    }
+  }
 }
 
-function loadDay (date: Date, skipToEnd: boolean) {
+function loadDay(date: Date, skipToEnd: boolean) {
   currentSelectedDateTime = date
   let dayReq = new DayRequest()
   dayReq.setCapturedaytimeseconds(
@@ -702,7 +704,7 @@ function loadDay (date: Date, skipToEnd: boolean) {
   )
 }
 
-function sendDayInfoToApp (resp: DayResponse, date: Date, skipToEnd: boolean) {
+function sendDayInfoToApp(resp: DayResponse, date: Date, skipToEnd: boolean) {
   // let dayInfo: DayInfo = {
   //   fullDate: moment(date).format('DD-MMM-YYYY'),
   //   skipToEnd: skipToEnd
@@ -717,4 +719,38 @@ function sendDayInfoToApp (resp: DayResponse, date: Date, skipToEnd: boolean) {
   if (mainWindow) {
     mainWindow.webContents.send('loaded-day', resp.toObject())
   }
+}
+
+function getSettings(): Promise<SettingsPlusOptions.AsObject> {
+  return new Promise((resolve, reject) => {
+    let req = new SettingsPlusOptionsRequest()
+    client.getSettings(
+      req,
+      (err: Error | null, response: SettingsPlusOptions) => {
+        if (err != null) {
+          console.log('error')
+          reject(err)
+        }
+        console.log('loaded settings')
+        resolve(response.toObject())
+      }
+    )
+  })
+}
+
+function setSettings(settings: Settings.AsObject): Promise<Settings.AsObject> {
+  return new Promise((resolve, reject) => {
+    let req = new Settings()
+    req.setIsenabled(settings.isenabled)
+    req.setRejectionsList(settings.rejectionsList)
+    req.setRetainforxdays(settings.retainforxdays)
+    client.setSettings(req, (err: Error | null, response: Settings) => {
+      if (err != null) {
+        console.log('error')
+        reject(err)
+      }
+      console.log('saved settings')
+      resolve(response.toObject())
+    })
+  })
 }

@@ -37,6 +37,7 @@ message Settings {
 	bool IsEnabled = 1;
 	int32 RetainForXDays = 2;
 	repeated string Rejections = 3;
+	repeated string OpenAutomaticallyAtLogin = 4;
 }
 
 message SettingsOptions {
