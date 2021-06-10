@@ -1,16 +1,18 @@
 package main
 
 import (
+	"context"
 	"log"
 	"net"
+	"time"
 
+	"github.com/go-co-op/gocron"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/nerdynz/relapse/daemon/relapse_proto"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
-	"golang.org/x/net/http2"
 	"google.golang.org/grpc"
 )
 
@@ -79,13 +81,40 @@ func main() {
 		logrus.Error("Alter table failed: ", err)
 	}
 
+	srv := NewCaptureServer(db)
+
+	// run cleanup
+	sch := gocron.NewScheduler(time.Now().Local().Location())
+	sch.Every(1).Hour().Do(func() {
+		ctx := context.Background()
+		settings := srv.CurrentSettings()
+		retainForXDays := settings.RetainForXDays
+		daysAgo := time.Duration(retainForXDays*-1) * (time.Hour * 24)
+		timeAgo := Bod(time.Now().Add(daysAgo))
+		summary, err := srv.GetDaySummaries(ctx, &relapse_proto.DaySummariesRequest{IncludeIsPurged: false, CaptureDayTimeSecondsBefore: timeAgo.Unix()})
+		if err != nil {
+			logrus.Error("GetDaySummaries: %v", err)
+		}
+		for _, daySummary := range summary.DaySummaries {
+			dayDateTime := time.Unix(daySummary.CaptureDayTimeSeconds, 0)
+			resp, err := srv.DeleteCapturesForDay(ctx, &relapse_proto.DeleteCapturesForDayRequest{
+				CaptureDayTimeSeconds: dayDateTime.Unix(),
+			})
+			if err != nil {
+				logrus.Errorf("DeleteCapturesForDay: task to delete failed %v", err)
+			}
+			logrus.Infof("Deleted Files for day %s: %v", dayDateTime.Format("02-Jan-2006"), resp.Deletions)
+		}
+	})
+	sch.StartAsync()
+
+	// run server
 	port := ":3333"
 	lis, err := net.Listen("tcp", port)
 	if err != nil {
 		log.Fatalln(err)
 	}
 
-	srv := NewCaptureServer(db)
 	s := grpc.NewServer()
 	relapse_proto.RegisterRelapseServer(s, srv)
 	logrus.Info("running grpc on port ", port)

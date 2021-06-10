@@ -2,6 +2,9 @@
 select *, case when is_purged then 1 else 0 end as xxx from capture;
 
 
+select replace( fullpath, ('/' || filepath), '' ) as folder_path from capture
+group by folder_path
+
 
 select app_name, app_path from capture
 group by app_name, app_path;

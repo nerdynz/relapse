@@ -11,6 +11,7 @@ require (
 	github.com/desertbit/timer v0.0.0-20180107155436-c41aec40b27f // indirect
 	github.com/fsnotify/fsnotify v1.4.9 // indirect
 	github.com/gen2brain/shm v0.0.0-20200228170931-49f9650110c5 // indirect
+	github.com/go-co-op/gocron v1.6.0 // indirect
 	github.com/improbable-eng/grpc-web v0.14.0
 	github.com/jmoiron/sqlx v1.2.0
 	github.com/kbinani/screenshot v0.0.0-20191211154542-3a185f1ce18f
@@ -24,7 +25,7 @@ require (
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.7.1
 	github.com/srikrsna/protoc-gen-gotag v0.5.0 // indirect
-	github.com/stretchr/testify v1.5.1
+	github.com/stretchr/testify v1.7.0
 	golang.org/x/sys v0.0.0-20210403161142-5e06dd20ab57 // indirect
 	google.golang.org/grpc v1.34.0
 	google.golang.org/protobuf v1.26.0 // indirect

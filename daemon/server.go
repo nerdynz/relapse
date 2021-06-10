@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"image"
@@ -67,7 +68,7 @@ func NewCaptureServer(db *sqlx.DB) *captureServer {
 		workspace:        nsWorkspaceShared(),
 		capturePath:      capturePath,
 		userDataPath:     userDataPath,
-		settingsFilePath: userDataPath + "settings.json",
+		settingsFilePath: userDataPath + "relapse-settings.json",
 	}
 }
 
@@ -111,12 +112,47 @@ func (cap *captureServer) GetSettings(ctx context.Context, req *relapse_proto.Se
 }
 
 func (cap *captureServer) GetDaySummaries(ctx context.Context, req *relapse_proto.DaySummariesRequest) (*relapse_proto.DaySummaries, error) {
-	sum, err := cap.getDaySummaries(ctx)
+	tx, err := cap.db.BeginTxx(ctx, nil)
 	if err != nil {
-		return nil, err
+		return nil, status.Errorf(codes.Internal, "Failed to begin sql tx %v", err)
+	}
+	defer tx.Commit()
+
+	summaries := make([]*relapse_proto.CaptureDaySummary, 0)
+	query := `
+	SELECT 
+	capture_day_time_seconds,
+	total_captured_time_seconds,
+	total_captures_for_day,
+	case when total_capture_size_bytes is null then 0 else total_capture_size_bytes end as total_capture_size_bytes,
+	is_purged
+	FROM capture_day_summary 
+	WHERE 1=1
+`
+	if !req.IncludeIsPurged {
+		query += " AND is_purged = FALSE"
+	}
+	if req.CaptureDayTimeSecondsBefore > 0 {
+		query += " AND capture_day_time_seconds <= " + strconv.FormatInt(req.CaptureDayTimeSecondsBefore, 10)
+	}
+	if req.CaptureDayTimeSecondsAfter > 0 {
+		query += " AND capture_day_time_seconds >= " + strconv.FormatInt(req.CaptureDayTimeSecondsAfter, 10)
+	}
+	rows, err := tx.Query(query)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "Failed to select rows %v", err)
+	}
+
+	for rows.Next() {
+		record := &relapse_proto.CaptureDaySummary{}
+		err := rows.Scan(&record.CaptureDayTimeSeconds, &record.TotalCapturedTimeSeconds, &record.TotalCapturesForDay, &record.TotalCaptureSizeBytes, &record.IsPurged)
+		if err != nil {
+			return nil, status.Errorf(codes.Internal, "Failed to convert to *CaptureDaySummary %v", err)
+		}
+		summaries = append(summaries, record)
 	}
 	return &relapse_proto.DaySummaries{
-		DaySummaries: sum,
+		DaySummaries: summaries,
 	}, nil
 }
 
@@ -133,7 +169,7 @@ func (cap *captureServer) getDaySummary(captureDayTimeSeconds int64) (*relapse_p
 	capture_day_time_seconds,
 	total_captured_time_seconds,
 	total_captures_for_day,
-	total_capture_size_bytes,
+	case when total_capture_size_bytes is null then 0 else total_capture_size_bytes end as total_capture_size_bytes,
 	is_purged
 	from capture_day_summary 
 	where capture_day_time_seconds = :1`, captureDayTimeSeconds)
@@ -159,36 +195,6 @@ func (cap *captureServer) getDaySummary(captureDayTimeSeconds int64) (*relapse_p
 	}, nil
 }
 
-func (cap *captureServer) getDaySummaries(ctx context.Context) ([]*relapse_proto.CaptureDaySummary, error) {
-	tx, err := cap.db.BeginTxx(ctx, nil)
-	if err != nil {
-		return nil, status.Errorf(codes.Internal, "Failed to begin sql tx %v", err)
-	}
-	defer tx.Commit()
-
-	summaries := make([]*relapse_proto.CaptureDaySummary, 0)
-	rows, err := tx.Query(`select 
-	capture_day_time_seconds,
-	total_captured_time_seconds,
-	total_captures_for_day,
-	total_capture_size_bytes,
-	is_purged
-	from capture_day_summary `)
-	if err != nil {
-		return nil, status.Errorf(codes.Internal, "Failed to select rows %v", err)
-	}
-
-	for rows.Next() {
-		record := &relapse_proto.CaptureDaySummary{}
-		err := rows.Scan(&record.CaptureDayTimeSeconds, &record.TotalCapturedTimeSeconds, &record.TotalCapturesForDay, &record.TotalCaptureSizeBytes, &record.IsPurged)
-		if err != nil {
-			return nil, status.Errorf(codes.Internal, "Failed to convert to *CaptureDaySummary %v", err)
-		}
-		summaries = append(summaries, record)
-	}
-	return summaries, nil
-}
-
 func (cap *captureServer) SetSettings(ctx context.Context, req *relapse_proto.Settings) (*relapse_proto.Settings, error) {
 	err := cap.settingsToFile(req)
 	if err != nil {
@@ -200,9 +206,7 @@ func (cap *captureServer) SetSettings(ctx context.Context, req *relapse_proto.Se
 func (cap *captureServer) ListenForCaptures(req *relapse_proto.ListenRequest, server relapse_proto.Relapse_ListenForCapturesServer) error {
 	if req.IsPerformingInitialCapture {
 		err := cap.captureScreen()
-		if err != nil {
-			return err
-		}
+		logrus.Error(err)
 	}
 
 	ticker := time.NewTicker(time.Second * 30)
@@ -218,7 +222,7 @@ func (cap *captureServer) ListenForCaptures(req *relapse_proto.ListenRequest, se
 				continue
 			}
 
-			dayCap, err := cap.getCapturesForADay(server.Context(), Bod(time.Now()).Unix())
+			dayCap, err := cap.GetCapturesForADayFromDB(server.Context(), Bod(time.Now()).Unix())
 			if err != nil {
 				logrus.Error(err)
 				continue
@@ -233,11 +237,86 @@ func (cap *captureServer) ListenForCaptures(req *relapse_proto.ListenRequest, se
 	}
 }
 
-func (cap *captureServer) GetCapturesForADay(ctx context.Context, req *relapse_proto.DayRequest) (*relapse_proto.DayResponse, error) {
-	return cap.getCapturesForADay(ctx, req.CaptureDayTimeSeconds)
+func (cap *captureServer) DeleteCapturesForDay(ctx context.Context, req *relapse_proto.DeleteCapturesForDayRequest) (*relapse_proto.DeleteCapturesForDayResponse, error) {
+	// retainForXDays := cap.CurrentSettings().RetainForXDays
+	// daysAgo := time.Duration(retainForXDays*-1) * (time.Hour * 24)
+	// timeAgo := Bod(time.Now().Add(daysAgo))
+	// caps, err := srv.GetCapturesForADayFromDB(context.Background(), timeAgo.Unix())
+	// if err != nil {
+	// 	logrus.Error(err)
+	// }
+
+	capturePath := cap.capturePath
+	// folderPath := timeAgo.Format("2006_Jan_02")
+	resp := &relapse_proto.DeleteCapturesForDayResponse{
+		CaptureDayTimeSeconds: req.CaptureDayTimeSeconds,
+		Deletions:             make([]string, 0),
+	}
+
+	rows, err := cap.db.Query(`
+select replace( fullpath, ('/' || filepath), '' ) as folder_path from capture
+where 1=1
+and is_purged = FALSE
+and capture_day_time_seconds = :1
+group by folder_path
+		`, req.CaptureDayTimeSeconds)
+
+	if err != nil {
+		if sql.ErrNoRows == err {
+			return resp, nil
+		}
+		return nil, fmt.Errorf("folder_path query failed %v", err)
+	}
+
+	var rowErr error
+	for rows.Next() {
+		deletePath := ""
+		rowErr = rows.Scan(&deletePath)
+		if err != nil {
+			logrus.Errorf("DB trans begin failed: %v", err)
+			continue
+		}
+
+		logrus.Info("deleting from path", capturePath, deletePath)
+		if deletePath != "" {
+			_, rowErr = os.Stat(capturePath + "" + deletePath)
+			if os.IsNotExist(err) {
+				logrus.Errorf("RemoveAll failed", err)
+				continue
+			}
+
+			rowErr = os.RemoveAll(capturePath + "" + deletePath)
+			if err != nil {
+				logrus.Errorf("RemoveAll failed", err)
+				continue
+			}
+		}
+		resp.Deletions = append(resp.Deletions, deletePath)
+	}
+
+	if rowErr == nil {
+		tx, err := cap.db.Beginx()
+		if err != nil {
+			return nil, fmt.Errorf("DB trans begin failed: %v", err)
+		}
+		_, err = tx.Exec("update capture set is_purged = TRUE where capture_day_time_seconds = :1", req.CaptureDayTimeSeconds)
+		if err != nil {
+			return nil, fmt.Errorf("capture purge flag update failed : %v", err)
+		}
+		err = tx.Commit()
+		if err != nil {
+			return nil, fmt.Errorf("DB trans commit failed: %v", err)
+		}
+	}
+
+	return resp, nil
 }
 
-func (cap *captureServer) getCapturesForADay(ctx context.Context, captureDayTimeSeconds int64) (*relapse_proto.DayResponse, error) {
+func (cap *captureServer) GetCapturesForADay(ctx context.Context, req *relapse_proto.DayRequest) (*relapse_proto.DayResponse, error) {
+	return cap.GetCapturesForADayFromDB(ctx, req.CaptureDayTimeSeconds)
+}
+
+func (cap *captureServer) GetCapturesForADayFromDB(ctx context.Context, captureDayTimeSeconds int64) (*relapse_proto.DayResponse, error) {
 	if captureDayTimeSeconds <= 0 {
 		return nil, status.Errorf(codes.InvalidArgument, "CaptureDayTimeSeconds is invalid")
 	}
@@ -287,7 +366,7 @@ func (cap *captureServer) captureScreen() error {
 
 	// check if the app is not rejected
 	isRejected := false
-	for _, rejection := range cap.currentSettings().Rejections {
+	for _, rejection := range cap.CurrentSettings().Rejections {
 		if rejection == appname {
 			isRejected = true
 		}
@@ -453,7 +532,7 @@ func (cap *captureServer) settingsToFile(settings *relapse_proto.Settings) error
 	return nil
 }
 
-func (cap *captureServer) currentSettings() *relapse_proto.Settings {
+func (cap *captureServer) CurrentSettings() *relapse_proto.Settings {
 	if cap.settings == nil {
 		settings, err := cap.settingsFromFile()
 		if err != nil {
@@ -473,8 +552,9 @@ func (cap *captureServer) settingsFromFile() (*relapse_proto.Settings, error) {
 	_, err := os.Stat(path)
 	if os.IsNotExist(err) {
 		cap.settingsToFile(&relapse_proto.Settings{ // default settings
-			IsEnabled:  true,
-			Rejections: make([]string, 0),
+			IsEnabled:      true,
+			Rejections:     make([]string, 0),
+			RetainForXDays: 30,
 		})
 	}
 

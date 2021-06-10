@@ -1072,7 +1072,8 @@ proto.relapse_proto.Settings.toObject = function(includeInstance, msg) {
   var f, obj = {
     isenabled: jspb.Message.getFieldWithDefault(msg, 1, false),
     retainforxdays: jspb.Message.getFieldWithDefault(msg, 2, 0),
-    rejectionsList: jspb.Message.getRepeatedField(msg, 3)
+    rejectionsList: jspb.Message.getRepeatedField(msg, 3),
+    openautomaticallyatlogin: jspb.Message.getFieldWithDefault(msg, 4, false)
   };
 
   if (includeInstance) {
@@ -1121,6 +1122,10 @@ proto.relapse_proto.Settings.deserializeBinaryFromReader = function(msg, reader)
       var value = /** @type {string} */ (reader.readString());
       msg.addRejections(value);
       break;
+    case 4:
+      var value = /** @type {boolean} */ (reader.readBool());
+      msg.setOpenautomaticallyatlogin(value);
+      break;
     default:
       reader.skipField();
       break;
@@ -1168,6 +1173,13 @@ proto.relapse_proto.Settings.serializeBinaryToWriter = function(message, writer)
   if (f.length > 0) {
     writer.writeRepeatedString(
       3,
+      f
+    );
+  }
+  f = message.getOpenautomaticallyatlogin();
+  if (f) {
+    writer.writeBool(
+      4,
       f
     );
   }
@@ -1232,6 +1244,23 @@ proto.relapse_proto.Settings.prototype.addRejections = function(value, opt_index
 
 proto.relapse_proto.Settings.prototype.clearRejectionsList = function() {
   this.setRejectionsList([]);
+};
+
+
+/**
+ * optional bool OpenAutomaticallyAtLogin = 4;
+ * Note that Boolean fields may be set to 0/1 when serialized from a Java server.
+ * You should avoid comparisons like {@code val === true/false} in those cases.
+ * @return {boolean}
+ */
+proto.relapse_proto.Settings.prototype.getOpenautomaticallyatlogin = function() {
+  return /** @type {boolean} */ (jspb.Message.getFieldWithDefault(this, 4, false));
+};
+
+
+/** @param {boolean} value */
+proto.relapse_proto.Settings.prototype.setOpenautomaticallyatlogin = function(value) {
+  jspb.Message.setProto3BooleanField(this, 4, value);
 };
 
 

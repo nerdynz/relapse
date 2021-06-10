@@ -23,6 +23,7 @@ type RelapseClient interface {
 	GetCapturesForADay(ctx context.Context, in *DayRequest, opts ...grpc.CallOption) (*DayResponse, error)
 	GetDaySummaries(ctx context.Context, in *DaySummariesRequest, opts ...grpc.CallOption) (*DaySummaries, error)
 	ListenForCaptures(ctx context.Context, in *ListenRequest, opts ...grpc.CallOption) (Relapse_ListenForCapturesClient, error)
+	DeleteCapturesForDay(ctx context.Context, in *DeleteCapturesForDayRequest, opts ...grpc.CallOption) (*DeleteCapturesForDayResponse, error)
 }
 
 type relapseClient struct {
@@ -101,6 +102,15 @@ func (x *relapseListenForCapturesClient) Recv() (*DayResponse, error) {
 	return m, nil
 }
 
+func (c *relapseClient) DeleteCapturesForDay(ctx context.Context, in *DeleteCapturesForDayRequest, opts ...grpc.CallOption) (*DeleteCapturesForDayResponse, error) {
+	out := new(DeleteCapturesForDayResponse)
+	err := c.cc.Invoke(ctx, "/relapse_proto.Relapse/DeleteCapturesForDay", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // RelapseServer is the server API for Relapse service.
 // All implementations must embed UnimplementedRelapseServer
 // for forward compatibility
@@ -110,6 +120,7 @@ type RelapseServer interface {
 	GetCapturesForADay(context.Context, *DayRequest) (*DayResponse, error)
 	GetDaySummaries(context.Context, *DaySummariesRequest) (*DaySummaries, error)
 	ListenForCaptures(*ListenRequest, Relapse_ListenForCapturesServer) error
+	DeleteCapturesForDay(context.Context, *DeleteCapturesForDayRequest) (*DeleteCapturesForDayResponse, error)
 	mustEmbedUnimplementedRelapseServer()
 }
 
@@ -131,6 +142,9 @@ func (UnimplementedRelapseServer) GetDaySummaries(context.Context, *DaySummaries
 }
 func (UnimplementedRelapseServer) ListenForCaptures(*ListenRequest, Relapse_ListenForCapturesServer) error {
 	return status.Errorf(codes.Unimplemented, "method ListenForCaptures not implemented")
+}
+func (UnimplementedRelapseServer) DeleteCapturesForDay(context.Context, *DeleteCapturesForDayRequest) (*DeleteCapturesForDayResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteCapturesForDay not implemented")
 }
 func (UnimplementedRelapseServer) mustEmbedUnimplementedRelapseServer() {}
 
@@ -238,6 +252,24 @@ func (x *relapseListenForCapturesServer) Send(m *DayResponse) error {
 	return x.ServerStream.SendMsg(m)
 }
 
+func _Relapse_DeleteCapturesForDay_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteCapturesForDayRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RelapseServer).DeleteCapturesForDay(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/relapse_proto.Relapse/DeleteCapturesForDay",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RelapseServer).DeleteCapturesForDay(ctx, req.(*DeleteCapturesForDayRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Relapse_ServiceDesc is the grpc.ServiceDesc for Relapse service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -260,6 +292,10 @@ var Relapse_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetDaySummaries",
 			Handler:    _Relapse_GetDaySummaries_Handler,
+		},
+		{
+			MethodName: "DeleteCapturesForDay",
+			Handler:    _Relapse_DeleteCapturesForDay_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{

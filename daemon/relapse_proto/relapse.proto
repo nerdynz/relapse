@@ -37,7 +37,7 @@ message Settings {
 	bool IsEnabled = 1;
 	int32 RetainForXDays = 2;
 	repeated string Rejections = 3;
-	repeated string OpenAutomaticallyAtLogin = 4;
+	bool OpenAutomaticallyAtLogin = 4;
 }
 
 message SettingsOptions {
@@ -49,7 +49,12 @@ message ApplicationInfo {
 	string AppPath = 2;
 }
 
-message DaySummariesRequest {}
+message DaySummariesRequest {
+	bool IncludeIsPurged = 1;
+	int64 CaptureDayTimeSecondsBefore = 2;
+	int64 CaptureDayTimeSecondsAfter = 3;
+}
+
 message DaySummaries {
 	repeated CaptureDaySummary DaySummaries = 1;
 }
@@ -64,10 +69,20 @@ message ListenRequest {
 	bool IsPerformingInitialCapture = 1;
 }
 
+message DeleteCapturesForDayRequest {
+	int64 CaptureDayTimeSeconds = 1;
+}
+
+message DeleteCapturesForDayResponse {
+	int64 CaptureDayTimeSeconds = 1;
+	repeated string Deletions = 2;
+}
+
 service Relapse {
   rpc GetSettings(SettingsPlusOptionsRequest) returns (SettingsPlusOptions) {}
   rpc SetSettings(Settings) returns (Settings) {}
   rpc GetCapturesForADay(DayRequest) returns (DayResponse) {}
   rpc GetDaySummaries(DaySummariesRequest) returns (DaySummaries) {}
   rpc ListenForCaptures(ListenRequest) returns (stream DayResponse) {}
+  rpc DeleteCapturesForDay(DeleteCapturesForDayRequest) returns (DeleteCapturesForDayResponse) {}
 }

@@ -155,6 +155,9 @@ export class Settings extends jspb.Message {
   setRejectionsList(value: Array<string>): void;
   addRejections(value: string, index?: number): string;
 
+  getOpenautomaticallyatlogin(): boolean;
+  setOpenautomaticallyatlogin(value: boolean): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): Settings.AsObject;
   static toObject(includeInstance: boolean, msg: Settings): Settings.AsObject;
@@ -170,6 +173,7 @@ export namespace Settings {
     isenabled: boolean,
     retainforxdays: number,
     rejectionsList: Array<string>,
+    openautomaticallyatlogin: boolean,
   }
 }
 
