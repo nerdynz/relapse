@@ -513,7 +513,7 @@ function showPreferencesScreen() {
 let currentSelectedDateTime = new Date()
 
 app.on('ready', () => {
-  let capturePath = app.getPath('documents') + '/RelapseScreenshots/'
+  let capturePath = app.getPath('userData') + '/RelapseScreenshots/'
   let userDataPath = app.getPath('userData') + '/'
   console.log('bin: ', binPath)
   console.log('imagePath: ', imagePath)
@@ -580,7 +580,12 @@ app.on('ready', () => {
   })
 
   ipcMain.on('load-settings', event => {
-    console.log('loading settings')
+    client.getSettings(new SettingsPlusOptionsRequest(), (err: Error | null, response: SettingsPlusOptions) => {
+      if (err != null) {
+        console.error(err)
+      }
+      event.sender.send('loaded-settings', response.toObject())
+    })
   })
 
   ipcMain.on('link-clicked', (event, link) => {
@@ -645,7 +650,6 @@ function startClient() {
 }
 
 function toggleCaptures(isEnabled: boolean) {
-  console.log('eh? ')
   if (isEnabled) {
     if (stream) {
       console.log('resuming stream')

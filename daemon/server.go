@@ -370,6 +370,9 @@ func (cap *captureServer) captureScreen() error {
 		if rejection == appname {
 			isRejected = true
 		}
+		if rejection == appPath {
+			isRejected = true
+		}
 	}
 
 	if isRejected {

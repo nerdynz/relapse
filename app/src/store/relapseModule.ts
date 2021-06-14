@@ -128,6 +128,7 @@ export const relapseModule = new RelapseModule({ store, name: 'relapse' })
 ipcRenderer.on(
   'loaded-settings',
   (ev: IpcRendererEvent, settings: SettingsPlusOptions.AsObject) => {
+    console.log('asxx')
     relapseModule.setSettingsPlusOptions(settings)
   }
 )

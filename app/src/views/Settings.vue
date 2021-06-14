@@ -6,17 +6,24 @@
     <div v-if="isLoaded" class="settings-content">
       <ico icon="home" />
       {{ appSettings }}
+      {{ options }}
       <div class="form-field">
         <label>Screenshot Capture Path</label>
-        <file-picker :value="path"></file-picker>
+        <!-- <file-picker :value="path"></file-picker> -->
       </div>
       <div class="form-field">
         <label>Retain screenshots for </label>
-        <numeric
+        <!-- <numeric
           :min="10"
           :max="61"
           :value="appSettings.retainforxdays"
-        ></numeric>
+        ></numeric> -->
+      </div>
+      <div class="app-exclusion" v-for="app in options.capturedapplicationsList" :key="app.appname">
+        <div class="app-name">
+          {{app.appname}}
+        </div>
+        <app-rejection-toggle :app="app" :rejections="appSettings.rejectionsList"/>
       </div>
     </div>
   </div>
@@ -25,39 +32,46 @@
 <script>
 // import FilePicker from './FilePicker'
 import Numeric from '@/components/Numeric'
+import AppRejectionToggle from '@/components/AppRejectionToggle'
 // import {mapGetters, mapActions} from 'vuex'
 import { relapseModule } from '@/store/relapseModule'
 import { Vue, Options } from 'vue-class-component'
 
 @Options({
   components: {
-    Numeric
+    Numeric,
+    AppRejectionToggle
   }
 })
 export default class Settings extends Vue {
-  get isLoaded () {
+  get isLoaded() {
     if (relapseModule.appSettings) {
       return true
     }
     return false
   }
 
-  get appSettings () {
+  get appSettings() {
     return relapseModule.appSettings
   }
 
-  mounted () {
+  get options() {
+    return relapseModule.settingsOptions
+  }
+
+  mounted() {
     relapseModule.loadSettings()
   }
 }
 </script>
 
 <style lang="scss">
-@import '../scss/variables';
+.app-exclusion {
+  display: flex;
 
-img {
-  margin-top: -25px;
-  width: 450px;
+  .app-name {
+    flex-grow: 2;
+  }
 }
 
 .settings {

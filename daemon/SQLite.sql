@@ -29,3 +29,13 @@ group by capture_day_time_seconds, is_purged;
 
 
 select * from capture_day_summary;
+
+
+select 
+	capture_day_time_seconds,
+	total_captured_time_seconds,
+	total_captures_for_day,
+	case when total_capture_size_bytes is null then 0 else total_capture_size_bytes end as total_capture_size_bytes,
+	is_purged
+	from capture_day_summary 
+	where capture_day_time_seconds
