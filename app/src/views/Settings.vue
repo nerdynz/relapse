@@ -5,8 +5,7 @@
     </div>
     <div v-if="isLoaded" class="settings-content">
       <ico icon="home" />
-      {{ appSettings }}
-      {{ options }}
+      {{ appSettings.rejectionsList }}
       <div class="form-field">
         <label>Screenshot Capture Path</label>
         <!-- <file-picker :value="path"></file-picker> -->
@@ -19,27 +18,41 @@
           :value="appSettings.retainforxdays"
         ></numeric> -->
       </div>
-      <div class="app-exclusion" v-for="app in options.capturedapplicationsList" :key="app.appname">
+      <div
+        class="app-exclusion"
+        v-for="app in options.capturedapplicationsList"
+        :key="app.appname"
+      >
         <div class="app-name">
-          {{app.appname}}
+          {{ app.appname }}
         </div>
-        <app-rejection-toggle :app="app" :rejections="appSettings.rejectionsList"/>
+        <app-rejection-toggle
+          :app="app"
+          :rejections="appSettings.rejectionsList"
+          @input="
+            isCapturing => {
+              updateRejections(app, isCapturing)
+            }
+          "
+        />
       </div>
     </div>
   </div>
 </template>
 
-<script>
+<script lang="ts">
 // import FilePicker from './FilePicker'
-import Numeric from '@/components/Numeric'
-import AppRejectionToggle from '@/components/AppRejectionToggle'
+// import Numeric from '@/components/Numeric'
+import AppRejectionToggle from '@/components/AppRejectionToggle.vue'
+import { ApplicationInfo } from '@/grpc/relapse_pb'
 // import {mapGetters, mapActions} from 'vuex'
 import { relapseModule } from '@/store/relapseModule'
 import { Vue, Options } from 'vue-class-component'
+import clone from 'ramda'
 
 @Options({
   components: {
-    Numeric,
+    // Numeric,
     AppRejectionToggle
   }
 })
@@ -61,6 +74,25 @@ export default class Settings extends Vue {
 
   mounted() {
     relapseModule.loadSettings()
+  }
+
+  updateRejections(app: ApplicationInfo.AsObject, isEnabled: boolean) {
+    if (this.appSettings) {
+      // let settings = { ...relapseModule.appSettings! }
+      let settings = clone(relapseModule.appSettings!)
+      if (!settings.rejectionsList) {
+        settings.rejectionsList = []
+      }
+      let appNameIndex = settings.rejectionsList.indexOf(app.apppath)
+      if (isEnabled) {
+        if (appNameIndex !== -1) {
+          settings.rejectionsList.push(app.apppath)
+        }
+      } else {
+        settings.rejectionsList.splice(appNameIndex, 1)
+      }
+      relapseModule.saveSettings(settings)
+    }
   }
 }
 </script>

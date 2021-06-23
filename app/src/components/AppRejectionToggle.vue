@@ -1,9 +1,9 @@
 <template>
   <div class="app-capture-toggle" :class="cssClass">
-    <div class="capturing">
+    <div class="capturing" @click="this.$emit('input', true)">
       Capturing
     </div>
-    <div class="disabled">
+    <div class="disabled" @click="this.$emit('input', false)">
       Disabled
     </div>
   </div>

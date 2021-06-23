@@ -1,4 +1,4 @@
-import { DayResponse, SettingsPlusOptions } from '@/grpc/relapse_pb'
+import { DayResponse, Settings, SettingsPlusOptions } from '@/grpc/relapse_pb'
 import { ipcRenderer } from 'electron'
 import { IpcRendererEvent } from 'electron/renderer'
 import { Action, Module, Mutation, VuexModule } from 'vuex-class-modules'
@@ -22,7 +22,7 @@ class RelapseModule extends VuexModule {
 
   get appSettings () {
     if (this.settingsPlusOptions) {
-      return this.settingsPlusOptions?.settings
+      return this.settingsPlusOptions!.settings
     }
     return null
   }
@@ -57,10 +57,11 @@ class RelapseModule extends VuexModule {
     ipcRenderer.send('load-settings')
   }
 
-  // @Action
-  // saveSettings (settings: RelapseSettings) {
-  //   ipcRenderer.send('change-settings', settings)
-  // }
+  @Action
+  saveSettings (settings: Settings.AsObject) {
+    console.log('settings', settings)
+    // ipcRenderer.send('change-settings', settings)
+  }
 
   @Action
   closeSettings () {
@@ -128,7 +129,6 @@ export const relapseModule = new RelapseModule({ store, name: 'relapse' })
 ipcRenderer.on(
   'loaded-settings',
   (ev: IpcRendererEvent, settings: SettingsPlusOptions.AsObject) => {
-    console.log('asxx')
     relapseModule.setSettingsPlusOptions(settings)
   }
 )
