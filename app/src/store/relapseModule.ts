@@ -1,4 +1,4 @@
-import { DayResponse, Settings, SettingsPlusOptions } from '@/grpc/relapse_pb'
+import { DayResponse, Settings, SettingsOptions, SettingsPlusOptions } from '@/grpc/relapse_pb'
 import { ipcRenderer } from 'electron'
 import { IpcRendererEvent } from 'electron/renderer'
 import { Action, Module, Mutation, VuexModule } from 'vuex-class-modules'
@@ -14,30 +14,36 @@ class RelapseModule extends VuexModule {
   isHelpShown = false
   day: DayResponse.AsObject | null = null
 
-  settingsPlusOptions: SettingsPlusOptions.AsObject | null = null
+  settingOptions: SettingsOptions.AsObject | null = null
+  settings: Settings.AsObject | null = null
 
   get currentDay () {
     return this.day
   }
 
   get appSettings () {
-    if (this.settingsPlusOptions) {
-      return this.settingsPlusOptions!.settings
+    if (this.settings) {
+      return this.settings
     }
     return null
   }
 
   get settingsOptions () {
-    if (this.settingsPlusOptions) {
-      return this.settingsPlusOptions?.settingsoptions
+    if (this.settingOptions) {
+      return this.settingOptions
     }
     return null
   }
 
   @Mutation
   setSettingsPlusOptions (settings: SettingsPlusOptions.AsObject) {
-    this.settingsPlusOptions = settings
-    console.log('this.settingsPlusOptions', this.settingsPlusOptions)
+    this.settingOptions = settings.settingsoptions ? settings.settingsoptions : null
+    this.settings = settings.settings ? settings.settings : null
+  }
+
+  @Mutation
+  setSettings(settings: Settings.AsObject) {
+    this.settings = settings || null
   }
   // @Mutation
   // updateSettingsMessage(msg: any) {
@@ -59,8 +65,7 @@ class RelapseModule extends VuexModule {
 
   @Action
   saveSettings (settings: Settings.AsObject) {
-    console.log('settings', settings)
-    // ipcRenderer.send('change-settings', settings)
+    ipcRenderer.send('change-settings', settings)
   }
 
   @Action
@@ -130,6 +135,12 @@ ipcRenderer.on(
   'loaded-settings',
   (ev: IpcRendererEvent, settings: SettingsPlusOptions.AsObject) => {
     relapseModule.setSettingsPlusOptions(settings)
+  }
+)
+ipcRenderer.on(
+  'changed-settings',
+  (ev: IpcRendererEvent, settings: Settings.AsObject) => {
+    relapseModule.setSettings(settings)
   }
 )
 ipcRenderer.on(

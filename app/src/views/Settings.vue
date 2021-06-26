@@ -48,7 +48,7 @@ import { ApplicationInfo } from '@/grpc/relapse_pb'
 // import {mapGetters, mapActions} from 'vuex'
 import { relapseModule } from '@/store/relapseModule'
 import { Vue, Options } from 'vue-class-component'
-import clone from 'ramda'
+import { clone, remove } from 'ramda'
 
 @Options({
   components: {
@@ -76,21 +76,30 @@ export default class Settings extends Vue {
     relapseModule.loadSettings()
   }
 
-  updateRejections(app: ApplicationInfo.AsObject, isEnabled: boolean) {
+  updateRejections(app: ApplicationInfo.AsObject, captureState: 'CAPTURING' | 'REJECTING') {
     if (this.appSettings) {
+      console.log('app', app)
       // let settings = { ...relapseModule.appSettings! }
       let settings = clone(relapseModule.appSettings!)
+      console.log('settings', settings)
       if (!settings.rejectionsList) {
         settings.rejectionsList = []
       }
       let appNameIndex = settings.rejectionsList.indexOf(app.apppath)
-      if (isEnabled) {
-        if (appNameIndex !== -1) {
-          settings.rejectionsList.push(app.apppath)
+      console.log('appNameIndex', appNameIndex, captureState)
+      console.log('appNameIndex', appNameIndex)
+
+      // this logic seems a little backwards because we are managing a list of rejections
+      if (captureState === 'CAPTURING') {
+        if (appNameIndex >= 0) {
+          settings.rejectionsList = remove(appNameIndex, 1, settings.rejectionsList)
         }
       } else {
-        settings.rejectionsList.splice(appNameIndex, 1)
+        if (appNameIndex === -1) {
+          settings.rejectionsList.push(app.apppath)
+        }
       }
+      console.log('settings.rejectionsList', settings.rejectionsList)
       relapseModule.saveSettings(settings)
     }
   }

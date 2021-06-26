@@ -1,10 +1,10 @@
 <template>
   <div class="app-capture-toggle" :class="cssClass">
-    <div class="capturing" @click="this.$emit('input', true)">
+    <div class="capturing" @click="this.$emit('input', 'CAPTURING')">
       Capturing
     </div>
-    <div class="disabled" @click="this.$emit('input', false)">
-      Disabled
+    <div class="reject" @click="this.$emit('input', 'REJECTING')">
+      Reject
     </div>
   </div>
 </template>
@@ -29,7 +29,7 @@ export default class Settings extends Vue {
 
   get cssClass() {
     if (this.rejections.includes(this.app.apppath)) {
-      return 'is-disabled'
+      return 'is-reject'
     }
     return 'is-capturing'
   }
@@ -44,15 +44,15 @@ export default class Settings extends Vue {
     .capturing {
       background: green;
     }
-    .disabled {
+    .reject {
       background: grey;
     }
   }
-  &.is-disabled {
+  &.is-reject {
     .capturing {
       background: grey;
     }
-    .disabled {
+    .reject {
       background: red;
     }
   }

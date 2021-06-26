@@ -598,27 +598,12 @@ app.on('ready', () => {
     }
   })
 
-  // ipcMain.on('change-settings', (event, settings) => {
-  //   setSettings(settings, (err, settings) => {
-  //     let msg = {
-  //       msgType: '',
-  //       msg: ''
-  //     }
-  //     if (err) {
-  //       log(err)
-  //       if (err.code === 'EACCES') {
-  //         msg = {
-  //           msgType: 'error',
-  //           msg: 'Invalid path. Please try selecting a new one.'
-  //         }
-  //       }
-  //     } else {
-  //       msg.msg = 'Preferences succesfully updated!'
-  //       msg.msgType = 'ok'
-  //     }
-  //     event.sender.send('changed-settings', msg, settings)
-  //   })
-  // })
+  ipcMain.on('change-settings', (event, settings: Settings.AsObject) => {
+    setSettings(settings).then((response: Settings.AsObject) => {
+      event.sender.send('changed-settings', response)
+    })
+    console.log('event, settings', event, settings)
+  })
 
   // ipcMain.on('open-dialog', (event) => {
   //   dialog.showOpenDialog({ properties: ['openDirectory'] }).then((result) => {

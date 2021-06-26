@@ -420,10 +420,17 @@ func (cap *captureServer) captureScreen() error {
 }
 
 func (cap *captureServer) captureWindowTitle() (appname string, appPath string, err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			logrus.Errorf("captureWindowTitle panic, %v", r)
+		}
+		return
+	}()
 	appname = ""
 	appPath = ""
 	res := cap.workspace.ActiveApplication()
-	for _, v := range strings.Split(res.String(), "\n") {
+	windowTitleString := res.String()
+	for _, v := range strings.Split(windowTitleString, "\n") {
 		if strings.Contains(v, " = ") {
 			split := strings.Split(v, " = ")
 			if strings.Contains(split[0], "NSApplicationName") {
