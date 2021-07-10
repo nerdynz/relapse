@@ -35,7 +35,7 @@ const isDevelopment = process.env.NODE_ENV !== 'production'
 // const path = require('path')
 // const moment = require('moment')
 
-const binPath = path.resolve(__dirname, '../src/bin/')
+const binPath = path.resolve(__dirname, '../src/assets/bin/')
 const imagePath = path.resolve(__dirname, '../src/assets/')
 const winURL = 'http://localhost:8080'
 
