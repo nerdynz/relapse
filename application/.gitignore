@@ -2,4 +2,5 @@ node_modules
 .DS_Store
 dist
 build/dist
+!dist/bin/daemon
 *.local
