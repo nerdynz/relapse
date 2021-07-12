@@ -1,4 +1,9 @@
-import { DayResponse, Settings, SettingsOptions, SettingsPlusOptions } from '@/grpc/relapse_pb'
+import {
+  DayResponse,
+  Settings,
+  SettingsOptions,
+  SettingsPlusOptions
+} from '@/grpc/relapse_pb'
 import { ipcRenderer } from 'electron'
 import { IpcRendererEvent } from 'electron/renderer'
 import { Action, Module, Mutation, VuexModule } from 'vuex-class-modules'
@@ -16,9 +21,14 @@ class RelapseModule extends VuexModule {
 
   settingOptions: SettingsOptions.AsObject | null = null
   settings: Settings.AsObject | null = null
+  isPreferencesShowing = false
 
   get currentDay () {
     return this.day
+  }
+
+  get currentDaySummary () {
+    return this.day?.summary
   }
 
   get appSettings () {
@@ -37,13 +47,25 @@ class RelapseModule extends VuexModule {
 
   @Mutation
   setSettingsPlusOptions (settings: SettingsPlusOptions.AsObject) {
-    this.settingOptions = settings.settingsoptions ? settings.settingsoptions : null
+    this.settingOptions = settings.settingsoptions
+      ? settings.settingsoptions
+      : null
     this.settings = settings.settings ? settings.settings : null
   }
 
   @Mutation
-  setSettings(settings: Settings.AsObject) {
+  setSettings (settings: Settings.AsObject) {
     this.settings = settings || null
+  }
+
+  @Mutation
+  togglePreferences (toggle?: boolean) {
+    console.log('toogle', toggle)
+    if (typeof toggle !== 'undefined') {
+      this.isPreferencesShowing = toggle
+    } else {
+      this.isPreferencesShowing = !this.isPreferencesShowing
+    }
   }
   // @Mutation
   // updateSettingsMessage(msg: any) {
@@ -57,6 +79,10 @@ class RelapseModule extends VuexModule {
   //     state.day = day
   //   }
   // }
+  @Action
+  changePreferences (toggle: boolean) {
+    this.togglePreferences(toggle)
+  }
 
   @Action
   loadSettings () {
@@ -87,14 +113,12 @@ class RelapseModule extends VuexModule {
 
   @Action
   changeDay (day: DayResponse.AsObject) {
-    console.log('day', day)
     this.setDay(day)
   }
 
   @Mutation
   setDay (day: DayResponse.AsObject) {
     this.day = day
-    console.log('this.day', day)
   }
 
   // @Action
@@ -147,6 +171,12 @@ ipcRenderer.on(
   'loaded-day',
   (ev: IpcRendererEvent, day: DayResponse.AsObject) => {
     relapseModule.changeDay(day)
+  }
+)
+ipcRenderer.on(
+  'show-preferences',
+  (ev: IpcRendererEvent, day: DayResponse.AsObject) => {
+    relapseModule.togglePreferences()
   }
 )
 

@@ -10,9 +10,21 @@
     "electron:build": "vue-cli-service electron:build",
     "electron:serve": "vue-cli-service electron:serve",
     "postinstall": "electron-builder install-app-deps",
-    "postuninstall": "electron-builder install-app-deps"
+    "postuninstall": "electron-builder install-app-deps",
+    "pack:osx": "electron-packager . Relapse --overwrite --icon=assets/Relapse.icns"
   },
   "main": "background.js",
+  "build": {
+    "mas": {
+        "type": "distribution",
+        "category": "public.app-category.productivity",
+        "entitlements": "build/entitlements.mas.plist",
+        "icon": "build/icon.icns",
+        "binaries": [
+          "dist/mas/relapse.app/Contents/Resources/bin/mtp-cli"
+        ]
+      }
+  },
   "dependencies": {
     "core-js": "^3.6.5",
     "dateformat": "^4.5.1",

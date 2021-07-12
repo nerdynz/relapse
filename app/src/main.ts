@@ -7,5 +7,4 @@ import { store } from './store'
 createApp(App)
   .component('ico', Icons)
   .use(store)
-  .use(router)
   .mount('#app')

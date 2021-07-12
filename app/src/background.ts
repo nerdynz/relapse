@@ -38,7 +38,7 @@ const isDevelopment = process.env.NODE_ENV !== 'production'
 const binPath = path.resolve(__dirname, '../src/assets/bin/')
 const imagePath = path.resolve(__dirname, '../src/assets/')
 const winURL = 'http://localhost:8080'
-
+const consolex = new console.Console(process.stdout, process.stderr)
 // const PROTO_PATH = path.resolve(__dirname, '../src/') + '/relapse.proto'
 // const protoLoader = require('@grpc/proto-loader')
 // let packageDefinition = protoLoader.loadSync(PROTO_PATH, {
@@ -413,44 +413,10 @@ function createTrayAndMenusAndShortcuts(
 
 let settingsWindow: Electron.BrowserWindow | null
 
-function showPreferencesScreen() {
-  mainWindow!.loadURL(winURL + '#/settings')
-  // if (settingsWindow) {
-  //   settingsWindow.show()
-  //   return // already open
-  // }
-  // settingsWindow = new BrowserWindow({
-  //   title: 'Relapse Preferences',
-  //   width: 460,
-  //   height: 360,
-  //   // transparent: true,
-  //   titleBarStyle: 'hiddenInset',
-  //   vibrancy: 'appearance-based',
-  //   webPreferences: {
-  //     // Use pluginOptions.nodeIntegration, leave this alone
-  //     // See nklayman.github.io/vue-cli-plugin-electron-builder/guide/security.html#node-integration for more info
-  //     nodeIntegration: true
-  //   }
-  // })
-  // let doStuff = () => {
-  //   settingsWindow!.on('closed', () => {
-  //     if (settingsWindow) {
-  //       settingsWindow = null
-  //     }
-  //   })
-  // }
-  // if (process.env.WEBPACK_DEV_SERVER_URL) {
-  //   // Load the url of the dev server if in development mode
-  //   settingsWindow
-  //     .loadURL(process.env.WEBPACK_DEV_SERVER_URL as string)
-  //     .then(doStuff)
-  //   // if (!process.env.IS_TEST) settingsWindow.webContents.openDevTools()
-  // } else {
-  //   createProtocol('app')
-  //   // Load the index.html when not in development
-  //   settingsWindow.loadURL('app://./index.html')
-  //   doStuff()
-  // }
+function showPreferencesScreen () {
+  if (mainWindow) {
+    mainWindow!.webContents.send('show-preferences')
+  }
 }
 
 // function createScreenMonitor (capturePath) {
@@ -580,12 +546,15 @@ app.on('ready', () => {
   })
 
   ipcMain.on('load-settings', event => {
-    client.getSettings(new SettingsPlusOptionsRequest(), (err: Error | null, response: SettingsPlusOptions) => {
-      if (err != null) {
-        console.error(err)
+    client.getSettings(
+      new SettingsPlusOptionsRequest(),
+      (err: Error | null, response: SettingsPlusOptions) => {
+        if (err != null) {
+          console.error(err)
+        }
+        event.sender.send('loaded-settings', response.toObject())
       }
-      event.sender.send('loaded-settings', response.toObject())
-    })
+    )
   })
 
   ipcMain.on('link-clicked', (event, link) => {
@@ -602,7 +571,6 @@ app.on('ready', () => {
     setSettings(settings).then((response: Settings.AsObject) => {
       event.sender.send('changed-settings', response)
     })
-    console.log('event, settings', event, settings)
   })
 
   // ipcMain.on('open-dialog', (event) => {
@@ -634,7 +602,7 @@ function startClient() {
   client = new RelapseClient('localhost:3333', credentials.createInsecure())
 }
 
-function toggleCaptures(isEnabled: boolean) {
+function toggleCaptures (isEnabled: boolean) {
   if (isEnabled) {
     if (stream) {
       console.log('resuming stream')

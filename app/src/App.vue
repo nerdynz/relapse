@@ -152,14 +152,4 @@ html {
   top: 0;
   left: 0;
 }
-
-.icon {
-  height: 32px;
-  width: 32px;
-  padding: 4px;
-  svg {
-  height: 24px;
-  width: 24px;
-  }
-}
 </style>

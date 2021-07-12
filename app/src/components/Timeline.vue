@@ -144,7 +144,7 @@ export default class Timeline extends Vue {
     if (this.isReady) {
       return 'opacity:1;'
     }
-    return 'opacity:0;'
+    return 'opacity:1;'
   }
 
   get bgColor() {
