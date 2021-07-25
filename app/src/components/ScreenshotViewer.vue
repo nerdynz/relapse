@@ -49,7 +49,6 @@ let lastRenderedImg: fabric.Image
 export default class ScreenshotViewer extends Vue {
   currentZoomLevel = 0.5
   currentImageIndex = 0
-  currentDate = new Date()
   firstTime = new Date()
   lastTime = new Date()
   localTimes: Array<CaptureSimple> = []
@@ -81,6 +80,10 @@ export default class ScreenshotViewer extends Vue {
 
   get currentDay () {
     return relapseModule.currentDay
+  }
+
+  get currentDate () {
+    return relapseModule.currentDate
   }
 
   loadNewDay (val?: DayInfo) {

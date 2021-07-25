@@ -6,23 +6,25 @@
 </template>
 
 <script>
-import Home from '@/assets/fa-svgs/solid/home.svg'
-import Share from '@/assets/fa-svgs/solid/share.svg'
-import ChevronLeft from '@/assets/fa-svgs/solid/chevron-left.svg'
-import ChevronRight from '@/assets/fa-svgs/solid/chevron-right.svg'
-import ChevronDoubleLeft from '@/assets/fa-svgs/solid/chevron-double-left.svg'
-import ChevronDoubleRight from '@/assets/fa-svgs/solid/chevron-double-right.svg'
-import AngleLeft from '@/assets/fa-svgs/solid/angle-left.svg'
-import AngleRight from '@/assets/fa-svgs/solid/angle-right.svg'
-import AngleDown from '@/assets/fa-svgs/light/angle-down.svg'
-import AngleUp from '@/assets/fa-svgs/light/angle-up.svg'
-import AngleDoubleLeft from '@/assets/fa-svgs/solid/angle-double-left.svg'
-import AngleDoubleRight from '@/assets/fa-svgs/solid/angle-double-right.svg'
-import ArrowFromLeft from '@/assets/fa-svgs/solid/arrow-from-left.svg'
-import ArrowFromRight from '@/assets/fa-svgs/solid/arrow-from-right.svg'
-import CameraPolaroid from '@/assets/fa-svgs/light/camera-polaroid.svg'
-import Minus from '@/assets/fa-svgs/light/minus.svg'
-import Plus from '@/assets/fa-svgs/light/plus.svg'
+import Home from '@/assets/fa-svgs/solid/home.svg?component'
+import Share from '@/assets/fa-svgs/solid/share.svg?component'
+import ChevronLeft from '@/assets/fa-svgs/solid/chevron-left.svg?component'
+import ChevronRight from '@/assets/fa-svgs/solid/chevron-right.svg?component'
+import ChevronDoubleLeft from '@/assets/fa-svgs/solid/chevron-double-left.svg?component'
+import ChevronDoubleRight from '@/assets/fa-svgs/solid/chevron-double-right.svg?component'
+import AngleLeft from '@/assets/fa-svgs/solid/angle-left.svg?component'
+import AngleRight from '@/assets/fa-svgs/solid/angle-right.svg?component'
+import AngleDown from '@/assets/fa-svgs/light/angle-down.svg?component'
+import AngleUp from '@/assets/fa-svgs/light/angle-up.svg?component'
+import AngleDoubleLeft from '@/assets/fa-svgs/solid/angle-double-left.svg?component'
+import AngleDoubleRight from '@/assets/fa-svgs/solid/angle-double-right.svg?component'
+import ArrowFromLeft from '@/assets/fa-svgs/solid/arrow-from-left.svg?component'
+import ArrowFromRight from '@/assets/fa-svgs/solid/arrow-from-right.svg?component'
+import ArrowLeft from '@/assets/fa-svgs/solid/arrow-left.svg?component'
+import ArrowRight from '@/assets/fa-svgs/solid/arrow-right.svg?component'
+import CameraPolaroid from '@/assets/fa-svgs/light/camera-polaroid.svg?component'
+import Minus from '@/assets/fa-svgs/light/minus.svg?component'
+import Plus from '@/assets/fa-svgs/light/plus.svg?component'
 
 const icons = (() => {
   let icons = {
@@ -36,6 +38,10 @@ const icons = (() => {
     'ico-angle-right': AngleRight,
     'ico-angle-down': AngleDown,
     'ico-angle-up': AngleUp,
+    'ico-arrow-left': ArrowLeft,
+    'ico-arrow-right': ArrowRight,
+    'ico-arrow-down': AngleDown,
+    'ico-arrow-up': AngleUp,
     'ico-angle-double-left': AngleDoubleLeft,
     'ico-angle-double-right': AngleDoubleRight,
     'ico-arrow-from-left': ArrowFromLeft,
@@ -97,7 +103,6 @@ export default {
         iconName = this.icon.join('-')
       }
       iconName = iconName.replaceAll('icon-', '')
-      console.log('hello', iconName)
       iconName = 'ico-' + iconName
       return iconName
     },

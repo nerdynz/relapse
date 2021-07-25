@@ -132,122 +132,7 @@ if (isDevelopment) {
 function createTrayAndMenusAndShortcuts(
   settings: SettingsPlusOptions.AsObject
 ) {
-  let isEnabled = settings.settings!.isenabled
-  // let isEnabled = false
-
-  let show = function() {
-    if (!mainWindow) {
-      createWindow()
-    } else {
-      mainWindow.show()
-    }
-  }
-
-  let toggleCapture = function(val: MenuItem) {
-    getSettings().then((settingsOptions: SettingsPlusOptions.AsObject) => {
-      let setting = settingsOptions.settings!
-      setting.isenabled = val.checked
-      setSettings(setting)
-      toggleCaptures(setting.isenabled)
-    })
-  }
-
-  let quit = function() {
-    app.quit()
-  }
-
-  let resetZoom = function() {
-    if (mainWindow) {
-      mainWindow.webContents.send('zoom-function', 'reset')
-    }
-  }
-
-  let zoomIn = function() {
-    if (mainWindow) {
-      mainWindow.webContents.send('zoom-function', 'in')
-    }
-  }
-
-  let zoomOut = function() {
-    if (mainWindow) {
-      mainWindow.webContents.send('zoom-function', 'out')
-    }
-  }
-
-  let today = function() {
-    if (mainWindow) {
-      mainWindow.webContents.send('day-function', 'today')
-    }
-  }
-  let nextDay = function() {
-    if (mainWindow) {
-      mainWindow.webContents.send('day-function', 'nextDay')
-    }
-  }
-  let prevDay = function() {
-    if (mainWindow) {
-      mainWindow.webContents.send('day-function', 'prevDay')
-    }
-  }
-
-  let launchWebsite = function() {
-    shell.openExternal('http://relapse.nerdy.co.nz/')
-  }
-  // var launchWebsiteHelp = function () {
-  //   shell.openExternal('http://relapse.nerdy.co.nz/help')
-  // }
-  let launchWebsiteFAQ = function() {
-    shell.openExternal('http://relapse.nerdy.co.nz/faq')
-  }
-  let launchReport = function() {
-    shell.openExternal('http://relapse.nerdy.co.nz/feedback')
-  }
-  let showTips = function() {
-    // getSettings((err, settings) => {
-    //   if (err) {
-    //     log(err)
-    //     return
-    //   }
-    //   settings.isHelpShown = true
-    //   setSettings(settings, () => {
-    //     if (mainWindow) { mainWindow.webContents.send('changed-settings', 'changed help shown', settings) }
-    //   })
-    // })
-  }
-
-  let goLeft = function() {
-    if (mainWindow) {
-      mainWindow.webContents.send('arrow-pressed', 'left')
-    }
-  }
-
-  let goRight = function() {
-    if (mainWindow) {
-      mainWindow.webContents.send('arrow-pressed', 'right')
-    }
-  }
-
-  let showAboutScreen = function() {
-    // if (aboutWindow) {
-    //   aboutWindow.show()
-    //   return // already open
-    // }
-    // aboutWindow = new BrowserWindow({
-    //   title: 'About Relapse',
-    //   width: 360,
-    //   height: 300,
-    //   backgroundColor: '#252830',
-    //   // transparent: true,
-    //   titleBarStyle: 'hiddenInset',
-    //   webPreferences: {
-    //     webSecurity: false
-    //   }
-    // })
-    // aboutWindow.loadURL(winURL + '#/about')
-    // aboutWindow.on('closed', () => {
-    //   aboutWindow = null
-    // })
-  }
+ 
 
   let helpSubMenu: any[] = [
     { label: 'Show Tips', type: 'normal', click: showTips },
@@ -413,11 +298,6 @@ function createTrayAndMenusAndShortcuts(
 
 let settingsWindow: Electron.BrowserWindow | null
 
-function showPreferencesScreen () {
-  if (mainWindow) {
-    mainWindow!.webContents.send('show-preferences')
-  }
-}
 
 // function createScreenMonitor (capturePath) {
 //   screenCap = new ScreenCapture({

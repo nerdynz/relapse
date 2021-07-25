@@ -28,7 +28,7 @@ import Settings from '@/views/Settings.vue'
 import { relapseModule } from '@/store/relapseModule'
 import { Vue, Options } from 'vue-class-component'
 import { Watch } from 'vue-property-decorator'
-import { CaptureSimple, DayInfo } from '@/interfaces/dayInfo.interface'
+import { CaptureSimple, DayInfo, DaySwap } from '@/interfaces/dayInfo.interface'
 import { fabric } from 'fabric'
 import { IEvent } from 'fabric/fabric-impl'
 // import { DayRequest } from '@/grpc/relapse_pb'
@@ -49,12 +49,15 @@ let lastRenderedImg: fabric.Image
 export default class ScreenshotViewer extends Vue {
   currentZoomLevel = 0.5
   currentImageIndex = 0
-  currentDate = new Date()
   firstTime = new Date()
   lastTime = new Date()
   localTimes: Array<CaptureSimple> = []
   firstImageIndex = 0
   lastImageIndex = 0
+
+  get currentDate () {
+    return relapseModule.currentDate;
+  }
 
   get settingsVisible () {
     return relapseModule.isPreferencesShowing
@@ -83,13 +86,11 @@ export default class ScreenshotViewer extends Vue {
     return relapseModule.currentDay
   }
 
-  loadNewDay (val?: DayInfo) {
+  loadNewDay (val?: DaySwap) {
     let date = this.currentDate
     let skipToEnd = false
     if (val) {
-      // @ts-ignore
       if (val.date) {
-        // @ts-ignore
         date = val.date
       }
       if (val.skipToEnd) {
@@ -248,13 +249,6 @@ export default class ScreenshotViewer extends Vue {
 
   @Watch('currentDay')
   onChangeCurrentDay () {
-    // this.currentImageIndex = 0
-    let date = new Date()
-    if (this.currentDay) {
-      let ms = this.currentDay.capturedaytimeseconds * 1000
-      date = new Date(ms)
-    }
-    this.currentDate = date
     console.log('happened', this.currentDate)
     setTimeout(() => {
       this.updateLocalTimes()

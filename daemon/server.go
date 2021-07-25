@@ -452,6 +452,11 @@ func (cap *captureServer) captureWindowTitle() (appname string, appPath string, 
 }
 
 func (cap *captureServer) captureImage(capturePath string, captureTime time.Time) (string, string, error) {
+	defer func() {
+		if r := recover(); r != nil {
+			logrus.Warn("Recovered in f", r)
+		}
+	}()
 	fullpath := filepath.Join(capturePath, "/"+captureTime.Format("2006_Jan_02")+"/")
 	fileName := fmt.Sprintf("%s.webp", captureTime.Format("20060102_150405"))
 	fullPathIncFile := filepath.Join(fullpath, "/", fileName)

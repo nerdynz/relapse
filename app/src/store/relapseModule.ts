@@ -31,6 +31,15 @@ class RelapseModule extends VuexModule {
     return this.day?.summary
   }
 
+  get currentDate () {
+    let date = new Date()
+    if (this.currentDay) {
+      let ms = this.currentDay.capturedaytimeseconds * 1000
+      date = new Date(ms)
+    }
+    return date
+  }
+
   get appSettings () {
     if (this.settings) {
       return this.settings

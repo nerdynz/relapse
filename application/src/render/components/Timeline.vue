@@ -2,8 +2,7 @@
   <div class="timeline" :style="timelineReadyStyle">
     <button
       class="side-btn prev-day"
-      @mousedown="prevMinute"
-      @mouseup="prevMinuteOff"
+      @click="prevDay"
     >
       <ico icon="arrow-from-right" />
     </button>
@@ -13,38 +12,15 @@
       @mousedown="prevMinute"
       @mouseup="prevMinuteOff"
     >
-      <ico icon="angle-double-left" />
-    </button>
-    <div class="splitter" />
-    <button
-      class="side-btn prev-minute"
-      @mousedown="prevMinute"
-      @mouseup="prevMinuteOff"
-    >
       <ico icon="angle-left" />
     </button>
-    <!--
-      <button class="side-btn prev-day" @click="prevDay">
-        <fa-icon icon="caret-left" />
-      </button>
-      <button class="side-btn next-day" @click="nextDay">
-        <fa-icon icon="caret-right" />
-      </button>
-      <button
-        class="side-btn next-minute"canvas-container
-        @mousedown="nextMinute"
-        @mouseup="nextMinuteOff"
-      >
-        <fa-icon icon="caret-right" />
-      </button> -->
+
     <div class="splitter" />
     <div class="picker">
+      {{value}}
       <datepicker
-        :value="day"
-        @selected="dayChanged"
-        :highlighted="highlighted"
-        @opened="datePickerOpened"
-        :time-override="currentTime"
+        :value="dayWithTimeFromMinuteIncrement"
+        @input="dayChanged"
       />
     </div>
     <div class="splitter" />
@@ -77,17 +53,8 @@
     </button>
     <div class="splitter" />
     <button
-      class="side-btn next-minute"
-      @mousedown="prevMinute"
-      @mouseup="prevMinuteOff"
-    >
-      <ico icon="angle-double-right" />
-    </button>
-    <div class="splitter" />
-    <button
       class="side-btn next-day"
-      @mousedown="prevMinute"
-      @mouseup="prevMinuteOff"
+      @click="nextDay"
     >
       <ico icon="arrow-from-left" />
     </button>
@@ -101,9 +68,10 @@ import { Watch, Prop } from 'vue-property-decorator'
 
 import { fabric } from 'fabric'
 import { IEvent } from 'fabric/fabric-impl'
-import dateFormat from 'dateformat'
-import Datepicker from './DatePicker.vue'
+import Datepicker from 'vue3-datepicker'
 import { CaptureSimple } from '@/interfaces/dayInfo.interface'
+import {format} from 'date-fns'
+import { relapseModule } from '@/store/relapseModule'
 
 const timeColor = '#99f9b3'
 
@@ -126,7 +94,7 @@ export default class Timeline extends Vue {
   lastImageIndex!: number
 
   @Prop()
-  day!: Date
+  day!: Date;
 
   canvas!: fabric.Canvas
   rect!: fabric.Rect
@@ -135,8 +103,17 @@ export default class Timeline extends Vue {
   isMouseDown = false
   minuteChangeIncrement = 0
   isReady = false
-  highlighted = {
-    dates: [new Date()]
+
+  get dayWithTimeFromMinuteIncrement () {
+    var date = new Date(this.day);
+    // 720 / 2880 * 60
+    if (this.value) {
+      let hours = this.value / 2880 * 24;
+      let mins = this.value / 2880 * 60;
+      date.setHours(hours);
+      date.setMinutes(mins);
+    }
+    return date;
   }
 
   get timelineReadyStyle () {
@@ -162,12 +139,6 @@ export default class Timeline extends Vue {
     return wholeHours
   }
 
-  datePickerOpened () {
-    this.highlighted = {
-      dates: [new Date()]
-    }
-  }
-
   prevDay () {
     const newDate = new Date(this.day)
     newDate.setDate(this.day.getDate() - 1)
@@ -186,7 +157,6 @@ export default class Timeline extends Vue {
   }
 
   dayChanged (date: Date, skipToEnd: boolean) {
-    this.canvas.clear()
     this.$emit('day-change', { date, skipToEnd })
   }
 
@@ -266,7 +236,7 @@ export default class Timeline extends Vue {
 
   formatDate (date: Date) {
     if (date) {
-      return dateFormat(date, 'h:MM:ss TT')
+      return format(date, 'h:MM:ss aa')
     }
 
     return ''
@@ -274,7 +244,7 @@ export default class Timeline extends Vue {
 
   formatDateSmall (date: Date) {
     if (date) {
-      return dateFormat(date, 'hTT')
+      return format(date, 'haa')
     }
     return ''
   }

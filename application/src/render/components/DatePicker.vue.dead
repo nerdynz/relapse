@@ -124,63 +124,76 @@
     </div>
   </div>
 </template>
-
-<script>
+<script lang="ts">
+import { Vue, Options } from 'vue-class-component'
+import { Prop } from 'vue-property-decorator'
 import DateUtils from './utils/DateUtils.js'
 import DateLanguages from './utils/DateLanguages.js'
 import dateFormat from 'dateformat'
 
-export default {
-  props: {
-    timeOverride: {
+@Options({
+})
+export default class DatePicker extends Vue {
+    @Prop({
       type: Date
-    },
-    value: {
+    })
+    timeOverride!: Date;
+
+    @Prop({
       validator: function (val) {
         return val === null || val instanceof Date || typeof val === 'string'
       }
-    },
-    name: {
-      value: String
-    },
-    id: {
-      value: String
-    },
-    format: {
-      value: String,
-      default: 'dd MMM yyyy'
-    },
-    language: {
-      value: String,
-      default: 'en'
-    },
-    disabled: {
-      type: Object
-    },
-    highlighted: {
-      type: Object
-    },
-    placeholder: {
-      type: String
-    },
+    })
+    value!: Date | null | string;
+    
+    @Prop()
+    name!: string;
+
+    @Prop()
+    id!: string;
+
+    @Prop({ default: 'dd MMM yyyy' })
+    format!: string;
+
+    @Prop({ default: 'en' })
+    language!: string;
+
+    @Prop({type: Boolean, default: false})
+    disabled!: boolean;
+
+    @Prop({type: Boolean, default: false})
+    highlighted!: boolean;
+
+    @Prop()
+    placeholder!: string;
+
+    @Prop({type: Boolean, default: false})
     inline: {
       type: Boolean
-    },
+    }
+
+    @Prop()
     inputClass: {
       type: String
     },
+    @Prop()
     wrapperClass: {
       type: String
     },
+    @Prop()
     mondayFirst: {
       type: Boolean,
       default: false
     },
+    @Prop()
     clearButton: {
       type: Boolean,
       default: false
     }
-  },
+export default {
+
+
+
   data () {
     return {
       /*
@@ -367,8 +380,14 @@ export default {
       return this.isInline() ? { position: 'static' } : {}
     }
   },
-  methods: {
-    close () {
+  /**
+   * Vue 2.x
+   */
+  mounted () {
+    this.init()
+  }
+
+   close () {
       this.showDayView = this.showMonthView = this.showYearView = false
     },
     getDefaultDate () {
@@ -848,19 +867,6 @@ export default {
         false
       )
     }
-  },
-  /**
-   * Vue 1.x
-   */
-  ready () {
-    this.init()
-  },
-  /**
-   * Vue 2.x
-   */
-  mounted () {
-    this.init()
-  }
 }
 </script>
 

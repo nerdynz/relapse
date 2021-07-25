@@ -6,7 +6,7 @@ import {
   Settings,
   SettingsOptions,
   SettingsPlusOptions
-} from '../grpc/relapse_pb'
+} from '../../grpc/relapse_pb'
 // serverEvents.registerEvents(store)
 // export default store
 import { store } from './index'
@@ -17,11 +17,22 @@ class RelapseModule extends VuexModule {
   // screenshotCapturePath = ''
 
   isHelpShown = false
+  
   day: DayResponse.AsObject | null = null
-
+  
   settingOptions: SettingsOptions.AsObject | null = null
   settings: Settings.AsObject | null = null
   isPreferencesShowing = false
+  
+  get currentDate() {
+    let date = new Date()
+    if (this.currentDay) {
+      console.log('this.currentDay.capturedaytimeseconds', this.currentDay.capturedaytimeseconds)
+      let ms = this.currentDay.capturedaytimeseconds * 1000
+      date = new Date(ms)
+    }
+    return date
+  }
 
   get currentDay () {
     return this.day

@@ -7,7 +7,7 @@
 //   capturetimeseconds: number
 //   capturedaytimeseconds: number
 // }
-import { Capture, CaptureDaySummary } from '@/grpc/relapse_pb'
+import { Capture, CaptureDaySummary } from '../../grpc/relapse_pb'
 export interface CaptureSimple {
   date: Date
   isReal: boolean
@@ -18,4 +18,9 @@ export interface DayInfo extends CaptureDaySummary.AsObject {
   fullDate: string
   skipToEnd: boolean
   files?: Capture.AsObject[]
+}
+
+export interface DaySwap {
+  date: Date
+  skipToEnd: boolean
 }
