@@ -1,0 +1,80 @@
+{
+  "name": "relapse",
+  "version": "1.0.0",
+  "author": {
+    "name": "Joshua Cave",
+    "email": "josh@nerdy.co.nz"
+  },
+  "main": "dist/main/app.js",
+  "scripts": {
+    "dev": "vite",
+    "start": "electron dist/main/app.js",
+    "build": "vite build",
+    "serve": "vite preview",
+    "electron:dev": "cross-env NODE_ENV=development electron index.js",
+    "electron:testbuild": "rimraf dist && vite build  && mkdir ./dist/grpc && mkdir ./dist/bin && mkdir ./dist/icons && cp ./src/grpc/*.js ./dist/grpc && cp ./src/bin/daemon ./dist/bin/daemon && cp ./src/icons/** ./dist/icons",
+    "electron:build": "yarn electron:testbuild && tsc -p tsconfig.electron.json && electron-builder -m",
+    "postinstall": "electron-builder install-app-deps"
+  },
+  "dependencies": {
+    "dateformat": "^4.5.1",
+    "electron-log": "^4.4.0",
+    "fabric": "^4.4.0",
+    "google-protobuf": "^3.15.8",
+    "grpc": "^1.24.10",
+    "moment": "^2.29.1",
+    "protobufjs": "^6.10.2",
+    "ramda": "^0.27.1",
+    "vue": "^3.1.5",
+    "vue3-datepicker": "^0.2.5",
+    "vuex": "^4.0.0-0"
+  },
+  "devDependencies": {
+    "@types/dateformat": "^3.0.1",
+    "@types/fabric": "^4.5.1",
+    "@types/google-protobuf": "^3.15.3",
+    "@types/ramda": "^0.27.44",
+    "@vitejs/plugin-vue": "^1.1.5",
+    "@vue/compiler-sfc": "^3.0.5",
+    "copyfiles": "^2.4.1",
+    "cross-env": "^7.0.3",
+    "electron": "^12.0.0",
+    "electron-builder": "^22.10.5",
+    "node-sass": "^6.0.1",
+    "rimraf": "^3.0.2",
+    "sass": "^1.35.2",
+    "ts-node": "^9.1.1",
+    "tslib": "^2.3.0",
+    "typescript": "^4.2.3",
+    "vite": "^2.0.5",
+    "vite-svg-loader": "^2.1.0",
+    "vitejs-plugin-electron": "^0.1.3",
+    "vue-class-component": "^8.0.0-rc.1",
+    "vue-property-decorator": "^10.0.0-rc.3",
+    "vue-svg-loader": "^0.17.0-beta.2",
+    "vue-tsc": "^0.0.8",
+    "vuex-class-modules": "^1.3.0"
+  },
+  "build": {
+    "productName": "Relapse",
+    "appId": "nz.co.nerdy.relapse",
+    "mac": {
+      "target": "dmg",
+      "category": "public.app-category.utilities"
+    },
+    "files": [
+      "dist/bin/**/*",
+      "dist/grpc/**/*",
+      "dist/main/**/*",
+      "dist/render/**/*"
+    ],
+    "asar": true,
+    "asarUnpack": [
+      "dist/bin/daemon",
+      "dist/icons/**"
+    ],
+    "directories": {
+      "output": "dist/release"
+    }
+  }
+}

@@ -426,6 +426,8 @@ func (cap *captureServer) captureWindowTitle() (appname string, appPath string, 
 		}
 		return
 	}()
+
+	panic("I panicked")
 	appname = ""
 	appPath = ""
 	res := cap.workspace.ActiveApplication()
