@@ -245,8 +245,8 @@ function createTrayAndMenusAndShortcuts(
   }
 
   let helpSubMenu: any[] = [
-    { label: 'Show Tips', type: 'normal', click: showTips },
-    { label: 'About', type: 'normal', click: showAboutScreen },
+    // { label: 'Show Tips', type: 'normal', click: showTips },
+    // { label: 'About', type: 'normal', click: showAboutScreen },
     { type: 'separator' },
     // {label: 'Relapse Help', type: 'normal', click: launchWebsiteHelp},
     { label: 'Website', type: 'normal', click: launchWebsite },
@@ -254,10 +254,10 @@ function createTrayAndMenusAndShortcuts(
     { label: 'Feedback / Report an Error', type: 'normal', click: launchReport }
   ]
 
-  // if (process.env.NODE_ENV === 'development') {
+  if (process.env.NODE_ENV === 'development') {
     helpSubMenu = [
-      { label: 'Show Tips', type: 'normal', click: showTips },
-      { label: 'About', type: 'normal', click: showAboutScreen },
+      // { label: 'Show Tips', type: 'normal', click: showTips },
+      // { label: 'About', type: 'normal', click: showAboutScreen },
       { type: 'separator' },
       // {label: 'Relapse Help', type: 'normal', click: launchWebsiteHelp},
       { label: 'Website', type: 'normal', click: launchWebsite },
@@ -272,7 +272,7 @@ function createTrayAndMenusAndShortcuts(
       // @ts-ignore
       { role: 'toggledevtools' }
     ]
-  // }
+  }
 
   const mainMenu = Menu.buildFromTemplate([
     {
@@ -433,7 +433,9 @@ app.on('ready', () => {
     '--capture-path',
     capturePath,
     '--userdata-path',
-    userDataPath
+    userDataPath,
+    '--bin-path',
+    binPath
   ])
   child.stdout.setEncoding('utf8')
   child.stdout.on('data', function(data: string) {
@@ -473,9 +475,14 @@ app.on('ready', () => {
 
   ipcMain.on('maximize', () => {
     if (mainWindow) {
-      mainWindow.maximize()
+      if (mainWindow.isMaximized()) {
+        mainWindow.unmaximize();
+      } else {
+        mainWindow.maximize();
+      }
     }
   })
+
   ipcMain.on('load-day', (event, date, skipToEnd) => {
     loadDay(date, skipToEnd)
   })
@@ -526,7 +533,6 @@ function toggleCaptures (isEnabled: boolean) {
       log.info('creating stream')
       stream.on('data', (resp: DayResponse) => {
         if (resp.getCapturedaytimeseconds() === startOfDayAsSeconds(currentSelectedDateTime)) {
-          log.info('updating app')
           sendDayInfoToApp(resp, currentSelectedDateTime, false)
         } else {
           log.info(

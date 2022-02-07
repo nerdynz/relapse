@@ -129,6 +129,7 @@ export default defineComponent({
   svg {
     height: 1.5rem;
     width: 1.5rem;
+    fill: currentColor;
   }
   &.is-large {
     height: 3rem;

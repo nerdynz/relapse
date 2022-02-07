@@ -1,3 +1,14 @@
+#
+
+When developing you have to run vite and also electron dev tools
+
+
+
+# Hg
+
+When running just the daemon use bloom rpc
+
+
 # generating golang
 
 protoc relapse.proto --go_out=$GOPATH/src --go-grpc_out=$GOPATH/src

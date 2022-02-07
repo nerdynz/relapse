@@ -10,6 +10,7 @@ import (
 	"io/ioutil"
 	"math"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -21,33 +22,17 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/nerdynz/relapse/daemon/relapse_proto"
 	"github.com/nfnt/resize"
-	"github.com/progrium/macdriver/core"
-	"github.com/progrium/macdriver/objc"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
 
-var NSWorkspace_ = nsWorkspace{objc.Get("NSWorkspace")}
-
-type nsWorkspace struct {
-	objc.Object
-}
-
-func nsWorkspaceShared() nsWorkspace {
-	return nsWorkspace{NSWorkspace_.Send("sharedWorkspace")}
-}
-
-func (ws nsWorkspace) ActiveApplication() core.NSDictionary {
-	return core.NSDictionary{ws.Send("activeApplication")}
-}
-
 type captureServer struct {
 	relapse_proto.UnsafeRelapseServer
-	workspace        nsWorkspace // for capturing mac window information
 	capturePath      string
 	userDataPath     string
+	binPath          string
 	settingsFilePath string
 	db               *sqlx.DB
 	settings         *relapse_proto.Settings
@@ -62,12 +47,16 @@ func NewCaptureServer(db *sqlx.DB) *captureServer {
 	if !strings.HasSuffix(userDataPath, "/") {
 		userDataPath += "/"
 	}
+	binPath := viper.GetString("bin-path")
+	if !strings.HasSuffix(binPath, "/") {
+		binPath += "/"
+	}
 
 	return &captureServer{
 		db:               db,
-		workspace:        nsWorkspaceShared(),
 		capturePath:      capturePath,
 		userDataPath:     userDataPath,
+		binPath:          binPath,
 		settingsFilePath: userDataPath + "relapse-settings.json",
 	}
 }
@@ -359,24 +348,30 @@ func (cap *captureServer) captureScreen() error {
 		seconds = 30
 	}
 
-	appname, appPath, err := cap.captureWindowTitle()
+	screenWindows, err := cap.captureWindowTitle()
 	if err != nil { // ignore this err
 		return fmt.Errorf("Capture window title failed: %v", err)
 	}
+	if len(screenWindows) == 0 { // ignore this err
+		return fmt.Errorf("No screen info captured: %v", err)
+	}
+	screenWindow := screenWindows[0]
+
+	logrus.Info("SCR", screenWindow)
 
 	// check if the app is not rejected
 	isRejected := false
 	for _, rejection := range cap.CurrentSettings().Rejections {
-		if rejection == appname {
+		if rejection == screenWindow.AppName {
 			isRejected = true
 		}
-		if rejection == appPath {
-			isRejected = true
-		}
+		// if rejection == appPath {
+		// 	isRejected = true
+		// }
 	}
 
 	if isRejected {
-		return fmt.Errorf("Rejected app capture %s", appname)
+		return fmt.Errorf("Rejected app capture %s", screenWindow.AppName)
 	}
 
 	captureTime := time.Date(now.Year(), now.Month(), now.Day(), now.Hour(), now.Minute(), seconds, 0, now.Location())
@@ -393,8 +388,8 @@ func (cap *captureServer) captureScreen() error {
 	}
 
 	capture := &relapse_proto.Capture{
-		AppName:               appname,
-		AppPath:               appPath,
+		AppName: screenWindow.AppName,
+		// AppPath:               appPath,
 		Filepath:              filepath,
 		Fullpath:              fullPathIncFile,
 		CaptureTimeSeconds:    captureTime.Unix(),
@@ -419,38 +414,19 @@ func (cap *captureServer) captureScreen() error {
 	return nil
 }
 
-func (cap *captureServer) captureWindowTitle() (appname string, appPath string, err error) {
-	defer func() {
-		if r := recover(); r != nil {
-			logrus.Errorf("captureWindowTitle panic, %v", r)
-		}
-		return
-	}()
-
-	panic("I panicked")
-	appname = ""
-	appPath = ""
-	res := cap.workspace.ActiveApplication()
-	windowTitleString := res.String()
-	for _, v := range strings.Split(windowTitleString, "\n") {
-		if strings.Contains(v, " = ") {
-			split := strings.Split(v, " = ")
-			if strings.Contains(split[0], "NSApplicationName") {
-				appname = split[1]
-				appname = strings.Split(appname, ";")[0]
-			}
-			if strings.Contains(split[0], "NSApplicationPath") {
-				appPath = split[1]
-				appPath = strings.Split(appPath, ";")[0]
-			}
-		}
+func (cap *captureServer) captureWindowTitle() ([]*ScreenWindow, error) {
+	x, _ := os.Getwd()
+	logrus.Info("xxx", x)
+	out, err := exec.Command(cap.binPath + "/screeninfo").Output()
+	if err != nil {
+		return nil, err
 	}
-
-	appname = strings.TrimLeft(appname, "\"")
-	appname = strings.TrimRight(appname, "\"")
-	appPath = strings.TrimLeft(appPath, "\"")
-	appPath = strings.TrimRight(appPath, "\"")
-	return appname, appPath, nil
+	sw := make([]*ScreenWindow, 0)
+	err = json.Unmarshal(out, &sw)
+	if err != nil {
+		return nil, err
+	}
+	return sw, nil
 }
 
 func (cap *captureServer) captureImage(capturePath string, captureTime time.Time) (string, string, error) {
@@ -587,4 +563,19 @@ func (cap *captureServer) settingsFromFile() (*relapse_proto.Settings, error) {
 	}
 
 	return settings, nil
+}
+
+type ScreenWindow struct {
+	AppName    string             `json:"appName"`
+	IsOnScreen bool               `json:"windowIsOnScreen"`
+	Layer      int32              `json:"layer"`
+	Pid        int32              `json:"pid"`
+	Bounds     ScreenWindowBounds `json:"bounds"`
+}
+
+type ScreenWindowBounds struct {
+	X      int32 `json:"x"`
+	Y      int32 `json:"y"`
+	Height int32 `json:"height"`
+	Width  int32 `json:"width"`
 }

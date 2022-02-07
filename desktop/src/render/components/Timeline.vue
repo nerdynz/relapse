@@ -1,10 +1,6 @@
 <template>
   <div class="timeline" :style="timelineReadyStyle">
-    <button
-      class="side-btn prev-day"
-      @click="prevDay"
-      title="Previous Day"
-    >
+    <button class="side-btn prev-day" @click="prevDay" title="Previous Day">
       <ico icon="arrow-from-right" />
     </button>
     <div class="splitter" />
@@ -45,13 +41,9 @@
         </div>
       </div>
     </div>
-    
+
     <div class="splitter" />
-    <button
-      class="side-btn"
-      @click="today"
-      title="Today"
-    >
+    <button class="side-btn" @click="today" title="Today">
       <ico icon="calendar-day" />
     </button>
     <div class="splitter" />
@@ -64,11 +56,7 @@
       <ico icon="angle-right" />
     </button>
     <div class="splitter" />
-    <button
-      class="side-btn next-day"
-      @click="nextDay"
-      title="Next Day"
-    >
+    <button class="side-btn next-day" @click="nextDay" title="Next Day">
       <ico icon="arrow-from-left" />
     </button>
   </div>
@@ -82,14 +70,14 @@ import { fabric } from 'fabric'
 import { IEvent } from 'fabric/fabric-impl'
 import Datepicker from 'vue3-datepicker'
 import { CaptureSimple } from '@render/interfaces/dayInfo.interface'
-import {format} from 'date-fns'
+import { format } from 'date-fns'
 
-const timeColor = '#99f9b3'
+const timeColor = '#86DA9D'
 
 @Options({
   components: {
-    Datepicker
-  }
+    Datepicker,
+  },
 })
 export default class Timeline extends Vue {
   @Prop()
@@ -105,10 +93,10 @@ export default class Timeline extends Vue {
   lastImageIndex!: number
 
   @Prop()
-  day!: Date;
+  day!: Date
 
   @Prop()
-  currentCapture!: CaptureSimple;
+  currentCapture!: CaptureSimple
 
   canvas!: fabric.Canvas
   rect!: fabric.Rect
@@ -118,26 +106,33 @@ export default class Timeline extends Vue {
   skipChangeIncrement = 0
   isReady = false
 
+  // bgColor = ''
 
-  get currentDayTime () {
+  get currentDayTime() {
     if (this.currentCapture) {
       return this.currentCapture.date
     }
-    return new Date();
+    return new Date()
   }
 
-  get timelineReadyStyle () {
+  get timelineReadyStyle() {
     if (this.isReady) {
       return 'opacity:1;'
     }
     return 'opacity:1;'
   }
 
-  get bgColor () {
-    return 'rgba(242, 242, 242, 0.5)'
-  }
+  // get bgColor() {
+  //   let style = ''
+  //   if (document && document.documentElement) {
+  //     style = getComputedStyle(document.documentElement).getPropertyValue(
+  //       '--theme-input-bg'
+  //     )
+  //   }
+  //   return style
+  // }
 
-  get timesWhereIsWholeHour () {
+  get timesWhereIsWholeHour() {
     const wholeHours = this.times.filter((t: any) => {
       var actualDate = new Date(t.date)
       if (actualDate.getMinutes() === 0 && actualDate.getSeconds() === 0) {
@@ -148,70 +143,70 @@ export default class Timeline extends Vue {
     return wholeHours
   }
 
-  prevDay () {
+  prevDay() {
     const newDate = new Date(this.day)
     newDate.setDate(this.day.getDate() - 1)
     this.dayChanged(newDate, true)
   }
 
-  nextDay () {
+  nextDay() {
     const newDate = new Date(this.day)
     newDate.setDate(this.day.getDate() + 1)
     this.dayChanged(newDate, false)
   }
 
-  today () {
+  today() {
     const newDate = new Date()
     this.dayChanged(newDate, true)
   }
 
-  dayChanged (date: Date, skipToEnd: boolean) {
+  dayChanged(date: Date, skipToEnd: boolean) {
     this.$emit('day-change', { date, skipToEnd })
   }
 
-  prevSkip (inc = 1) {
-    this.skipChangeIncrement = (-1 * inc)
+  prevSkip(inc = 1) {
+    this.skipChangeIncrement = -1 * inc
   }
 
-  nextSkip (inc = 1) {
-    this.skipChangeIncrement = (1 * inc)
+  nextSkip(inc = 1) {
+    this.skipChangeIncrement = 1 * inc
   }
 
-  prevSkipOff () {
+  prevSkipOff() {
     this.skipChangeIncrement = 0
   }
 
-  nextSkipOff () {
+  nextSkipOff() {
     this.skipChangeIncrement = 0
   }
 
-  minuteChanged (index: number) {
+  minuteChanged(index: number) {
     this.$emit('minute-index-change', index)
   }
 
-  moveMinuteLinePosition (index: number) {
+  moveMinuteLinePosition(index: number) {
     var xPos = this.getLinePoint(index)
     this.rect.set({ left: xPos })
     this.canvas.renderAll()
   }
 
-  moveMinuteHoverLinePosition (index: number) {
+  moveMinuteHoverLinePosition(index: number) {
     var xPos = this.getLinePoint(index)
     this.hoverRect.set({ left: xPos, height: 60 })
     this.canvas.renderAll()
   }
 
-  hideMinuteHoverLine () {
+  hideMinuteHoverLine() {
     this.hoverRect.set({ height: 0 })
     this.canvas.renderAll()
   }
 
-  markerStyle (index: number) {
+  markerStyle(index: number) {
     let percent = (index / (this.timesWhereIsWholeHour.length - 1)) * 100
     return `left: ${percent}%;`
   }
 
-  isWholeHour (date: Date) {
+  isWholeHour(date: Date) {
     var actualDate = new Date(date)
     if (actualDate.getMinutes() === 0) {
       return true
@@ -220,7 +215,7 @@ export default class Timeline extends Vue {
     return false
   }
 
-  getLinePoint (index: number) {
+  getLinePoint(index: number) {
     var linePoint = 0
     if (this.canvas && this.canvas.width) {
       return (this.canvas.width * ((index / this.times.length) * 100)) / 100
@@ -228,7 +223,7 @@ export default class Timeline extends Vue {
     return linePoint
   }
 
-  get currentTime () {
+  get currentTime() {
     let currentTime = this.times[this.value]
     if (currentTime) {
       return currentTime.date
@@ -237,11 +232,11 @@ export default class Timeline extends Vue {
     return null
   }
 
-  mouseout () {
+  mouseout() {
     // this.isMouseDown = false
   }
 
-  formatDate (date: Date) {
+  formatDate(date: Date) {
     if (date) {
       return format(date, 'h:MM:ss aa')
     }
@@ -249,18 +244,25 @@ export default class Timeline extends Vue {
     return ''
   }
 
-  formatDateSmall (date: Date) {
+  formatDateSmall(date: Date) {
     if (date) {
       return format(date, 'haa')
     }
     return ''
   }
 
-  redrawCanvas () {
+  redrawCanvas() {
+    let bgColor = ''
+    if (document && document.documentElement) {
+      bgColor = getComputedStyle(document.documentElement).getPropertyValue(
+        '--theme-input-bg'
+      )
+    }
+    
     // 240 buttons, padding 40, datepicker 180, 7 splliters
     this.canvas.setDimensions({
       width: window.innerWidth - (200 + 40 + 220 + 7 * 1),
-      height: 34
+      height: 34,
     })
     // clear it
     this.canvas.clear()
@@ -287,9 +289,9 @@ export default class Timeline extends Vue {
             height: 40,
             left: lastRectIndex,
             top: 0,
-            stroke: !time.isReal ? timeColor : this.bgColor, // reversed because its not real
-            fill: !time.isReal ? timeColor : this.bgColor, // reversed because its not real
-            selectable: false
+            stroke: !time.isReal ? timeColor : bgColor, // reversed because its not real
+            fill: !time.isReal ? timeColor : bgColor, // reversed because its not real
+            selectable: false,
           })
         )
         lastRectIndex = left
@@ -301,9 +303,9 @@ export default class Timeline extends Vue {
             height: 40,
             left: lastRectIndex,
             top: 0,
-            stroke: time.isReal ? timeColor : this.bgColor, // this is the actualness :)
-            fill: time.isReal ? timeColor : this.bgColor, // this is the actualness :)
-            selectable: false
+            stroke: time.isReal ? timeColor : bgColor, // this is the actualness :)
+            fill: time.isReal ? timeColor : bgColor, // this is the actualness :)
+            selectable: false,
           })
         )
       }
@@ -317,7 +319,7 @@ export default class Timeline extends Vue {
       top: 0,
       stroke: '#f2ae57',
       fill: '#f2ae57',
-      selectable: false
+      selectable: false,
     })
 
     this.hoverRect = new fabric.Rect({
@@ -327,7 +329,7 @@ export default class Timeline extends Vue {
       top: -1,
       stroke: '#F65C26',
       fill: '#F65C26',
-      selectable: false
+      selectable: false,
     })
     this.canvas.add(this.rect)
     this.canvas.add(this.hoverRect)
@@ -336,17 +338,18 @@ export default class Timeline extends Vue {
   }
 
   @Watch('times')
-  onChangeTimes () {
+  onChangeTimes() {
+
     this.redrawCanvas()
   }
 
   @Watch('value')
-  onChangeValue () {
+  onChangeValue() {
     this.moveMinuteLinePosition(this.value)
   }
 
   @Watch('skipChangeIncrement')
-  onChangeMinuteIncrement () {
+  onChangeMinuteIncrement() {
     let callCountIncrement = 0
     let changeMinute = () => {
       if (this.skipChangeIncrement !== 0) {
@@ -368,7 +371,7 @@ export default class Timeline extends Vue {
     changeMinute()
   }
 
-  goleft (inc = 1) {
+  goleft(inc = 1) {
     this.prevSkip(inc)
     this.$nextTick(() => {
       // DOM updated
@@ -376,7 +379,7 @@ export default class Timeline extends Vue {
     })
   }
 
-  goRight (inc = 1) {
+  goRight(inc = 1) {
     this.nextSkip(inc)
     this.$nextTick(() => {
       // DOM updated
@@ -387,7 +390,7 @@ export default class Timeline extends Vue {
   lastKeyboardEvent = 0
   eventDebounce = 100
 
-  arrowPressed (direction: string) {
+  arrowPressed(direction: string) {
     if (this.lastKeyboardEvent + this.eventDebounce < Number(+new Date())) {
       this.lastKeyboardEvent = Number(+new Date())
       if (direction === 'left') {
@@ -402,7 +405,7 @@ export default class Timeline extends Vue {
     }
   }
 
-  dayChanging (direction: string) {
+  dayChanging(direction: string) {
     if (this.lastKeyboardEvent + this.eventDebounce < Number(+new Date())) {
       this.lastKeyboardEvent = Number(+new Date())
       if (direction === 'prevDay') {
@@ -415,7 +418,7 @@ export default class Timeline extends Vue {
     }
   }
 
-  created () {
+  created() {
     setTimeout(() => {
       this.redrawCanvas()
     }, 1)
@@ -424,7 +427,7 @@ export default class Timeline extends Vue {
     this.$ipc.receive('day-function', this.dayChanging)
   }
 
-  mounted () {
+  mounted() {
     let panning = false
 
     this.canvas = new fabric.Canvas('timeline-viewer')
@@ -493,8 +496,7 @@ export default class Timeline extends Vue {
     height: 22px;
     margin: 7px 0;
     width: 1px;
-    // background-color: $light-theme-input-bg-transparency;
-    // background-color: $light-theme-lines-between-color;
+    // background-color: $theme-lines-between-color;
   }
 
   .side-btn {
@@ -514,10 +516,9 @@ export default class Timeline extends Vue {
       }
     }
     border: none;
-    // background: $light-theme-input-bg-transparency;
-    background-color: $light-theme-input-bg-transparency;
-    // border-right: 1px solid $light-theme-lines-between-color;
-    color: $light-theme-text-color;
+    background-color: $theme-input-bg;
+    // border-right: 1px solid $theme-lines-between-color;
+    color: $theme-text-color;
     top: 0;
     outline: none !important;
     font-size: 16px;
@@ -525,11 +526,11 @@ export default class Timeline extends Vue {
 
     &:hover,
     &:active {
-      background-color: $light-theme-input-hover-bg;
+      background-color: $theme-input-hover-bg;
     }
 
     &.next-30-sec {
-      // border-left: 1px solid $light-theme-lines-between-color;
+      // border-left: 1px solid $theme-lines-between-color;
       // border-top-right-radius: $standard-border-radius;
       // border-bottom-right-radius: $standard-border-radius;
     }
@@ -551,7 +552,7 @@ export default class Timeline extends Vue {
     border: none;
     height: 34px;
     width: 36px;
-    color: $light-theme-text-color;
+    color: $theme-text-color;
     position: relative;
     border-radius: 6px;
 
@@ -569,7 +570,7 @@ export default class Timeline extends Vue {
 
     .side-btn {
       &.next-day {
-        border-left: 1px solid $light-theme-lines-between-color;
+        border-left: 1px solid $theme-lines-between-color;
         left: 135px;
         top: 0;
         border-top-right-radius: 5px;
@@ -578,10 +579,21 @@ export default class Timeline extends Vue {
 
       &.prev-day {
         left: 0;
-        border-right: 1px solid $light-theme-lines-between-color;
+        border-right: 1px solid $theme-lines-between-color;
         border-top-left-radius: 5px;
         border-bottom-left-radius: 5px;
       }
+    }
+
+    .v3dp__heading {
+      color: $theme-text-heading-color;
+      .v3dp__heading__center[data-v-2e128338]:hover,
+      .v3dp__heading__button[data-v-2e128338]:not(:disabled):hover {
+        background: $theme-input-hover-bg;
+      }
+    }
+    .v3dp__subheading {
+      color: $theme-text-subheading-color;
     }
 
     .v3dp__datepicker {
@@ -590,10 +602,10 @@ export default class Timeline extends Vue {
         text-align: center;
         font-size: 15px;
         height: 34px;
-        background: $light-theme-input-bg-transparency;
+        background: $theme-input-bg;
         border: none;
         font-weight: normal;
-        color: $light-theme-text-color;
+        color: $theme-text-color;
         width: 100%;
         cursor: pointer;
         -webkit-user-select: none;
@@ -603,7 +615,7 @@ export default class Timeline extends Vue {
 
       &:hover {
         input[type='text'] {
-          background: $light-theme-input-hover-bg;
+          background: $theme-input-hover-bg;
         }
       }
     }
@@ -614,11 +626,11 @@ export default class Timeline extends Vue {
 
     .v3dp__popout {
       width: 320px;
-      background-color: $light-theme-input-bg;
+      background-color: $theme-input-bg;
 
       .v3dp__elements button {
         font-size: 1rem;
-        color: $light-theme-text-color;
+        color: $theme-text-color;
         padding: 0;
         span {
           line-height: 2.6rem;
@@ -626,16 +638,16 @@ export default class Timeline extends Vue {
         }
 
         &:disabled {
-          color: $light-theme-unfocused-text-color;
+          color: $theme-unfocused-text-color;
         }
 
         &.selected span {
-          background-color: $light-theme-input-active-bg;
-          color: $light-theme-text-color;
+          background-color: $theme-input-active-bg;
+          color: $theme-text-color;
         }
         &:not(:disabled):hover span {
-          background-color: $light-theme-input-hover-bg;
-          color: $light-theme-text-color;
+          background-color: $theme-input-hover-bg;
+          color: $theme-text-color;
         }
       }
     }
@@ -651,8 +663,7 @@ export default class Timeline extends Vue {
     -webkit-app-region: no-drag;
     position: relative;
     height: 34px;
-    // border-left: 1px solid $light-theme-lines-between-color;
-    // background-color: $light-theme-input-bg-transparency;
+    // border-left: 1px solid $theme-lines-between-color;
 
     .time {
       position: absolute;
@@ -664,11 +675,11 @@ export default class Timeline extends Vue {
       -webkit-user-select: none;
     }
     user-select: none;
-    color: $light-theme-text-color;
+    color: $theme-text-color;
 
     .tick {
       font-size: 9px;
-      color: $light-theme-text-color;
+      color: $theme-text-color;
 
       font-weight: 300;
       position: absolute;

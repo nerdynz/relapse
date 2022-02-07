@@ -114,7 +114,7 @@ export default class Settings extends Vue {
 
 <style lang="scss">
 .app-exclusions {
-  border: 1px solid $light-theme-lines-between-color;
+  border: 1px solid $theme-lines-between-color;
   border-radius: $radius;
   width: 100%;
   overflow-x: hidden;
@@ -127,19 +127,19 @@ export default class Settings extends Vue {
     td.app-name {
       width: 100%;
       padding: 0.75rem;
-      color: $light-theme-text-color;
+      color: $theme-text-color;
     }
 
     tr:nth-child(odd) {
       th,
       td {
-        background: $light-theme-input-row-odd;
+        background: $theme-input-row-odd;
       }
     }
     tr:nth-child(even) {
       th,
       td {
-        background: $light-theme-input-row-even;
+        background: $theme-input-row-even;
       }
     }
   }
@@ -147,28 +147,26 @@ export default class Settings extends Vue {
 
 .settings {
   position: absolute;
-  top: $handlebar-height;
+  top: 0;
   left: 0;
   right: 0;
   bottom: 0;
   height: 100%;
   width: 100%;
   min-width: 460px;
-  background: transparent;
   display: block;
   display: flex;
   flex-direction: column;
-  border-top: 1px solid $light-theme-lines-between-color;
 
   h1.title {
-    color: $light-theme-text-color;
+    color: $theme-text-heading-color;
     font-weight: 600;
     margin-bottom: 1rem;
   }
 
   label {
     display: block;
-    color: $light-theme-text-color;
+    color: $theme-text-subheading-color;
     font-weight: 600;
     margin-bottom: 0.5rem !important;
   }
@@ -176,11 +174,11 @@ export default class Settings extends Vue {
   .title-bar {
     -webkit-app-region: drag;
     height: 85px;
-    border-bottom: 1px solid $light-theme-lines-between-color;
+    border-bottom: 1px solid $theme-lines-between-color;
   }
   .settings-content {
     padding: 30px;
-    // background: $light-theme-bg;
+    // background: $theme-bg;
     flex-grow: 2;
   }
 
@@ -203,7 +201,7 @@ export default class Settings extends Vue {
       border-top-left-radius: 0;
       border-bottom-left-radius: 0;
       width: 30%;
-      background: $light-theme-input-bg;
+      background: $theme-input-bg;
       color: $color-light-grey;
       outline: none !important;
 
@@ -238,13 +236,13 @@ export default class Settings extends Vue {
       border-top-left-radius: 0;
       border-bottom-left-radius: 0;
       width: 30%;
-      background: $light-theme-input-bg;
+      background: $theme-input-bg;
       color: $color-light-grey;
       outline: none !important;
       border: none;
 
       &:hover {
-        background: $light-theme-input-hover-bg;
+        background: $theme-input-hover-bg;
       }
 
       &.number-up {

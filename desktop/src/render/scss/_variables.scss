@@ -12,7 +12,6 @@ $color-light-green: #4cdaae;
 $color-dark-green: #1baf7d;
 
 $color-green: #00bf02;
-
 $color-purple: #9f82ff;
 $color-light-purple: #bca7ff;
 
@@ -38,29 +37,46 @@ $inactive-bg: #ececec;
 $handlebar-height: 86px;
 $color-bg: black;
 
-$light-theme-unfocused-bg: #e6e6e6;
-$light-theme-unfocused-text-color: #acacac;
-$light-theme-lines-between-color: #b3b3b3;
-$light-theme-bg: #ffffff;
-$light-theme-text-color: #fefefe;
-$light-theme-input-active-bg: hsl(0deg 0% 20% / 100%);
-$light-theme-input-hover-bg: hsl(0deg 0% 15% / 100%);
-$light-theme-input-bg: hsl(0deg 0% 10% / 100%);
-$light-theme-input-bg-transparency: hsl(0deg 0% 10% / 50%);
-$light-theme-input-row-odd: #ffffff;
-$light-theme-input-row-even: #f4f5f5;
+
 
 $standard-border-radius: 5px;
 
+$theme-unfocused-bg: var(--theme-unfocused-bg);
+$theme-unfocused-text-color: var(--theme-unfocused-text-color);
+$theme-lines-between-color: var(--theme-lines-between-color);
+$theme-text-color: var(--theme-text-color);
+$theme-text-heading-color: var(--theme-text-heading-color);
+$theme-text-subheading-color: var(--theme-text-subheading-color);
+$theme-input-active-bg: var(--theme-input-active-bg);
+$theme-input-hover-bg: var(--theme-input-hover-bg);
+$theme-input-bg: var(--theme-input-bg);
+$theme-input-row-odd: var(--theme-input-row-odd);
+$theme-input-row-even: var(--theme-input-row-even);
 
-$was-light-theme-unfocused-bg: #e6e6e6;
-$was-light-theme-unfocused-text-color: #acacac;
-$was-light-theme-lines-between-color: #b3b3b3;
-$was-light-theme-bg: #ffffff;
-$was-light-theme-text-color: #515151;
-$was-light-theme-input-active-bg: hsl(0deg 0% 90% / 100%);
-$was-light-theme-input-hover-bg: hsl(0deg 0% 85% / 100%);
-$was-light-theme-input-bg: hsl(0deg 0% 95% / 100%);
-$was-light-theme-input-bg-transparency: hsl(0deg 0% 95% / 50%);
-$was-light-theme-input-row-odd: #ffffff;
-$was-light-theme-input-row-even: #f4f5f5;
+
+// DARK
+$was-theme-unfocused-bg: #e6e6e6;
+$was-theme-unfocused-text-color: #acacac;
+$was-theme-lines-between-color: #403F3E;
+$was-theme-text-color: rgba(255, 255, 255, 0.87);
+$was-theme-text-heading-color: rgba(255, 255, 255, 0.74);
+$was-theme-text-subheading-color: rgba(255, 255, 255, 0.67);;
+$was-theme-input-active-bg: hsl(0deg 0% 20% / 60%);
+$was-theme-input-hover-bg: hsl(0deg 0% 15% / 60%);
+$was-theme-input-bg: hsl(0deg 0% 10% / 100%);
+$was-theme-input-row-odd: #ffffff;
+$was-theme-input-row-even: #f4f5f5;
+
+
+// Light
+$was-theme-unfocused-bg: #e6e6e6;
+$was-theme-unfocused-text-color: #acacac;
+$was-theme-lines-between-color: #b3b3b3;
+$was-theme-text-color: #515151;
+$was-theme-text-heading-color: #444444;
+$was-theme-text-subheading-color: #555555;
+$was-theme-input-active-bg: hsl(0deg 0% 90% / 100%);
+$was-theme-input-hover-bg: hsl(0deg 0% 85% / 100%);
+$was-theme-input-bg: hsl(0deg 0% 95% / 100%);
+$was-theme-input-row-odd: #ffffff;
+$was-theme-input-row-even: #f4f5f5;

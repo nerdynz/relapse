@@ -888,11 +888,11 @@ $width: 300px;
   user-select: none;
   -webkit-app-region: no-drag;
 
-  border: 2px solid $light-theme-input-bg;
+  border: 2px solid $theme-input-bg;
 
-  color: $light-theme-text-color;
-  background: $light-theme-input-bg;
-  border-color: $light-theme-input-bg;
+  color: $theme-text-color;
+  background: $theme-input-bg;
+  border-color: $theme-input-bg;
 
   top: 31px;
   left: -1px;
@@ -930,7 +930,7 @@ $width: 300px;
     .up:not(.disabled) {
       cursor: pointer;
       &:hover {
-        background-color: $light-theme-input-hover-bg;
+        background-color: $theme-input-hover-bg;
       }
     }
   }
@@ -954,16 +954,16 @@ $width: 300px;
     &:not(.blank):not(.disabled).year {
       cursor: pointer;
       &:hover {
-        background: $light-theme-input-hover-bg;
+        background: $theme-input-hover-bg;
       }
     }
     &.selected {
-      background: $light-theme-input-hover-bg;
+      background: $theme-input-hover-bg;
       &:hover {
-        background: $light-theme-input-hover-bg;
+        background: $theme-input-hover-bg;
       }
       &.highlighted {
-        background: $light-theme-input-hover-bg;
+        background: $theme-input-hover-bg;
       }
     }
     &.highlighted {

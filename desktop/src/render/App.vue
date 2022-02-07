@@ -34,7 +34,7 @@ export default class App extends Vue {
           this.$ipc.send('maximize')
         }
         this.clicks = 0
-      }, 250)
+      }, 225)
     }
   }
 
@@ -54,6 +54,38 @@ export default class App extends Vue {
 </script>
 
 <style lang="scss">
+  :root {
+    --theme-unfocused-bg: #e6e6e6;
+    --theme-unfocused-text-color: #acacac;
+    --theme-lines-between-color: #b3b3b3;
+    --theme-text-color: #515151;
+    --theme-text-heading-color: #444444;
+    --theme-text-subheading-color: #555555;
+    --theme-input-active-bg: hsl(0deg 0% 85% / 100%);
+    --theme-input-hover-bg: hsl(0deg 0% 82% / 100%);
+    --theme-input-bg: hsl(0deg 0% 80% / 98%);
+    // --theme-input-bg-transparency: hsl(0deg 0% 95% / 50%);
+    --theme-input-row-odd: #ffffff;
+    --theme-input-row-even: #f4f5f5;
+  }
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --theme-unfocused-bg: #e6e6e6;
+    --theme-unfocused-text-color: #acacac;
+    --theme-lines-between-color: #403F3E;
+    --theme-text-color: rgba(255, 255, 255, 0.87);
+    --theme-text-heading-color: rgba(255, 255, 255, 0.74);
+    --theme-text-subheading-color: rgba(255, 255, 255, 0.67);;
+    --theme-input-active-bg: hsl(0deg 0% 20% / 60%);
+    --theme-input-hover-bg: hsl(0deg 0% 15% / 60%);
+    --theme-input-bg: hsl(0deg 0% 10% / 65%);
+    // --theme-input-bg-transparency: hsl(0deg 0% 10% / 50%);
+    --theme-input-row-odd: #444;
+    --theme-input-row-even: #666;
+  }
+}
+
 * {
   margin: 0;
   padding: 0;
@@ -131,7 +163,14 @@ html {
   }
 }
 
+#app {
+  width: 100%;
+  height: 100%;
+}
+
 .main-body {
+  width: 100%;
+  height: 100%;
   .content {
     width: 100%;
     height: 30px;
@@ -146,15 +185,15 @@ html {
   // window styling based on dark, light themes
   .content,
   .handlebar {
-    // background-color: $light-theme-bg;
-    color: $light-theme-text-color;
+    // background-color: $theme-bg;
+    color: $theme-text-color;
   }
 
   &.is-blurred {
     .content,
     .handlebar {
-      // background-color: $light-theme-unfocused-bg;
-      color: $light-theme-unfocused-text-color;
+      // background-color: $theme-unfocused-bg;
+      color: $theme-unfocused-text-color;
     }
   }
 }
@@ -170,7 +209,7 @@ html {
   position: fixed;
   top: 0;
   left: 0;
-  box-shadow: 0 0 12px $light-theme-lines-between-color;
+  // box-shadow: 0 0 12px $theme-lines-between-color;
   z-index: 20;
 }
 </style>

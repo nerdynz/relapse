@@ -70,7 +70,6 @@ class RelapseModule extends VuexModule {
 
   @Mutation
   togglePreferences (toggle?: boolean) {
-    console.log('toogle', toggle)
     if (typeof toggle !== 'undefined') {
       this.isPreferencesShowing = toggle
     } else {
@@ -123,7 +122,6 @@ class RelapseModule extends VuexModule {
 
   @Action
   changeDay (day: DayResponse.AsObject) {
-    console.log('day', day)
     this.setDay(day)
   }
 

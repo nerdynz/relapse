@@ -115,10 +115,6 @@ export default class ScreenshotViewer extends Vue {
     this.currentImageIndex--
   }
 
-  showScreen () {
-    relapseModule.changePreferences(false)
-  }
-
   currentImageIndexChanged (val: any) {
     this.currentImageIndex = val
     if (this.filePath) {
@@ -126,6 +122,8 @@ export default class ScreenshotViewer extends Vue {
         oImg.left = 0
         oImg.top = 0
         oImg.selectable = false
+        oImg.hoverCursor = '-webkit-grab'
+        oImg.moveCursor = '-webkit-grabbing'
         canvas.add(oImg)
         canvas.remove(lastRenderedImg)
         lastRenderedImg = oImg
@@ -136,7 +134,7 @@ export default class ScreenshotViewer extends Vue {
 
     // if we are on the settings screen we dont need to load the canvas screen
     // if (!this.settingsVisible) {
-    this.showScreen()
+    // relapseModule.changePreferences(false)
     // }
   }
 
@@ -283,19 +281,24 @@ export default class ScreenshotViewer extends Vue {
 
   mounted () {
     let panning = false
-
     canvas = new fabric.Canvas('screenshot-viewer')
     canvas.selection = false
-    canvas.defaultCursor = '-webkit-grab'
+    // canvas.defaultCursor = '-webkit-grab'
     canvas.absolutePan(new fabric.Point(-50, -50))
 
     canvas.on('mouse:up', (e: IEvent) => {
       canvas.defaultCursor = '-webkit-grab'
+      if (e.target) {
+        e.target!.hoverCursor = '-webkit-grab'
+      }
       panning = false
     })
 
     canvas.on('mouse:down', (e: IEvent) => {
       canvas.defaultCursor = '-webkit-grabbing'
+      if (e.target) {
+        e.target!.hoverCursor = '-webkit-grabbing'
+      }
       panning = true
     })
 
@@ -303,7 +306,6 @@ export default class ScreenshotViewer extends Vue {
       let event = e.e as any
       canvasX = event.layerX
       canvasY = event.layerY
-
       if (panning && e && event) {
         // var units = 10
         var delta = new fabric.Point(event.movementX, event.movementY)

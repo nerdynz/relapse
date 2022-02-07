@@ -68,8 +68,8 @@ export default class MainApp extends Vue {
 
   .zoom-text {
     position: absolute;
-    background: $light-theme-input-bg;
-    color: $light-theme-text-color;
+    background: $theme-input-bg;
+    color: $theme-text-color;
     height: 34px;
     width: 44px;
     text-align: center;
@@ -83,7 +83,7 @@ export default class MainApp extends Vue {
 
     &:active,
     &:hover {
-      background-color: $light-theme-input-hover-bg;
+      background-color: $theme-input-hover-bg;
     }
   }
 
@@ -93,8 +93,8 @@ export default class MainApp extends Vue {
     height: 34px;
     width: 30px;
     border: none;
-    background: $light-theme-input-bg;
-    color: $light-theme-text-color;
+    background: $theme-input-bg;
+    color: $theme-text-color;
     top: 0;
     outline: none !important;
     cursor: pointer;
@@ -102,20 +102,20 @@ export default class MainApp extends Vue {
 
     &.zoom-down {
       left: 0;
-      border-right: 1px solid $light-theme-lines-between-color;
+      border-right: 1px solid $theme-lines-between-color;
       border-top-left-radius: $radius;
       border-bottom-left-radius: $radius;
     }
     &.zoom-up {
       left: 74px;
-      border-left: 1px solid $light-theme-lines-between-color;
+      border-left: 1px solid $theme-lines-between-color;
       border-top-right-radius: $radius;
       border-bottom-right-radius: $radius;
     }
 
     &:hover,
     &:active {
-      background-color: $light-theme-input-hover-bg;
+      background-color: $theme-input-hover-bg;
     }
   }
 }

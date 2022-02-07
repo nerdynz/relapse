@@ -34,3 +34,5 @@ pnpm-debug.log*
 app/dist_electron/
 
 daemon/settings.json
+
+daemon/screeninfo

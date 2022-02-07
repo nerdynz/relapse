@@ -19,9 +19,11 @@ import (
 func main() {
 	viper.SetDefault("capture-path", "./")
 	viper.SetDefault("userdata-path", "./")
+	viper.SetDefault("bin-path", "./")
 
 	pflag.String("capture-path", viper.GetString("capture-path"), "path for database and captures")
 	pflag.String("userdata-path", viper.GetString("userdata-path"), "path for database and captures")
+	pflag.String("bin-path", viper.GetString("bin-path"), "path for binary files")
 	pflag.Parse()
 
 	if err := viper.BindPFlag("capture-path", pflag.Lookup("capture-path")); err != nil {
@@ -30,6 +32,10 @@ func main() {
 	}
 	if err := viper.BindPFlag("userdata-path", pflag.Lookup("userdata-path")); err != nil {
 		logrus.Errorf("Failed to setup binary flag userdata-path: %v", err)
+		return
+	}
+	if err := viper.BindPFlag("bin-path", pflag.Lookup("bin-path")); err != nil {
+		logrus.Errorf("Failed to setup binary flag bin-path: %v", err)
 		return
 	}
 

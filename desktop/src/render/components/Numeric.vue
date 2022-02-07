@@ -67,22 +67,20 @@ export default {
     position: absolute;
     left: 0;
     top: 0;
-    background-color: $light-theme-input-bg;
-    color: white;
+    background-color: $theme-input-bg;
+    color: $theme-text-color;
     height: 32px;
-    color: black;
     text-align: left;
     padding: 0 6px;
     line-height: 32px;
     outline: none;
-    font-family: system, -apple-system, '.SFNSDisplay-Regular', 'Helvetica Neue',
-      Helvetica, 'Segoe UI', sans-serif;
+    font-family: $font-family-default;
     font-size: 13px;
     border: none;
     border-top-left-radius: $radius;
     border-bottom-left-radius: $radius;
     &:hover {
-      background-color: $light-theme-input-hover-bg;
+      background-color: $theme-input-hover-bg;
     }
   }
 
@@ -94,7 +92,7 @@ export default {
     font-size: 10px;
     cursor: pointer;
     &:hover {
-      background-color: $light-theme-input-hover-bg;
+      background-color: $theme-input-hover-bg;
     }
     .icon {
       display: block;
