@@ -99,7 +99,7 @@ func main() {
 		timeAgo := Bod(time.Now().Add(daysAgo))
 		summary, err := srv.GetDaySummaries(ctx, &relapse_proto.DaySummariesRequest{IncludeIsPurged: false, CaptureDayTimeSecondsBefore: timeAgo.Unix()})
 		if err != nil {
-			logrus.Error("GetDaySummaries: %v", err)
+			logrus.Errorf("GetDaySummaries: %v", err)
 		}
 		for _, daySummary := range summary.DaySummaries {
 			dayDateTime := time.Unix(daySummary.CaptureDayTimeSeconds, 0)

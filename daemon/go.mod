@@ -21,10 +21,17 @@ require (
 )
 
 require (
-	github.com/davecgh/go-spew v1.1.1
+	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/spf13/afero v1.8.0 // indirect
 	golang.org/x/net v0.0.0-20220111093109-d55c255bac03 // indirect
 	google.golang.org/genproto v0.0.0-20220111164026-67b88f271998 // indirect
+)
+
+require (
+	github.com/golang/geo v0.0.0-20210211234256-740aa86cb551
+	github.com/google/uuid v1.1.2
+	golang.org/x/image v0.0.0-20190802002840-cff245a6509b
+	gopkg.in/stretchr/testify.v1 v1.2.2
 )
 
 require (
@@ -37,6 +44,7 @@ require (
 	github.com/magiconair/properties v1.8.5 // indirect
 	github.com/mitchellh/mapstructure v1.4.3 // indirect
 	github.com/pelletier/go-toml v1.9.4 // indirect
+	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/robfig/cron/v3 v3.0.1 // indirect
 	github.com/spf13/cast v1.4.1 // indirect
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect

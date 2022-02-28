@@ -6,6 +6,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"image"
+	"image/color"
+	"image/png"
 	"io/fs"
 	"io/ioutil"
 	"math"
@@ -24,6 +26,9 @@ import (
 	"github.com/nfnt/resize"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
+	"golang.org/x/image/font"
+	"golang.org/x/image/font/basicfont"
+	"golang.org/x/image/math/fixed"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -270,13 +275,13 @@ group by folder_path
 		if deletePath != "" {
 			_, rowErr = os.Stat(capturePath + "" + deletePath)
 			if os.IsNotExist(err) {
-				logrus.Errorf("RemoveAll failed", err)
+				logrus.Errorf("RemoveAll failed %v", err)
 				continue
 			}
 
 			rowErr = os.RemoveAll(capturePath + "" + deletePath)
 			if err != nil {
-				logrus.Errorf("RemoveAll failed", err)
+				logrus.Errorf("RemoveAll failed  %v", err)
 				continue
 			}
 		}
@@ -342,12 +347,6 @@ func (cap *captureServer) GetCapturesForADayFromDB(ctx context.Context, captureD
 }
 
 func (cap *captureServer) captureScreen() error {
-	now := time.Now()
-	seconds := 0
-	if now.Second() > 30 {
-		seconds = 30
-	}
-
 	screenWindows, err := cap.captureWindowTitle()
 	if err != nil { // ignore this err
 		return fmt.Errorf("Capture window title failed: %v", err)
@@ -357,35 +356,53 @@ func (cap *captureServer) captureScreen() error {
 	}
 	screenWindow := screenWindows[0]
 
-	logrus.Info("SCR", screenWindow)
+	screens := getScreens()
 
-	// check if the app is not rejected
-	isRejected := false
-	for _, rejection := range cap.CurrentSettings().Rejections {
-		if rejection == screenWindow.AppName {
-			isRejected = true
-		}
-		// if rejection == appPath {
-		// 	isRejected = true
-		// }
-	}
+	// logrus.Info("SCR", screenWindow)
 
-	if isRejected {
-		return fmt.Errorf("Rejected app capture %s", screenWindow.AppName)
-	}
+	// // check if the app is not rejected
+	// isRejected := false
+	// for _, rejection := range cap.CurrentSettings().Rejections {
+	// 	if rejection == screenWindow.AppName {
+	// 		isRejected = true
+	// 	}
+	// 	// if rejection == appPath {
+	// 	// 	isRejected = true
+	// 	// }
+	// }
 
-	captureTime := time.Date(now.Year(), now.Month(), now.Day(), now.Hour(), now.Minute(), seconds, 0, now.Location())
-	logrus.Infof("Capturing at %s", captureTime.Format("Mon Jan 2 2006 15:04:05 -0700 MST "))
+	// if isRejected {
+	// 	return fmt.Errorf("Rejected app capture %s", screenWindow.AppName)
+	// }
 
-	filepath, fullPathIncFile, err := cap.captureImage(cap.capturePath, captureTime)
+	img, bounds, err := cap.captureImage()
 	if err != nil {
 		return fmt.Errorf("Capture image failed: %v", err)
 	}
 
+	// manage rejections
+	gp := NewGlimpsePool(img, screens)
+	for _, sw := range screenWindows {
+		str := strconv.Itoa(int(sw.Layer))
+		str = str + "00"
+		layer, _ := strconv.Atoi(str)
+		gp.AddFromRect(sw.AppName, layer, sw.Bounds.ToRectangle())
+	}
+
+	gp.DrawGlimpses()
+
+	// img = gp.Image() // its by reference
+
+	filepath, fullPathIncFile, captureTime, err := cap.saveImage(img, bounds)
+	if err != nil {
+		return fmt.Errorf("Save image failed: %v", err)
+	}
+
 	stat, err := os.Stat(fullPathIncFile)
 	if err != nil {
-		stat.Size()
+		return err
 	}
+	// cap.saveImage(capturePath string, captureTime time.Time, img *image.RGBA, bounds image.Rectangle)
 
 	capture := &relapse_proto.Capture{
 		AppName: screenWindow.AppName,
@@ -415,61 +432,48 @@ func (cap *captureServer) captureScreen() error {
 }
 
 func (cap *captureServer) captureWindowTitle() ([]*ScreenWindow, error) {
-	x, _ := os.Getwd()
-	logrus.Info("xxx", x)
 	out, err := exec.Command(cap.binPath + "/screeninfo").Output()
 	if err != nil {
 		return nil, err
 	}
-	sw := make([]*ScreenWindow, 0)
-	err = json.Unmarshal(out, &sw)
+	windows := make([]*ScreenWindow, 0)
+	err = json.Unmarshal(out, &windows)
 	if err != nil {
 		return nil, err
 	}
-	return sw, nil
+
+	// minX, minY, maxX, maxY := getScreenBounds()
+
+	// screen := image.Rectangle{
+	// 	Min: image.Point{
+	// 		X: minX,
+	// 		Y: minY,
+	// 	},
+	// 	Max: image.Point{
+	// 		X: maxX,
+	// 		Y: maxY,
+	// 	},
+	// }
+
+	// img := image.NewRGBA(screen)
+	// r := NewImageRenderer(img)
+	// rect := windows[0].Bounds.ToRectangle()
+	// r.Rectangle(rect)
+
+	// if err = r.Write(cap.capturePath + "test.png"); err != nil {
+	// 	logrus.Error("bugger: ", err.Error())
+	// }
+
+	// need to create a bunch of rectangles that relate to the window. [SCREEN 1200x1200 [SPOTIFY 300x600] [CHROME 600x600] [SPOTIFY 300x600]]
+	// for _, win := range windows {
+	// 	win.Bounds.ToRect()
+	// }
+
+	return windows, nil
 }
 
-func (cap *captureServer) captureImage(capturePath string, captureTime time.Time) (string, string, error) {
-	defer func() {
-		if r := recover(); r != nil {
-			logrus.Warn("Recovered in f", r)
-		}
-	}()
-	fullpath := filepath.Join(capturePath, "/"+captureTime.Format("2006_Jan_02")+"/")
-	fileName := fmt.Sprintf("%s.webp", captureTime.Format("20060102_150405"))
-	fullPathIncFile := filepath.Join(fullpath, "/", fileName)
-
-	err := os.MkdirAll(fullpath, os.ModePerm)
-	if err != nil {
-		return fileName, fullPathIncFile, err
-	}
-
-	n := screenshot.NumActiveDisplays()
-	minX, minY, maxX, maxY := 0, 0, 0, 0
-	for i := 0; i < n; i++ {
-		bounds := screenshot.GetDisplayBounds(i)
-		if i == 0 {
-			minX = bounds.Min.X
-			maxX = bounds.Max.X
-			minY = bounds.Min.Y
-			maxY = bounds.Max.Y
-			continue
-		}
-
-		if bounds.Min.X < minX {
-			minX = bounds.Min.X
-		}
-		if bounds.Max.X > maxX {
-			maxX = bounds.Max.X
-		}
-		if bounds.Min.Y < minY {
-			minY = bounds.Min.Y
-		}
-		if bounds.Max.Y > maxY {
-			maxY = bounds.Max.Y
-		}
-	}
-
+func (cap *captureServer) captureImage() (*image.RGBA, image.Rectangle, error) {
+	minX, minY, maxX, maxY := getScreenBounds()
 	bounds := image.Rectangle{
 		Min: image.Point{
 			X: minX,
@@ -481,24 +485,46 @@ func (cap *captureServer) captureImage(capturePath string, captureTime time.Time
 		},
 	}
 
-	totalWidth := uint(math.Round(math.Abs(float64(minX)) + math.Abs(float64(maxX))*0.8))
 	img, err := screenshot.CaptureRect(bounds)
 	if err != nil {
-		return fileName, fullPathIncFile, err
+		return nil, bounds, err
 	}
+	return img, bounds, nil
+}
+
+func (cap *captureServer) saveImage(img *image.RGBA, bounds image.Rectangle) (string, string, time.Time, error) {
+	now := time.Now()
+	seconds := 0
+	if now.Second() > 30 {
+		seconds = 30
+	}
+
+	captureTime := time.Date(now.Year(), now.Month(), now.Day(), now.Hour(), now.Minute(), seconds, 0, now.Location())
+	logrus.Infof("Capturing at %s", captureTime.Format("Mon Jan 2 2006 15:04:05 -0700 MST "))
+
+	fullpath := filepath.Join(cap.capturePath, "/"+captureTime.Format("2006_Jan_02")+"/")
+	fileName := fmt.Sprintf("%s.webp", captureTime.Format("20060102_150405"))
+	fullPathIncFile := filepath.Join(fullpath, "/", fileName)
+
+	err := os.MkdirAll(fullpath, os.ModePerm)
+	if err != nil {
+		return fileName, fullPathIncFile, captureTime, err
+	}
+	totalWidth := uint(math.Round(math.Abs(float64(bounds.Min.X)) + math.Abs(float64(bounds.Max.X))*0.8))
+
 	newImage := resize.Resize(totalWidth, 0, img, resize.Lanczos3)
 	file, err := os.Create(fullPathIncFile)
 	if err != nil {
-		return fileName, fullPathIncFile, err
+		return fileName, fullPathIncFile, captureTime, err
 	}
 	defer file.Close()
 	// Encode lossless webp
 	err = webp.Encode(file, newImage, &webp.Options{Lossless: false, Quality: 50, Exact: true})
 	if err != nil {
-		return fileName, fullPathIncFile, err
+		return fileName, fullPathIncFile, captureTime, err
 	}
 
-	return fileName, fullPathIncFile, nil
+	return fileName, fullPathIncFile, captureTime, nil
 }
 
 type Details struct {
@@ -578,4 +604,140 @@ type ScreenWindowBounds struct {
 	Y      int32 `json:"y"`
 	Height int32 `json:"height"`
 	Width  int32 `json:"width"`
+}
+
+func (swb ScreenWindowBounds) ToRectangle() image.Rectangle {
+	return image.Rectangle{
+		Min: image.Point{
+			X: int(swb.X),
+			Y: int(swb.Y),
+		},
+		Max: image.Point{
+			X: int(swb.X) + int(swb.Width),
+			Y: int(swb.Y) + int(swb.Height),
+		},
+	}
+}
+
+func getScreens() []image.Rectangle {
+	n := screenshot.NumActiveDisplays()
+	logrus.Info("screens", n)
+	screens := make([]image.Rectangle, 0)
+	for i := 0; i < n; i++ {
+		screen := screenshot.GetDisplayBounds(i)
+		screens = append(screens, screen)
+	}
+	logrus.Info("screens", screens)
+	return screens
+}
+
+func getScreenBounds() (minX int, minY int, maxX int, maxY int) {
+	n := screenshot.NumActiveDisplays()
+	minX, minY, maxX, maxY = 0, 0, 0, 0
+	for i := 0; i < n; i++ {
+		bounds := screenshot.GetDisplayBounds(i)
+		if i == 0 {
+			minX = bounds.Min.X
+			maxX = bounds.Max.X
+			minY = bounds.Min.Y
+			maxY = bounds.Max.Y
+			continue
+		}
+
+		if bounds.Min.X < minX {
+			minX = bounds.Min.X
+		}
+		if bounds.Max.X > maxX {
+			maxX = bounds.Max.X
+		}
+		if bounds.Min.Y < minY {
+			minY = bounds.Min.Y
+		}
+		if bounds.Max.Y > maxY {
+			maxY = bounds.Max.Y
+		}
+	}
+	return minX, minY, maxX, maxY
+}
+
+//https://stackoverflow.com/questions/28992396/draw-a-rectangle-in-golang
+
+type ImageRenderer struct {
+	img   *image.RGBA
+	color color.Color
+}
+
+func NewImageRenderer(img *image.RGBA) *ImageRenderer {
+	return &ImageRenderer{
+		img:   img,
+		color: color.RGBA{255, 0, 0, 255},
+	}
+}
+
+func (ir *ImageRenderer) AddLabel(x, y int, label string) {
+	point := fixed.Point26_6{
+		X: fixed.Int26_6(x * 64),
+		Y: fixed.Int26_6(y * 64),
+	}
+
+	d := &font.Drawer{
+		Dst:  ir.img,
+		Src:  image.NewUniform(ir.color),
+		Face: basicfont.Face7x13,
+		Dot:  point,
+	}
+	d.DrawString(label)
+}
+
+// HLine draws a horizontal line
+func (ir *ImageRenderer) HLine(x1, y, x2 int) {
+	for ; x1 <= x2; x1++ {
+		ir.img.Set(x1, y, ir.color)
+	}
+}
+
+// VLine draws a veritcal line
+func (ir *ImageRenderer) VLine(x, y1, y2 int) {
+	for ; y1 <= y2; y1++ {
+		ir.img.Set(x, y1, ir.color)
+	}
+}
+
+// Rect draws a rectangle utilizing HLine() and VLine()
+func (ir *ImageRenderer) Rect(x1, y1, x2, y2 int) {
+	ir.HLine(x1, y1, x2)
+	ir.HLine(x1, y2, x2)
+	ir.VLine(x1, y1, y2)
+	ir.VLine(x2, y1, y2)
+}
+
+func (ir *ImageRenderer) Rectangle(rect image.Rectangle) {
+	x1 := rect.Min.X
+	x2 := rect.Max.X
+	y1 := rect.Min.Y
+	y2 := rect.Max.Y
+	ir.Rect(x1, y1, x2, y2)
+}
+
+func (ir *ImageRenderer) DrawLabeledRectangle(label string, rect image.Rectangle) {
+	ir.Rectangle(rect)
+
+	xCenter := (((rect.Max.X - rect.Min.X) / 2) + rect.Min.X) - len(label)
+	yCenter := (((rect.Max.Y - rect.Min.Y) / 2) + rect.Min.Y) - 5 // height of font is 10
+
+	ir.AddLabel(xCenter, yCenter, label)
+}
+
+func (ir *ImageRenderer) Write(path string) error {
+	logrus.Info("writing to ", path)
+	f, err := os.Create(path)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+	err = png.Encode(f, ir.img)
+	if err != nil {
+		return err
+	}
+	return nil
 }
