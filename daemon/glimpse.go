@@ -253,11 +253,25 @@ func (gp *GlimpsePool) Image() *image.RGBA {
 }
 
 func (gp *GlimpsePool) DrawGlimpses() {
-
 	for _, glimpse := range gp.glimpses {
-		logGlimpse(glimpse)
+		// logGlimpse(glimpse)
 		if glimpse.Layer >= 0 && !glimpse.Rectangle.Empty() {
 			gp.renderer.DrawLabeledRectangle(glimpse.Label, glimpse.Rectangle)
+		}
+	}
+}
+
+func (gp *GlimpsePool) GreyOutFromLabels(excludeScreenLabels []string) {
+	for _, glimpse := range gp.glimpses {
+		// logGlimpse(glimpse)
+		if glimpse.Layer >= 0 && !glimpse.Rectangle.Empty() {
+
+			for _, excludeScreenLabel := range excludeScreenLabels {
+				logrus.Info("excludeScreenLabel", excludeScreenLabel, "glimpse.Label", glimpse.Label)
+				if glimpse.Label == excludeScreenLabel {
+					gp.renderer.DrawGreyedOutRect(glimpse.Label, glimpse.Rectangle)
+				}
+			}
 		}
 	}
 }

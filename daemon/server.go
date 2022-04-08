@@ -347,7 +347,7 @@ func (cap *captureServer) GetCapturesForADayFromDB(ctx context.Context, captureD
 }
 
 func (cap *captureServer) captureScreen() error {
-	screenWindows, err := cap.captureWindowTitle()
+	screenWindows, err := cap.getScreenInfo()
 	if err != nil { // ignore this err
 		return fmt.Errorf("Capture window title failed: %v", err)
 	}
@@ -389,7 +389,9 @@ func (cap *captureServer) captureScreen() error {
 		gp.AddFromRect(sw.AppName, layer, sw.Bounds.ToRectangle())
 	}
 
-	gp.DrawGlimpses()
+	logrus.Info("cap.CurrentSettings().Rejections", cap.CurrentSettings().Rejections)
+
+	gp.GreyOutFromLabels(cap.CurrentSettings().Rejections)
 
 	// img = gp.Image() // its by reference
 
@@ -431,7 +433,7 @@ func (cap *captureServer) captureScreen() error {
 	return nil
 }
 
-func (cap *captureServer) captureWindowTitle() ([]*ScreenWindow, error) {
+func (cap *captureServer) getScreenInfo() ([]*ScreenWindow, error) {
 	out, err := exec.Command(cap.binPath + "/screeninfo").Output()
 	if err != nil {
 		return nil, err
@@ -519,7 +521,7 @@ func (cap *captureServer) saveImage(img *image.RGBA, bounds image.Rectangle) (st
 	}
 	defer file.Close()
 	// Encode lossless webp
-	err = webp.Encode(file, newImage, &webp.Options{Lossless: false, Quality: 50, Exact: true})
+	err = webp.Encode(file, newImage, &webp.Options{Lossless: false, Quality: 40, Exact: true})
 	if err != nil {
 		return fileName, fullPathIncFile, captureTime, err
 	}
@@ -568,6 +570,7 @@ func (cap *captureServer) CurrentSettings() *relapse_proto.Settings {
 func (cap *captureServer) settingsFromFile() (*relapse_proto.Settings, error) {
 	path := cap.settingsFilePath
 
+	logrus.Info("settingsFilePath", path)
 	_, err := os.Stat(path)
 	if os.IsNotExist(err) {
 		cap.settingsToFile(&relapse_proto.Settings{ // default settings
@@ -670,7 +673,7 @@ type ImageRenderer struct {
 func NewImageRenderer(img *image.RGBA) *ImageRenderer {
 	return &ImageRenderer{
 		img:   img,
-		color: color.RGBA{255, 0, 0, 255},
+		color: color.RGBA{128, 139, 151, 200},
 	}
 }
 
@@ -711,6 +714,22 @@ func (ir *ImageRenderer) Rect(x1, y1, x2, y2 int) {
 	ir.VLine(x2, y1, y2)
 }
 
+func (ir *ImageRenderer) Over(x1, y1, x2, y2 int) {
+	// ir.HLine(x1, y1, x2)
+	// ir.HLine(x1, y2, x2)
+	for i := x1; i < (x2 + 1); i++ {
+		ir.VLine(i, y1, y2)
+	}
+}
+
+func (ir *ImageRenderer) Overlay(rect image.Rectangle) {
+	x1 := rect.Min.X
+	x2 := rect.Max.X
+	y1 := rect.Min.Y
+	y2 := rect.Max.Y
+	ir.Over(x1, y1, x2, y2)
+}
+
 func (ir *ImageRenderer) Rectangle(rect image.Rectangle) {
 	x1 := rect.Min.X
 	x2 := rect.Max.X
@@ -726,6 +745,10 @@ func (ir *ImageRenderer) DrawLabeledRectangle(label string, rect image.Rectangle
 	yCenter := (((rect.Max.Y - rect.Min.Y) / 2) + rect.Min.Y) - 5 // height of font is 10
 
 	ir.AddLabel(xCenter, yCenter, label)
+}
+
+func (ir *ImageRenderer) DrawGreyedOutRect(label string, rect image.Rectangle) {
+	ir.Overlay(rect)
 }
 
 func (ir *ImageRenderer) Write(path string) error {
