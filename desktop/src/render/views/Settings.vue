@@ -1,7 +1,9 @@
 <template>
   <div class="settings">
+    <div class="title-bar">
+      <h4 class="title is-4 has-text-centered pt-1">Settings</h4>
+    </div>
     <div v-if="isLoaded && appSettings && options" class="settings-content">
-      <h1 class="title">Settings</h1>
       <div class="form-field">
         <label>Retain Screenshots for Days</label>
         <numeric
@@ -40,73 +42,79 @@
 
 <script lang="ts">
 // import FilePicker from './FilePicker'
-import Numeric from '@render/components/Numeric.vue'
-import AppRejectionToggle from '@render/components/AppRejectionToggle.vue'
-import { ApplicationInfo } from '../../grpc/relapse_pb'
+import AppRejectionToggle from "@render/components/AppRejectionToggle.vue";
+import Numeric from "@render/components/Numeric.vue";
 // import {mapGetters, mapActions} from 'vuex'
-import { relapseModule } from '@render/store/relapseModule'
-import { Vue, Options } from 'vue-class-component'
-import { clone, remove } from 'ramda'
+import { relapseModule } from "@render/store/relapseModule";
+import { clone, remove } from "ramda";
+import { Options, Vue } from "vue-class-component";
+import { ApplicationInfo } from "../../grpc/relapse_pb";
 
 @Options({
   components: {
     Numeric,
-    AppRejectionToggle
-  }
+    AppRejectionToggle,
+  },
 })
 export default class Settings extends Vue {
-  get isLoaded () {
+  get isLoaded() {
     if (relapseModule.appSettings) {
-      return true
+      return true;
     }
-    return false
+    return false;
   }
 
-  get appSettings () {
-    return relapseModule.appSettings
+  get appSettings() {
+    return relapseModule.appSettings;
   }
 
-  get options () {
-    return relapseModule.settingsOptions
+  get options() {
+    return relapseModule.settingsOptions;
   }
 
-  mounted () {
-    relapseModule.loadSettings()
+  mounted() {
+    relapseModule.loadSettings();
   }
 
-  updateRetainForX (val: number) {
+  updateRetainForX(val: number) {
     if (this.appSettings) {
       // let settings = { ...relapseModule.appSettings! }
-      let settings = clone(relapseModule.appSettings!)
-      settings.retainforxdays = val
-      relapseModule.saveSettings(settings)
+      let settings = clone(relapseModule.appSettings!);
+      settings.retainforxdays = val;
+      relapseModule.saveSettings(settings);
     }
   }
 
-  updateRejections ({app, state}: { app: ApplicationInfo.AsObject, state: 'CAPTURING' | 'REJECTING'}) {
+  updateRejections({
+    app,
+    state,
+  }: {
+    app: ApplicationInfo.AsObject;
+    state: "CAPTURING" | "REJECTING";
+  }) {
     if (this.appSettings) {
       // let settings = { ...relapseModule.appSettings! }
-      let settings = clone(relapseModule.appSettings!)
+      let settings = clone(relapseModule.appSettings!);
       if (!settings.rejectionsList) {
-        settings.rejectionsList = []
+        settings.rejectionsList = [];
       }
-      let appNameIndex = settings.rejectionsList.indexOf(app.apppath)
+      let appNameIndex = settings.rejectionsList.indexOf(app.appname);
 
       // this logic seems a little backwards because we are managing a list of rejections
-      if (state === 'CAPTURING') {
+      if (state === "CAPTURING") {
         if (appNameIndex >= 0) {
           settings.rejectionsList = remove(
             appNameIndex,
             1,
             settings.rejectionsList
-          )
+          );
         }
       } else {
         if (appNameIndex === -1) {
-          settings.rejectionsList.push(app.apppath)
+          settings.rejectionsList.push(app.appname);
         }
       }
-      relapseModule.saveSettings(settings)
+      relapseModule.saveSettings(settings);
     }
   }
 }
@@ -175,7 +183,10 @@ export default class Settings extends Vue {
     -webkit-app-region: drag;
     height: 85px;
     border-bottom: 1px solid $theme-lines-between-color;
+    background-color: $theme-titlebar-bg;
+    color: $theme-text-heading-color;
   }
+
   .settings-content {
     padding: 30px;
     // background: $theme-bg;
@@ -184,7 +195,7 @@ export default class Settings extends Vue {
 
   .msg {
     margin-bottom: 10px;
-    font-size: 1$radius;
+    font-size: 1;
 
     &.error-msg {
       color: $color-red;

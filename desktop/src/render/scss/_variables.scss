@@ -29,18 +29,16 @@ $color-disable-text-color: #656565;
 $handlebar-color: #252830;
 $color-med-bg: #3c414f;
 
-
+$radius-small: 4px;
 $radius: 6px;
 
 $inactive-bg: #ececec;
 
 $handlebar-height: 86px;
-$color-bg: black;
-
-
 
 $standard-border-radius: 5px;
 
+$theme-titlebar-bg: var(--theme-titlebar-bg);
 $theme-unfocused-bg: var(--theme-unfocused-bg);
 $theme-unfocused-text-color: var(--theme-unfocused-text-color);
 $theme-lines-between-color: var(--theme-lines-between-color);

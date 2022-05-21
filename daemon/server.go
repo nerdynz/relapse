@@ -81,8 +81,8 @@ func (cap *captureServer) GetSettings(ctx context.Context, req *relapse_proto.Se
 
 	appInfos := make([]*relapse_proto.ApplicationInfo, 0)
 	rows, err := tx.Query(`
-	select app_name, app_path from capture
-	group by app_name, app_path
+	select app_name from capture
+	group by app_name
 	`)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "Failed to select rows %v", err)
@@ -90,7 +90,7 @@ func (cap *captureServer) GetSettings(ctx context.Context, req *relapse_proto.Se
 
 	for rows.Next() {
 		record := &relapse_proto.ApplicationInfo{}
-		err := rows.Scan(&record.AppName, &record.AppPath)
+		err := rows.Scan(&record.AppName)
 		if err != nil {
 			return nil, status.Errorf(codes.Internal, "Failed to convert to *Capture %v", err)
 		}
@@ -98,7 +98,6 @@ func (cap *captureServer) GetSettings(ctx context.Context, req *relapse_proto.Se
 	}
 
 	options.CapturedApplications = appInfos
-
 	return &relapse_proto.SettingsPlusOptions{
 		Settings:        settings,
 		SettingsOptions: options,
@@ -527,12 +526,6 @@ func (cap *captureServer) saveImage(img *image.RGBA, bounds image.Rectangle) (st
 	}
 
 	return fileName, fullPathIncFile, captureTime, nil
-}
-
-type Details struct {
-	NSApplicationName              string
-	NSApplicationPath              string
-	NSApplicationProcessIdentifier int64
 }
 
 func Bod(t time.Time) time.Time {

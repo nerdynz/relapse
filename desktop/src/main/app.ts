@@ -1,8 +1,18 @@
-const log = require('electron-log')
-import { join, resolve } from 'path';
-import { spawn, ChildProcessWithoutNullStreams } from 'child_process'
-import { app, ipcMain, BrowserWindow, Menu, MenuItem, shell, Tray, protocol } from 'electron';
-import { RelapseClient } from '../grpc/relapse_grpc_pb'
+const log = require("electron-log");
+import { ChildProcessWithoutNullStreams, spawn } from "child_process";
+import {
+  app,
+  BrowserWindow,
+  ipcMain,
+  Menu,
+  MenuItem,
+  protocol,
+  shell,
+  Tray
+} from "electron";
+import { ClientReadableStream, credentials, ServiceError } from "grpc";
+import { join, resolve } from "path";
+import { RelapseClient } from "../grpc/relapse_grpc_pb";
 import {
   CaptureDaySummary,
   DayRequest,
@@ -11,181 +21,227 @@ import {
   Settings,
   SettingsPlusOptions,
   SettingsPlusOptionsRequest
-} from '../grpc/relapse_pb'
-import { ClientReadableStream, credentials, ServiceError } from 'grpc';
+} from "../grpc/relapse_pb";
 
-log.transports.file.level = 'silly';
+log.transports.file.level = "silly";
 
-process.env.ELECTRON_DISABLE_SECURITY_WARNINGS = '1'
+process.env.ELECTRON_DISABLE_SECURITY_WARNINGS = "1";
 
 // global vars
-const isDev = process.env.NODE_ENV === 'development'
-let mainWindow: BrowserWindow | null = null
-let willQuitApp = false
+const isDev = process.env.NODE_ENV === "development";
+let mainWindow: BrowserWindow | null = null;
+let settingsWindow: BrowserWindow | null = null;
+let willQuitApp = false;
 let daemon: ChildProcessWithoutNullStreams;
 
-let iconPath = resolve(__dirname, '../icons/')
-let binPath = resolve(__dirname, '../bin/')
+let iconPath = resolve(__dirname, "../icons/");
+let binPath = resolve(__dirname, "../bin/");
 if (!isDev) {
-  binPath = binPath.replace('app.asar', 'app.asar.unpacked')
-  iconPath = iconPath.replace('app.asar', 'app.asar.unpacked')
+  binPath = binPath.replace("app.asar", "app.asar.unpacked");
+  iconPath = iconPath.replace("app.asar", "app.asar.unpacked");
 }
 
-let client: RelapseClient
-let stream: ClientReadableStream<CaptureDaySummary> | null
-let tray
-let trayContextMenu
+let client: RelapseClient;
+let stream: ClientReadableStream<CaptureDaySummary> | null;
+let tray;
+let trayContextMenu;
 
-function createWindow () {
+function createSettingsWindow(isOpening = true) {
+  settingsWindow = new BrowserWindow({
+    minWidth: 500,
+    minHeight: 400,
+    width: 720,
+    height: 540,
+    titleBarStyle: "hiddenInset",
+    vibrancy: "appearance-based",
+    title: "settings",
+    webPreferences: {
+      nodeIntegration: false,
+      preload: join(__dirname, "preload.js"),
+    },
+  });
+
+  if (process.env.NODE_ENV === "development") {
+    settingsWindow.loadURL("http://localhost:3000/#settings");
+  } else {
+    settingsWindow.loadFile("dist/render/index.html#settings");
+  }
+  // and load the index.html of the app.
+  settingsWindow.on("close", function (event) {
+    if (!willQuitApp) {
+      event.preventDefault();
+      settingsWindow?.hide();
+    }
+  });
+  // Emitted when the window is closed.
+  settingsWindow.on("closed", function () {
+    // settingsWindow = null;
+  });
+
+  if (isOpening) {
+    settingsWindow.once("ready-to-show", () => {
+      settingsWindow?.show();
+    });
+  }
+  settingsWindow?.hide();
+}
+
+function createWindow() {
   mainWindow = new BrowserWindow({
     minWidth: 1140,
     minHeight: 700,
     width: 1440,
     height: 900,
-    titleBarStyle: 'hiddenInset',
-    vibrancy: 'appearance-based',
+    titleBarStyle: "hiddenInset",
+    vibrancy: "appearance-based",
     webPreferences: {
       nodeIntegration: false,
-      preload: join(__dirname, 'preload.js')
-    }
-  })
+      preload: join(__dirname, "preload.js"),
+    },
+  });
 
-  if (process.env.NODE_ENV === 'development') {
-      mainWindow.loadURL('http://localhost:3000/')
+  if (process.env.NODE_ENV === "development") {
+    mainWindow.loadURL("http://localhost:3000/");
   } else {
-      mainWindow.loadFile('dist/render/index.html')
+    mainWindow.loadFile("dist/render/index.html");
   }
   // and load the index.html of the app.
-  mainWindow.on('close', function (event) {
+  mainWindow.on("close", function (event) {
     if (!willQuitApp) {
-      event.preventDefault()
-      mainWindow?.hide()
+      event.preventDefault();
+      mainWindow?.hide();
     }
-  })
+  });
   // Emitted when the window is closed.
-  mainWindow.on('closed', function () {
-    mainWindow = null
-  })
-  mainWindow.once('ready-to-show', () => {
-    mainWindow?.show()
-  })
+  mainWindow.on("closed", function () {
+    mainWindow = null;
+  });
+  mainWindow.once("ready-to-show", () => {
+    mainWindow?.show();
+  });
 }
 
-app.on('window-all-closed', function () {
-  if (process.platform !== 'darwin') {
-    app.quit()
+app.on("window-all-closed", function () {
+  if (process.platform !== "darwin") {
+    app.quit();
   }
-})
+});
 
-app.on('activate', () => {
+app.on("activate", () => {
   if (!mainWindow) {
-    createWindow()
+    createWindow();
   } else {
-    mainWindow.show()
+    mainWindow.show();
   }
-})
+});
 
-app.on('before-quit', () => {
-  willQuitApp = true
+app.on("before-quit", () => {
+  willQuitApp = true;
   if (daemon) {
-    daemon.kill()
+    daemon.kill();
   }
-})
+});
 
 if (isDev) {
-  if (process.platform === 'win32') {
-    process.on('message', data => {
-      if (data === 'graceful-exit') {
-        app.quit()
+  if (process.platform === "win32") {
+    process.on("message", (data) => {
+      if (data === "graceful-exit") {
+        app.quit();
       }
-    })
+    });
   } else {
-    process.on('SIGTERM', () => {
-      app.quit()
-    })
+    process.on("SIGTERM", () => {
+      app.quit();
+    });
   }
 }
 
 function createTrayAndMenusAndShortcuts(
   settings: SettingsPlusOptions.AsObject
 ) {
-  let isEnabled = settings.settings!.isenabled
+  let isEnabled = settings.settings!.isenabled;
   // let isEnabled = false
 
-  let show = function() {
+  let show = function () {
     if (!mainWindow) {
-      createWindow()
+      createWindow();
     } else {
-      mainWindow.show()
+      mainWindow.show();
     }
-  }
+  };
 
-  let toggleCapture = function(val: MenuItem) {
+  let toggleCapture = function (val: MenuItem) {
     getSettings().then((settingsOptions: SettingsPlusOptions.AsObject) => {
-      let setting = settingsOptions.settings!
-      setting.isenabled = val.checked
-      setSettings(setting)
-      toggleCaptures(setting.isenabled)
-    })
-  }
+      let setting = settingsOptions.settings!;
+      setting.isenabled = val.checked;
+      setSettings(setting);
+      toggleCaptures(setting.isenabled);
+    });
+  };
 
-  let quit = function() {
-    app.quit()
-  }
+  let quit = function () {
+    app.quit();
+  };
 
-  let showPreferencesScreen = function() {
-    if (mainWindow) {
-      mainWindow!.webContents.send('show-preferences')
+  let showPreferencesScreen = function () {
+    if (settingsWindow === null || settingsWindow.isDestroyed()) {
+      createSettingsWindow();
+    } else {
+      if (settingsWindow.isVisible()) {
+        settingsWindow.hide();
+      } else {
+        settingsWindow.show();
+      }
     }
-  }
+  };
 
-  let resetZoom = function() {
+  let resetZoom = function () {
     if (mainWindow) {
-      mainWindow.webContents.send('zoom-function', 'reset')
+      mainWindow.webContents.send("zoom-function", "reset");
     }
-  }
+  };
 
-  let zoomIn = function() {
+  let zoomIn = function () {
     if (mainWindow) {
-      mainWindow.webContents.send('zoom-function', 'in')
+      mainWindow.webContents.send("zoom-function", "in");
     }
-  }
+  };
 
-  let zoomOut = function() {
+  let zoomOut = function () {
     if (mainWindow) {
-      mainWindow.webContents.send('zoom-function', 'out')
+      mainWindow.webContents.send("zoom-function", "out");
     }
-  }
+  };
 
-  let today = function() {
+  let today = function () {
     if (mainWindow) {
-      mainWindow.webContents.send('day-function', 'today')
+      mainWindow.webContents.send("day-function", "today");
     }
-  }
-  let nextDay = function() {
+  };
+  let nextDay = function () {
     if (mainWindow) {
-      mainWindow.webContents.send('day-function', 'nextDay')
+      mainWindow.webContents.send("day-function", "nextDay");
     }
-  }
-  let prevDay = function() {
+  };
+  let prevDay = function () {
     if (mainWindow) {
-      mainWindow.webContents.send('day-function', 'prevDay')
+      mainWindow.webContents.send("day-function", "prevDay");
     }
-  }
+  };
 
-  let launchWebsite = function() {
-    shell.openExternal('http://relapse.nerdy.co.nz/')
-  }
+  let launchWebsite = function () {
+    shell.openExternal("http://relapse.nerdy.co.nz/");
+  };
   // var launchWebsiteHelp = function () {
   //   shell.openExternal('http://relapse.nerdy.co.nz/help')
   // }
-  let launchWebsiteFAQ = function() {
-    shell.openExternal('http://relapse.nerdy.co.nz/faq')
-  }
-  let launchReport = function() {
-    shell.openExternal('http://relapse.nerdy.co.nz/feedback')
-  }
-  let showTips = function() {
+  let launchWebsiteFAQ = function () {
+    shell.openExternal("http://relapse.nerdy.co.nz/faq");
+  };
+  let launchReport = function () {
+    shell.openExternal("http://relapse.nerdy.co.nz/feedback");
+  };
+  let showTips = function () {
     // getSettings((err, settings) => {
     //   if (err) {
     //     log(err)
@@ -196,33 +252,33 @@ function createTrayAndMenusAndShortcuts(
     //     if (mainWindow) { mainWindow.webContents.send('changed-settings', 'changed help shown', settings) }
     //   })
     // })
-  }
+  };
 
-  let goLeft = function() {
+  let goLeft = function () {
     if (mainWindow) {
-      mainWindow.webContents.send('arrow-pressed', 'left')
+      mainWindow.webContents.send("arrow-pressed", "left");
     }
-  }
+  };
 
-  let goRight = function() {
+  let goRight = function () {
     if (mainWindow) {
-      mainWindow.webContents.send('arrow-pressed', 'right')
+      mainWindow.webContents.send("arrow-pressed", "right");
     }
-  }
+  };
 
-  let goLeft1Min = function() {
+  let goLeft1Min = function () {
     if (mainWindow) {
-      mainWindow.webContents.send('arrow-pressed', 'left-1min')
+      mainWindow.webContents.send("arrow-pressed", "left-1min");
     }
-  }
+  };
 
-  let goRight1Min = function() {
+  let goRight1Min = function () {
     if (mainWindow) {
-      mainWindow.webContents.send('arrow-pressed', 'right-1min')
+      mainWindow.webContents.send("arrow-pressed", "right-1min");
     }
-  }
+  };
 
-  let showAboutScreen = function() {
+  let showAboutScreen = function () {
     // if (aboutWindow) {
     //   aboutWindow.show()
     //   return // already open
@@ -242,142 +298,151 @@ function createTrayAndMenusAndShortcuts(
     // aboutWindow.on('closed', () => {
     //   aboutWindow = null
     // })
-  }
+  };
 
   let helpSubMenu: any[] = [
     // { label: 'Show Tips', type: 'normal', click: showTips },
     // { label: 'About', type: 'normal', click: showAboutScreen },
-    { type: 'separator' },
+    { type: "separator" },
     // {label: 'Relapse Help', type: 'normal', click: launchWebsiteHelp},
-    { label: 'Website', type: 'normal', click: launchWebsite },
-    { label: 'FAQ', type: 'normal', click: launchWebsiteFAQ },
-    { label: 'Feedback / Report an Error', type: 'normal', click: launchReport }
-  ]
+    { label: "Website", type: "normal", click: launchWebsite },
+    { label: "FAQ", type: "normal", click: launchWebsiteFAQ },
+    {
+      label: "Feedback / Report an Error",
+      type: "normal",
+      click: launchReport,
+    },
+  ];
 
-  if (process.env.NODE_ENV === 'development') {
+  if (process.env.NODE_ENV === "development") {
     helpSubMenu = [
       // { label: 'Show Tips', type: 'normal', click: showTips },
       // { label: 'About', type: 'normal', click: showAboutScreen },
-      { type: 'separator' },
+      { type: "separator" },
       // {label: 'Relapse Help', type: 'normal', click: launchWebsiteHelp},
-      { label: 'Website', type: 'normal', click: launchWebsite },
-      { label: 'FAQ', type: 'normal', click: launchWebsiteFAQ },
+      { label: "Website", type: "normal", click: launchWebsite },
+      { label: "FAQ", type: "normal", click: launchWebsiteFAQ },
       {
-        label: 'Feedback / Report an Error',
-        type: 'normal',
-        click: launchReport
+        label: "Feedback / Report an Error",
+        type: "normal",
+        click: launchReport,
       },
       // @ts-ignore
-      { role: 'reload' },
+      { role: "reload" },
       // @ts-ignore
-      { role: 'toggledevtools' }
-    ]
+      { role: "toggledevtools" },
+    ];
   }
 
   const mainMenu = Menu.buildFromTemplate([
     {
-      label: 'Relapse',
+      label: "Relapse",
       submenu: [
         {
-          label: 'Preferences',
-          type: 'normal',
+          label: "Preferences",
+          type: "normal",
           click: showPreferencesScreen,
-          accelerator: 'Command+,'
+          accelerator: "Command+,",
         },
-        { label: 'Quit', type: 'normal', click: quit, accelerator: 'Command+Q' }
-      ]
+        {
+          label: "Quit",
+          type: "normal",
+          click: quit,
+          accelerator: "Command+Q",
+        },
+      ],
     },
     {
-      label: 'Edit',
-      submenu: [{ role: 'copy' }, { role: 'paste' }]
+      label: "Edit",
+      submenu: [{ role: "copy" }, { role: "paste" }],
     },
     {
-      label: 'View',
+      label: "View",
       submenu: [
         {
-          label: 'Zoom In',
-          type: 'normal',
+          label: "Zoom In",
+          type: "normal",
           click: zoomIn,
-          accelerator: 'Command+='
+          accelerator: "Command+=",
         },
         {
-          label: 'Zoom Out',
-          type: 'normal',
+          label: "Zoom Out",
+          type: "normal",
           click: zoomOut,
-          accelerator: 'Command+-'
+          accelerator: "Command+-",
         },
         {
-          label: 'Reset Zoom',
-          type: 'normal',
+          label: "Reset Zoom",
+          type: "normal",
           click: resetZoom,
-          accelerator: 'Command+0'
-        }
-      ]
+          accelerator: "Command+0",
+        },
+      ],
     },
     {
-      label: 'Navigation',
+      label: "Navigation",
       submenu: [
         {
-          label: 'Today',
-          type: 'normal',
+          label: "Today",
+          type: "normal",
           click: today,
-          accelerator: 'Command+T'
+          accelerator: "Command+T",
         },
         {
-          label: 'Next Day',
-          type: 'normal',
+          label: "Next Day",
+          type: "normal",
           click: nextDay,
-          accelerator: 'Command+Right'
+          accelerator: "Command+Right",
         },
         {
-          label: 'Previous Day',
-          type: 'normal',
+          label: "Previous Day",
+          type: "normal",
           click: prevDay,
-          accelerator: 'Command+Left'
+          accelerator: "Command+Left",
         },
-        { type: 'separator' },
+        { type: "separator" },
         {
-          label: 'Next 30 Seconds',
-          type: 'normal',
+          label: "Next 30 Seconds",
+          type: "normal",
           click: goRight,
-          accelerator: 'Right'
+          accelerator: "Right",
         },
         {
-          label: 'Previous 30 Seconds',
-          type: 'normal',
+          label: "Previous 30 Seconds",
+          type: "normal",
           click: goLeft,
-          accelerator: 'Left'
+          accelerator: "Left",
         },
-        { type: 'separator' },
+        { type: "separator" },
         {
-          label: 'Next Minute',
-          type: 'normal',
+          label: "Next Minute",
+          type: "normal",
           click: goRight1Min,
-          accelerator: 'Shift+Right'
+          accelerator: "Shift+Right",
         },
         {
-          label: 'Previous Minute',
-          type: 'normal',
+          label: "Previous Minute",
+          type: "normal",
           click: goLeft1Min,
-          accelerator: 'Shift+Left'
-        }
-      ]
+          accelerator: "Shift+Left",
+        },
+      ],
     },
     {
-      label: 'Window',
+      label: "Window",
       submenu: [
         {
-          label: 'Show Window',
-          type: 'normal',
+          label: "Show Window",
+          type: "normal",
           click: show,
-          accelerator: 'Command+N'
+          accelerator: "Command+N",
         },
-        { role: 'minimize' },
-        { role: 'close' }
-      ]
+        { role: "minimize" },
+        { role: "close" },
+      ],
     },
     {
-      label: 'Help',
+      label: "Help",
       // submenu: [
       //   {label: 'Relapse Help', type: 'normal', click: launchWebsiteHelp},
       //   {label: 'Website', type: 'normal', click: launchWebsite},
@@ -386,26 +451,26 @@ function createTrayAndMenusAndShortcuts(
       //   {role: 'reload'},
       //   {role: 'toggledevtools'}
       // ]
-      submenu: helpSubMenu
-    }
-  ])
-
-  Menu.setApplicationMenu(mainMenu)
-
-  tray = new Tray(iconPath+ '/TrayIcon@2x.png')
-  tray.setPressedImage(iconPath+ '/TrayIcon@2x.png')
-  trayContextMenu = Menu.buildFromTemplate([
-    { label: 'Show Window', type: 'normal', click: show },
-    { type: 'separator' },
-    {
-      label: 'Capturing Screen',
-      type: 'checkbox',
-      checked: isEnabled,
-      click: toggleCapture
+      submenu: helpSubMenu,
     },
-    { type: 'separator' },
-    { label: 'Quit', type: 'normal', click: quit, accelerator: 'Command+Q' }
-  ])
+  ]);
+
+  Menu.setApplicationMenu(mainMenu);
+
+  tray = new Tray(iconPath + "/TrayIcon@2x.png");
+  tray.setPressedImage(iconPath + "/TrayIcon@2x.png");
+  trayContextMenu = Menu.buildFromTemplate([
+    { label: "Show Window", type: "normal", click: show },
+    { type: "separator" },
+    {
+      label: "Capturing Screen",
+      type: "checkbox",
+      checked: isEnabled,
+      click: toggleCapture,
+    },
+    { type: "separator" },
+    { label: "Quit", type: "normal", click: quit, accelerator: "Command+Q" },
+  ]);
 
   // if (isDevelopment && !process.env.IS_TEST) {
   //   // Install Vue Devtools
@@ -416,64 +481,65 @@ function createTrayAndMenusAndShortcuts(
   //   }
   // }
 
-  tray.setContextMenu(trayContextMenu)
+  tray.setContextMenu(trayContextMenu);
 }
 
-let currentSelectedDateTime = new Date()
+let currentSelectedDateTime = new Date();
 
-app.on('ready', () => {
-  let capturePath = app.getPath('userData') + '/RelapseScreenshots/'
-  let userDataPath = app.getPath('userData') + '/'
-  log.debug('iconPath: ', iconPath)
-  log.debug('binPath: ', binPath)
-  log.debug('capturePath: ', capturePath)
-  log.debug('userDataPath: ', userDataPath)
+app.on("ready", () => {
 
-  let child = spawn(binPath + '/daemon', [
-    '--capture-path',
+  let capturePath = app.getPath("userData") + "/RelapseScreenshots/";
+  let userDataPath = app.getPath("userData") + "/";
+  log.debug("iconPath: ", iconPath);
+  log.debug("binPath: ", binPath);
+  log.debug("capturePath: ", capturePath);
+  log.debug("userDataPath: ", userDataPath);
+
+  let child = spawn(binPath + "/daemon", [
+    "--capture-path",
     capturePath,
-    '--userdata-path',
+    "--userdata-path",
     userDataPath,
-    '--bin-path',
-    binPath
-  ])
-  child.stdout.setEncoding('utf8')
-  child.stdout.on('data', function(data: string) {
-    logFromGolangLogrus(data)
-  })
+    "--bin-path",
+    binPath,
+  ]);
+  child.stdout.setEncoding("utf8");
+  child.stdout.on("data", function (data: string) {
+    logFromGolangLogrus(data);
+  });
 
-  child.stderr.setEncoding('utf8')
-  child.stderr.on('data', function(data: string) {
+  child.stderr.setEncoding("utf8");
+  child.stderr.on("data", function (data: string) {
     if (data) {
-      logFromGolangLogrus(data)
+      logFromGolangLogrus(data);
       if (
-        data.includes('running grpc on port') ||
-        data.includes('address already in use')
+        data.includes("running grpc on port") ||
+        data.includes("address already in use")
       ) {
-        log.info('starting client')
-        startClient()
+        log.info("starting client");
+        startClient();
         getSettings().then((settings: SettingsPlusOptions.AsObject) => {
-          let isEnabled = settings.settings!.isenabled
-          createTrayAndMenusAndShortcuts(settings)
-          toggleCaptures(isEnabled)
-        })
+          let isEnabled = settings.settings!.isenabled;
+          createTrayAndMenusAndShortcuts(settings);
+          toggleCaptures(isEnabled);
+          createSettingsWindow(false);
+        });
       }
     }
-  })
+  });
 
-  const protocolName = 'relapse-image'
+  const protocolName = "relapse-image";
   protocol.registerFileProtocol(protocolName, (request, callback) => {
-    const url = request.url.replace(`${protocolName}://`, '')
+    const url = request.url.replace(`${protocolName}://`, "");
     try {
-      return callback(decodeURIComponent(url))
+      return callback(decodeURIComponent(url));
     } catch (error) {
       // Handle the error as needed
-      console.error(error)
+      console.error(error);
     }
-  })
+  });
 
-
-  ipcMain.on('maximize', () => {
+  ipcMain.on("maximize", () => {
     if (mainWindow) {
       if (mainWindow.isMaximized()) {
         mainWindow.unmaximize();
@@ -481,33 +547,33 @@ app.on('ready', () => {
         mainWindow.maximize();
       }
     }
-  })
+  });
 
-  ipcMain.on('load-day', (event, date, skipToEnd) => {
-    loadDay(date, skipToEnd)
-  })
+  ipcMain.on("load-day", (event, date, skipToEnd) => {
+    loadDay(date, skipToEnd);
+  });
 
-  ipcMain.on('load-settings', event => {
+  ipcMain.on("load-settings", (event) => {
     client.getSettings(
       new SettingsPlusOptionsRequest(),
       (err: Error | null, response: SettingsPlusOptions) => {
         if (err != null) {
-          console.error(err)
+          console.error(err);
         }
-        event.sender.send('loaded-settings', response.toObject())
+        event.sender.send("loaded-settings", response.toObject());
       }
-    )
-  })
+    );
+  });
 
-  ipcMain.on('link-clicked', (event, link) => {
-    shell.openExternal(link)
-  })
+  ipcMain.on("link-clicked", (event, link) => {
+    shell.openExternal(link);
+  });
 
-  ipcMain.on('change-settings', (event, settings: Settings.AsObject) => {
+  ipcMain.on("change-settings", (event, settings: Settings.AsObject) => {
     setSettings(settings).then((response: Settings.AsObject) => {
-      event.sender.send('changed-settings', response)
-    })
-  })
+      event.sender.send("changed-settings", response);
+    });
+  });
 
   // ipcMain.on('open-dialog', (event) => {
   //   dialog.showOpenDialog({ properties: ['openDirectory'] }).then((result) => {
@@ -516,67 +582,68 @@ app.on('ready', () => {
   //     }
   //   })
   // })
-  createWindow()
-})
+  createWindow();
+});
 
 function startClient() {
-  client = new RelapseClient('localhost:3333', credentials.createInsecure())
+  client = new RelapseClient("localhost:3333", credentials.createInsecure());
 }
 
-function toggleCaptures (isEnabled: boolean) {
+function toggleCaptures(isEnabled: boolean) {
   if (isEnabled) {
     if (stream) {
-      log.info('resuming stream')
-      stream.resume()
+      log.info("resuming stream");
+      stream.resume();
     } else {
-      stream = client.listenForCaptures(new ListenRequest())
-      log.info('creating stream')
-      stream.on('data', (resp: DayResponse) => {
-        if (resp.getCapturedaytimeseconds() === startOfDayAsSeconds(currentSelectedDateTime)) {
-          sendDayInfoToApp(resp, currentSelectedDateTime, false)
+      stream = client.listenForCaptures(new ListenRequest());
+      log.info("creating stream");
+      stream.on("data", (resp: DayResponse) => {
+        if (
+          resp.getCapturedaytimeseconds() ===
+          startOfDayAsSeconds(currentSelectedDateTime)
+        ) {
+          sendDayInfoToApp(resp, currentSelectedDateTime, false);
         } else {
           log.info(
-            'wrong day to update',
+            "wrong day to update",
             resp.getCapturedaytimeseconds(),
             startOfDayAsSeconds(currentSelectedDateTime)
-          )
+          );
         }
-      })
-      stream.on('error', (err) => {
-        log.info('stream error' + err)
-      })
+      });
+      stream.on("error", (err) => {
+        log.info("stream error" + err);
+      });
     }
   } else {
     if (stream) {
-      log.info('pausing stream')
+      log.info("pausing stream");
       // might not be defined yet
-      stream.cancel()
-      stream = null
+      stream.cancel();
+      stream = null;
     } else {
-      log.info('stream not enabled yet')
+      log.info("stream not enabled yet");
     }
   }
 }
 
 function loadDay(date: Date, skipToEnd: boolean) {
-  currentSelectedDateTime = date
-  let dayReq = new DayRequest()
-  dayReq.setCapturedaytimeseconds(
-    startOfDayAsSeconds(date)
-  )
+  currentSelectedDateTime = date;
+  let dayReq = new DayRequest();
+  dayReq.setCapturedaytimeseconds(startOfDayAsSeconds(date));
 
   client.getCapturesForADay(
     dayReq,
     (err: ServiceError | null, resp?: DayResponse) => {
       if (err) {
-        console.error(err)
+        console.error(err);
       } else if (resp) {
-        sendDayInfoToApp(resp, date, skipToEnd)
+        sendDayInfoToApp(resp, date, skipToEnd);
       } else {
-        log.silly('nothing happened?')
+        log.silly("nothing happened?");
       }
     }
-  )
+  );
 }
 
 function sendDayInfoToApp(resp: DayResponse, date: Date, skipToEnd: boolean) {
@@ -592,100 +659,106 @@ function sendDayInfoToApp(resp: DayResponse, date: Date, skipToEnd: boolean) {
   //   })
   // }
   if (mainWindow) {
-    mainWindow.webContents.send('loaded-day', resp.toObject())
+    mainWindow.webContents.send("loaded-day", resp.toObject());
   }
 }
 
 function getSettings(): Promise<SettingsPlusOptions.AsObject> {
   return new Promise((resolve, reject) => {
-    let req = new SettingsPlusOptionsRequest()
+    let req = new SettingsPlusOptionsRequest();
     client.getSettings(
       req,
       (err: Error | null, response: SettingsPlusOptions) => {
         if (err != null) {
-          log.info('error')
-          reject(err)
+          log.info("error");
+          reject(err);
         }
-        log.info('loaded settings')
-        resolve(response.toObject())
+        log.info("loaded settings");
+        resolve(response.toObject());
       }
-    )
-  })
+    );
+  });
 }
 
 function setSettings(settings: Settings.AsObject): Promise<Settings.AsObject> {
   return new Promise((resolve, reject) => {
-    let req = new Settings()
-    req.setIsenabled(settings.isenabled)
-    req.setRejectionsList(settings.rejectionsList)
-    req.setRetainforxdays(settings.retainforxdays)
+    let req = new Settings();
+    req.setIsenabled(settings.isenabled);
+    req.setRejectionsList(settings.rejectionsList);
+    req.setRetainforxdays(settings.retainforxdays);
     client.setSettings(req, (err: Error | null, response: Settings) => {
       if (err != null) {
-        log.info('error')
-        reject(err)
+        log.info("error");
+        reject(err);
       }
-      log.info('saved settings')
-      resolve(response.toObject())
-    })
-  })
+      log.info("saved settings");
+      resolve(response.toObject());
+    });
+  });
 }
 
 function startOfDayAsSeconds(date: Date) {
-  let bod = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 0, 0, 0)
-  return Math.floor(bod.valueOf() / 1000)
+  let bod = new Date(
+    date.getFullYear(),
+    date.getMonth(),
+    date.getDate(),
+    0,
+    0,
+    0
+  );
+  return Math.floor(bod.valueOf() / 1000);
 }
 
-
 interface LogInfo {
-  level: 'Info' | 'Warning' | 'Error' | 'Debug' | 'Silly';
+  level: "Info" | "Warning" | "Error" | "Debug" | "Silly";
   message: String;
 }
 
-function logFromGolangLogrus(rawLog: string) : void {
+function logFromGolangLogrus(rawLog: string): void {
   let cleanLog = parseFromGolangLogrus(rawLog);
-  if (cleanLog.level === 'Silly') {
-    log.silly(cleanLog.message)
-  } else if (cleanLog.level === 'Debug') {
-    log.debug(cleanLog.message)
-  } else if (cleanLog.level === 'Error') {
-    log.error(cleanLog.message)
-  } else if (cleanLog.level === 'Warning') {
-    log.warn(cleanLog.message)
-  } else if (cleanLog.level === 'Info') {
-    log.info(cleanLog.message)
+  if (cleanLog.level === "Silly") {
+    log.silly(cleanLog.message);
+  } else if (cleanLog.level === "Debug") {
+    log.debug(cleanLog.message);
+  } else if (cleanLog.level === "Error") {
+    log.error(cleanLog.message);
+  } else if (cleanLog.level === "Warning") {
+    log.warn(cleanLog.message);
+  } else if (cleanLog.level === "Info") {
+    log.info(cleanLog.message);
   }
 }
 
-function parseFromGolangLogrus(rawLog: string) : LogInfo {
+function parseFromGolangLogrus(rawLog: string): LogInfo {
   let result: LogInfo = {
-    level: 'Silly',
-    message: rawLog
-  }
-  if (rawLog.includes('level=') && rawLog.includes("msg=")) {
-    let split = rawLog.split('level=')
+    level: "Silly",
+    message: rawLog,
+  };
+  if (rawLog.includes("level=") && rawLog.includes("msg=")) {
+    let split = rawLog.split("level=");
     if (split.length > 1) {
-      split = split[1].split('msg=')
+      split = split[1].split("msg=");
       let level = split[0];
-      if (level.toLowerCase().includes('warn')) {
-        result.level = 'Warning'
-      } else if (level.toLowerCase().includes('err')) {
-        result.level = 'Error'
-      } else if (level.toLowerCase().includes('info')) {
-        result.level = 'Info'
-      } else if (level.toLowerCase().includes('debug')) {
-        result.level = 'Debug'
+      if (level.toLowerCase().includes("warn")) {
+        result.level = "Warning";
+      } else if (level.toLowerCase().includes("err")) {
+        result.level = "Error";
+      } else if (level.toLowerCase().includes("info")) {
+        result.level = "Info";
+      } else if (level.toLowerCase().includes("debug")) {
+        result.level = "Debug";
       }
       let message = split[1];
-      message = message.trim()
+      message = message.trim();
       if (message.indexOf(`"`) === 0) {
-        message.substring(1)
+        message.substring(1);
       }
       if (message.lastIndexOf(`"`) === message.length - 1) {
-        message.substring(0, message.length-1)
+        message.substring(0, message.length - 1);
       }
       result.message = message;
     }
   }
 
-  return result
+  return result;
 }

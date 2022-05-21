@@ -19,42 +19,42 @@
 
 <script>
 export default {
-  name: 'numeric',
+  name: "numeric",
   computed: {},
   props: {
     value: {
       type: Number,
-      required: true
+      required: true,
     },
     min: Number,
-    max: Number
+    max: Number,
   },
   methods: {
-    numberUp () {
-      var newVal = this.value + 1
-      this.numberChanged(newVal)
+    numberUp() {
+      var newVal = this.value + 1;
+      this.numberChanged(newVal);
     },
-    numberDown () {
-      var newVal = this.value - 1
-      this.numberChanged(newVal)
+    numberDown() {
+      var newVal = this.value - 1;
+      this.numberChanged(newVal);
     },
-    numberChanged (val) {
-      let ev
-      if (typeof val === 'number') {
+    numberChanged(val) {
+      let ev;
+      if (typeof val === "number") {
         // its good
       } else {
-        ev = val
-        val = val.target.value
+        ev = val;
+        val = val.target.value;
       }
       if (val > this.min && val < this.max) {
-        this.$emit('updated', val)
+        this.$emit("updated", val);
       }
     },
-    blurred () {
-      this.$forceUpdate()
-    }
-  }
-}
+    blurred() {
+      this.$forceUpdate();
+    },
+  },
+};
 </script>
 
 <style lang="scss">
@@ -80,7 +80,7 @@ export default {
     border-top-left-radius: $radius;
     border-bottom-left-radius: $radius;
     &:hover {
-      background-color: $theme-input-hover-bg;
+      // background-color: $theme-input-hover-bg;
     }
   }
 
@@ -99,6 +99,7 @@ export default {
       margin-top: -1px;
       margin-left: auto;
       margin-right: auto;
+      color: $theme-text-color;
     }
 
     &.number-up {

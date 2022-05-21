@@ -6,8 +6,7 @@
     <div class="splitter" />
     <button
       class="side-btn prev-minute"
-      @mousedown="prevSkip"
-      @mouseup="prevSkipOff"
+      @click="goleft(1)"
       title="Previous 30 Seconds"
     >
       <ico icon="angle-left" />
@@ -49,8 +48,8 @@
     <div class="splitter" />
     <button
       class="side-btn next-30-sec"
-      @mousedown="nextSkip"
-      @mouseup="nextSkipOff"
+      @mousedown="prevSkipOn"
+      @mouseup="prevSkipOff"
       title="Next 30 Seconds"
     >
       <ico icon="angle-right" />
@@ -63,16 +62,15 @@
 </template>
 
 <script lang="ts">
-import { Vue, Options } from 'vue-class-component'
-import { Watch, Prop } from 'vue-property-decorator'
+import { CaptureSimple } from "@render/interfaces/dayInfo.interface";
+import { format } from "date-fns";
+import { fabric } from "fabric";
+import { IEvent } from "fabric/fabric-impl";
+import { Options, Vue } from "vue-class-component";
+import { Prop, Watch } from "vue-property-decorator";
+import Datepicker from "vue3-datepicker";
 
-import { fabric } from 'fabric'
-import { IEvent } from 'fabric/fabric-impl'
-import Datepicker from 'vue3-datepicker'
-import { CaptureSimple } from '@render/interfaces/dayInfo.interface'
-import { format } from 'date-fns'
-
-const timeColor = '#86DA9D'
+const timeColor = "#86DA9D";
 
 @Options({
   components: {
@@ -81,45 +79,44 @@ const timeColor = '#86DA9D'
 })
 export default class Timeline extends Vue {
   @Prop()
-  times!: Array<CaptureSimple>
+  times!: Array<CaptureSimple>;
 
   @Prop()
-  value!: number
+  value!: number;
 
   @Prop()
-  firstImageIndex!: number
+  firstImageIndex!: number;
 
   @Prop()
-  lastImageIndex!: number
+  lastImageIndex!: number;
 
   @Prop()
-  day!: Date
+  day!: Date;
 
   @Prop()
-  currentCapture!: CaptureSimple
+  currentCapture!: CaptureSimple;
 
-  canvas!: fabric.Canvas
-  rect!: fabric.Rect
-  hoverRect!: fabric.Rect
+  canvas!: fabric.Canvas;
+  rect!: fabric.Rect;
+  hoverRect!: fabric.Rect;
 
-  isMouseDown = false
-  skipChangeIncrement = 0
-  isReady = false
+  isMouseDown = false;
+  isReady = false;
 
   // bgColor = ''
 
   get currentDayTime() {
     if (this.currentCapture) {
-      return this.currentCapture.date
+      return this.currentCapture.date;
     }
-    return new Date()
+    return new Date();
   }
 
   get timelineReadyStyle() {
     if (this.isReady) {
-      return 'opacity:1;'
+      return "opacity:1;";
     }
-    return 'opacity:1;'
+    return "opacity:1;";
   }
 
   // get bgColor() {
@@ -134,102 +131,120 @@ export default class Timeline extends Vue {
 
   get timesWhereIsWholeHour() {
     const wholeHours = this.times.filter((t: any) => {
-      var actualDate = new Date(t.date)
+      var actualDate = new Date(t.date);
       if (actualDate.getMinutes() === 0 && actualDate.getSeconds() === 0) {
-        return true
+        return true;
       }
-      return false
-    })
-    return wholeHours
+      return false;
+    });
+    return wholeHours;
   }
 
   prevDay() {
-    const newDate = new Date(this.day)
-    newDate.setDate(this.day.getDate() - 1)
-    this.dayChanged(newDate, true)
+    const newDate = new Date(this.day);
+    newDate.setDate(this.day.getDate() - 1);
+    this.dayChanged(newDate, true);
   }
 
   nextDay() {
-    const newDate = new Date(this.day)
-    newDate.setDate(this.day.getDate() + 1)
-    this.dayChanged(newDate, false)
+    const newDate = new Date(this.day);
+    newDate.setDate(this.day.getDate() + 1);
+    this.dayChanged(newDate, false);
   }
 
   today() {
-    const newDate = new Date()
-    this.dayChanged(newDate, true)
+    const newDate = new Date();
+    this.dayChanged(newDate, true);
   }
 
   dayChanged(date: Date, skipToEnd: boolean) {
-    this.$emit('day-change', { date, skipToEnd })
+    this.$emit("day-change", { date, skipToEnd });
   }
 
   prevSkip(inc = 1) {
-    this.skipChangeIncrement = -1 * inc
+    inc = -1 * inc;
+    var newValue = this.value + inc;
+    this.minuteChanged(newValue);
   }
 
   nextSkip(inc = 1) {
-    this.skipChangeIncrement = 1 * inc
+    var newValue = this.value + inc;
+    this.minuteChanged(newValue);
+  }
+
+  skipChangeIncrement = 0;
+  skipChangeMultipler = 1;
+
+  prevSkipOn() {
+    this.skipChangeIncrement = 1;
   }
 
   prevSkipOff() {
-    this.skipChangeIncrement = 0
+    this.skipChangeIncrement = 0;
+    this.skipChangeMultipler = 1;
+  }
+
+  recurringMove() {
+    let nextInc =
+      this.skipChangeIncrement * Math.floor(this.skipChangeMultipler);
+    this.prevSkip(nextInc);
+    this.skipChangeMultipler += 0.1;
   }
 
   nextSkipOff() {
-    this.skipChangeIncrement = 0
+    this.skipChangeIncrement = 0;
   }
 
   minuteChanged(index: number) {
-    this.$emit('minute-index-change', index)
+    this.$emit("minute-index-change", index);
   }
 
   moveMinuteLinePosition(index: number) {
-    var xPos = this.getLinePoint(index)
-    this.rect.set({ left: xPos })
-    this.canvas.renderAll()
+    var xPos = this.getLinePoint(index);
+    this.rect.set({ left: xPos });
+    this.canvas.renderAll();
   }
 
   moveMinuteHoverLinePosition(index: number) {
-    var xPos = this.getLinePoint(index)
-    this.hoverRect.set({ left: xPos, height: 60 })
-    this.canvas.renderAll()
+    var xPos = this.getLinePoint(index);
+    this.hoverRect.set({ left: xPos, height: 60 });
+    this.canvas.renderAll();
   }
 
   hideMinuteHoverLine() {
-    this.hoverRect.set({ height: 0 })
-    this.canvas.renderAll()
+    this.hoverRect.set({ height: 0 });
+    this.canvas.renderAll();
   }
 
   markerStyle(index: number) {
-    let percent = (index / (this.timesWhereIsWholeHour.length - 1)) * 100
-    return `left: ${percent}%;`
+    let percent = (index / (this.timesWhereIsWholeHour.length - 1)) * 100;
+    return `left: ${percent}%;`;
   }
 
   isWholeHour(date: Date) {
-    var actualDate = new Date(date)
+    var actualDate = new Date(date);
     if (actualDate.getMinutes() === 0) {
-      return true
+      return true;
     }
 
-    return false
+    return false;
   }
 
   getLinePoint(index: number) {
-    var linePoint = 0
+    var linePoint = 0;
     if (this.canvas && this.canvas.width) {
-      return (this.canvas.width * ((index / this.times.length) * 100)) / 100
+      return (this.canvas.width * ((index / this.times.length) * 100)) / 100;
     }
-    return linePoint
+    return linePoint;
   }
 
   get currentTime() {
-    let currentTime = this.times[this.value]
+    let currentTime = this.times[this.value];
     if (currentTime) {
-      return currentTime.date
+      return currentTime.date;
       // return dateFormat(currentTime.date, 'h:MM:ss TT')
     }
-    return null
+    return null;
   }
 
   mouseout() {
@@ -238,50 +253,50 @@ export default class Timeline extends Vue {
 
   formatDate(date: Date) {
     if (date) {
-      return format(date, 'h:MM:ss aa')
+      return format(date, "h:MM:ss aa");
     }
 
-    return ''
+    return "";
   }
 
   formatDateSmall(date: Date) {
     if (date) {
-      return format(date, 'haa')
+      return format(date, "haa");
     }
-    return ''
+    return "";
   }
 
   redrawCanvas() {
-    let bgColor = ''
+    let bgColor = "";
     if (document && document.documentElement) {
       bgColor = getComputedStyle(document.documentElement).getPropertyValue(
-        '--theme-input-bg'
-      )
+        "--theme-input-bg"
+      );
     }
-    
+
     // 240 buttons, padding 40, datepicker 180, 7 splliters
     this.canvas.setDimensions({
       width: window.innerWidth - (200 + 40 + 220 + 7 * 1),
       height: 34,
-    })
+    });
     // clear it
-    this.canvas.clear()
+    this.canvas.clear();
 
     // recalc line widths to be used for indicator and time rectanges
-    let lineWidth = 0
+    let lineWidth = 0;
     if (this.canvas && this.canvas.width) {
-      lineWidth = (this.canvas.width * ((1 / this.times.length) * 100)) / 100
+      lineWidth = (this.canvas.width * ((1 / this.times.length) * 100)) / 100;
     }
 
     // draw the times, one rect for each solid block of work (i.e. isReal) toggle between isReal and !isReal to create full rects
-    var currentOnOffness = false
-    var lastRectIndex = 0
+    var currentOnOffness = false;
+    var lastRectIndex = 0;
     for (var i = 0; i < this.times.length; i++) {
-      var time = this.times[i] // eslint-disable-line no-unused-vars
-      var left = this.getLinePoint(i)
+      var time = this.times[i]; // eslint-disable-line no-unused-vars
+      var left = this.getLinePoint(i);
       if (i === 0) {
-        currentOnOffness = time.isReal
-        lastRectIndex = left
+        currentOnOffness = time.isReal;
+        lastRectIndex = left;
       } else if (currentOnOffness !== time.isReal) {
         this.canvas.add(
           new fabric.Rect({
@@ -293,9 +308,9 @@ export default class Timeline extends Vue {
             fill: !time.isReal ? timeColor : bgColor, // reversed because its not real
             selectable: false,
           })
-        )
-        lastRectIndex = left
-        currentOnOffness = time.isReal
+        );
+        lastRectIndex = left;
+        currentOnOffness = time.isReal;
       } else if (i === this.times.length - 1) {
         this.canvas.add(
           new fabric.Rect({
@@ -307,7 +322,7 @@ export default class Timeline extends Vue {
             fill: time.isReal ? timeColor : bgColor, // this is the actualness :)
             selectable: false,
           })
-        )
+        );
       }
     }
 
@@ -317,170 +332,145 @@ export default class Timeline extends Vue {
       height: 60,
       left: this.getLinePoint(this.value),
       top: 0,
-      stroke: '#f2ae57',
-      fill: '#f2ae57',
+      stroke: "#f2ae57",
+      fill: "#f2ae57",
       selectable: false,
-    })
+    });
 
     this.hoverRect = new fabric.Rect({
       width: lineWidth * 1,
       height: 0,
       left: this.getLinePoint(this.value),
       top: -1,
-      stroke: '#F65C26',
-      fill: '#F65C26',
+      stroke: "#F65C26",
+      fill: "#F65C26",
       selectable: false,
-    })
-    this.canvas.add(this.rect)
-    this.canvas.add(this.hoverRect)
+    });
+    this.canvas.add(this.rect);
+    this.canvas.add(this.hoverRect);
 
-    this.isReady = true
+    this.isReady = true;
   }
 
-  @Watch('times')
+  @Watch("times")
   onChangeTimes() {
-
-    this.redrawCanvas()
+    this.redrawCanvas();
   }
 
-  @Watch('value')
+  @Watch("value")
   onChangeValue() {
-    this.moveMinuteLinePosition(this.value)
-  }
-
-  @Watch('skipChangeIncrement')
-  onChangeMinuteIncrement() {
-    let callCountIncrement = 0
-    let changeMinute = () => {
-      if (this.skipChangeIncrement !== 0) {
-        // we have the mouse down
-        var newValue = this.value + this.skipChangeIncrement
-        this.minuteChanged(newValue)
-        callCountIncrement++
-        if (callCountIncrement > 30) {
-          setTimeout(changeMinute, 45)
-        } else if (callCountIncrement > 20) {
-          setTimeout(changeMinute, 75)
-        } else if (callCountIncrement > 10) {
-          setTimeout(changeMinute, 90)
-        } else {
-          setTimeout(changeMinute, 140)
-        }
-      }
-    }
-    changeMinute()
+    this.moveMinuteLinePosition(this.value);
   }
 
   goleft(inc = 1) {
-    this.prevSkip(inc)
-    this.$nextTick(() => {
-      // DOM updated
-      this.prevSkipOff()
-    })
+    this.prevSkip(inc);
   }
 
   goRight(inc = 1) {
-    this.nextSkip(inc)
-    this.$nextTick(() => {
-      // DOM updated
-      this.nextSkipOff()
-    })
+    this.nextSkip(inc);
   }
 
-  lastKeyboardEvent = 0
-  eventDebounce = 100
+  lastKeyboardEvent = 0;
+  eventDebounce = 100;
 
   arrowPressed(direction: string) {
     if (this.lastKeyboardEvent + this.eventDebounce < Number(+new Date())) {
-      this.lastKeyboardEvent = Number(+new Date())
-      if (direction === 'left') {
-        this.goleft()
-      } else if (direction === 'right') {
-        this.goRight()
-      } else if (direction === 'left-1min') {
-        this.goleft(2)
-      } else if (direction === 'right-1min') {
-        this.goRight(2)
+      this.lastKeyboardEvent = Number(+new Date());
+      if (direction === "left") {
+        this.goleft();
+      } else if (direction === "right") {
+        this.goRight();
+      } else if (direction === "left-1min") {
+        this.goleft(2);
+      } else if (direction === "right-1min") {
+        this.goRight(2);
       }
     }
   }
 
   dayChanging(direction: string) {
     if (this.lastKeyboardEvent + this.eventDebounce < Number(+new Date())) {
-      this.lastKeyboardEvent = Number(+new Date())
-      if (direction === 'prevDay') {
-        this.prevDay()
-      } else if (direction === 'nextDay') {
-        this.nextDay()
+      this.lastKeyboardEvent = Number(+new Date());
+      if (direction === "prevDay") {
+        this.prevDay();
+      } else if (direction === "nextDay") {
+        this.nextDay();
       } else {
-        this.today()
+        this.today();
       }
     }
   }
 
   created() {
     setTimeout(() => {
-      this.redrawCanvas()
-    }, 1)
+      this.redrawCanvas();
+    }, 1);
 
-    this.$ipc.receive('arrow-pressed', this.arrowPressed)
-    this.$ipc.receive('day-function', this.dayChanging)
+    this.$ipc.receive("arrow-pressed", this.arrowPressed);
+    this.$ipc.receive("day-function", this.dayChanging);
+    this.interval = setInterval(this.recurringMove, 100);
   }
 
+  destroyed() {
+    clearInterval(this.interval);
+  }
+
+  interval = 0;
+
   mounted() {
-    let panning = false
+    let panning = false;
 
-    this.canvas = new fabric.Canvas('timeline-viewer')
-    this.canvas.selection = false
-    this.canvas.setDimensions({ width: window.innerWidth - 40, height: 40 })
+    this.canvas = new fabric.Canvas("timeline-viewer");
+    this.canvas.selection = false;
+    this.canvas.setDimensions({ width: window.innerWidth - 40, height: 40 });
 
-    window.addEventListener('resize', () => {
-      this.redrawCanvas()
-    })
+    window.addEventListener("resize", () => {
+      this.redrawCanvas();
+    });
 
     var calcCursorPos = (e: any) => {
-      let canvasX = e.e.layerX
-      var clickPercent = canvasX / this.canvas.width! // dont * by 100 because we need the decimal percent
-      var val = Math.round(clickPercent * this.times.length)
+      let canvasX = e.e.layerX;
+      var clickPercent = canvasX / this.canvas.width!; // dont * by 100 because we need the decimal percent
+      var val = Math.round(clickPercent * this.times.length);
       if (val >= this.times.length - 1) {
-        val = this.times.length - 2
+        val = this.times.length - 2;
       }
       if (val <= 0) {
-        val = 0
+        val = 0;
       }
-      return val
-    }
+      return val;
+    };
 
-    this.canvas.on('mouse:up', (e: IEvent) => {
-      this.minuteChanged(calcCursorPos(e))
-      panning = false
-    })
+    this.canvas.on("mouse:up", (e: IEvent) => {
+      this.minuteChanged(calcCursorPos(e));
+      panning = false;
+    });
 
-    this.canvas.on('mouse:down', (e: IEvent) => {
-      this.minuteChanged(calcCursorPos(e))
-      panning = true
-    })
-    this.canvas.on('mouse:out', (e: IEvent) => {
-      this.hideMinuteHoverLine()
-    })
+    this.canvas.on("mouse:down", (e: IEvent) => {
+      this.minuteChanged(calcCursorPos(e));
+      panning = true;
+    });
+    this.canvas.on("mouse:out", (e: IEvent) => {
+      this.hideMinuteHoverLine();
+    });
 
-    this.canvas.on('mouse:move', (e: IEvent) => {
+    this.canvas.on("mouse:move", (e: IEvent) => {
       if (e && e.e) {
         if (panning) {
-          this.minuteChanged(calcCursorPos(e))
+          this.minuteChanged(calcCursorPos(e));
           // var units = 10
           // var delta = new fabric.Point(e.e.movementX, e.e.movementY)
         } else {
-          this.moveMinuteHoverLinePosition(calcCursorPos(e))
+          this.moveMinuteHoverLinePosition(calcCursorPos(e));
         }
       }
-    })
+    });
   }
 }
 </script>
 
 <style lang="scss">
-@import '../scss/variables';
+@import "../scss/variables";
 .timeline {
   opacity: 0;
   width: 100%;
@@ -598,7 +588,7 @@ export default class Timeline extends Vue {
 
     .v3dp__datepicker {
       width: 100%;
-      input[type='text'] {
+      input[type="text"] {
         text-align: center;
         font-size: 15px;
         height: 34px;
@@ -614,7 +604,7 @@ export default class Timeline extends Vue {
       }
 
       &:hover {
-        input[type='text'] {
+        input[type="text"] {
           background: $theme-input-hover-bg;
         }
       }

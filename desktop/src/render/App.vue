@@ -5,81 +5,91 @@
   >
     <div class="handlebar" @click="handleClick"></div>
     <!-- <help-view v-if="settings.isHelpShown"></help-view> -->
-    <screenshot-viewer />
+    <settings v-if="isSettingsView" />
+    <screenshot-viewer v-else />
   </div>
 </template>
 
 <script lang="ts">
-import ScreenshotViewer from '@render/components/ScreenshotViewer.vue'
-import { Vue, Options } from 'vue-class-component'
+import ScreenshotViewer from "@render/components/ScreenshotViewer.vue";
+import { Options, Vue } from "vue-class-component";
+import Settings from "./views/Settings.vue";
 
 @Options({
   components: {
-    ScreenshotViewer
-  }
+    ScreenshotViewer,
+    Settings,
+  },
 })
 export default class App extends Vue {
-  isFocused = true
-  clicks = 0
-  totalMinutesWorked = 0
+  isFocused = true;
+  clicks = 0;
+  totalMinutesWorked = 0;
 
-  handleClick () {
-    this.clicks++
+  get isSettingsView() {
+    return window.location.hash === "#settings";
+  }
+
+  handleClick() {
+    this.clicks++;
     if (this.clicks === 1) {
       setTimeout(() => {
         if (this.clicks === 1) {
           // this.singleClick()
         } else {
           // this.doubleClick()
-          this.$ipc.send('maximize')
+          this.$ipc.send("maximize");
         }
-        this.clicks = 0
-      }, 225)
+        this.clicks = 0;
+      }, 225);
     }
   }
 
-  onWindowBlur () {
-    this.isFocused = false
+  onWindowBlur() {
+    this.isFocused = false;
   }
 
-  onWindowFocus () {
-    this.isFocused = true
+  onWindowFocus() {
+    this.isFocused = true;
   }
 
-  created () {
-    this.$ipc.receive('window-blur', this.onWindowBlur)
-    this.$ipc.receive('window-focus', this.onWindowFocus)
+  created() {
+    this.$ipc.receive("window-blur", this.onWindowBlur);
+    this.$ipc.receive("window-focus", this.onWindowFocus);
+    console.log("document.title", document.title);
   }
 }
 </script>
 
 <style lang="scss">
-  :root {
-    --theme-unfocused-bg: #e6e6e6;
-    --theme-unfocused-text-color: #acacac;
-    --theme-lines-between-color: #b3b3b3;
-    --theme-text-color: #515151;
-    --theme-text-heading-color: #444444;
-    --theme-text-subheading-color: #555555;
-    --theme-input-active-bg: hsl(0deg 0% 85% / 100%);
-    --theme-input-hover-bg: hsl(0deg 0% 82% / 100%);
-    --theme-input-bg: hsl(0deg 0% 80% / 98%);
-    // --theme-input-bg-transparency: hsl(0deg 0% 95% / 50%);
-    --theme-input-row-odd: #ffffff;
-    --theme-input-row-even: #f4f5f5;
-  }
+:root {
+  --theme-titlebar-bg: hsl(0deg 0% 100% / 50%);
+  --theme-unfocused-bg: #e6e6e6;
+  --theme-unfocused-text-color: #acacac;
+  --theme-lines-between-color: #b3b3b3;
+  --theme-text-color: #515151;
+  --theme-text-heading-color: #444444;
+  --theme-text-subheading-color: #555555;
+  --theme-input-active-bg: hsl(0deg 0% 85% / 98%);
+  --theme-input-hover-bg: hsl(0deg 0% 85% / 98%);
+  --theme-input-bg: hsl(0deg 0% 92% / 98%);
+  // --theme-input-bg-transparency: hsl(0deg 0% 95% / 50%);
+  --theme-input-row-odd: #ffffff;
+  --theme-input-row-even: #f4f5f5;
+}
 
 @media (prefers-color-scheme: dark) {
   :root {
+    --theme-titlebar-bg: hsl(0deg 0% 20% / 60%);
     --theme-unfocused-bg: #e6e6e6;
     --theme-unfocused-text-color: #acacac;
-    --theme-lines-between-color: #403F3E;
+    --theme-lines-between-color: #403f3e;
     --theme-text-color: rgba(255, 255, 255, 0.87);
     --theme-text-heading-color: rgba(255, 255, 255, 0.74);
-    --theme-text-subheading-color: rgba(255, 255, 255, 0.67);;
-    --theme-input-active-bg: hsl(0deg 0% 20% / 60%);
-    --theme-input-hover-bg: hsl(0deg 0% 15% / 60%);
-    --theme-input-bg: hsl(0deg 0% 10% / 65%);
+    --theme-text-subheading-color: rgba(255, 255, 255, 0.67);
+    --theme-input-active-bg: hsl(0deg 0% 20% / 98%);
+    --theme-input-hover-bg: hsl(0deg 0% 15% / 98%);
+    --theme-input-bg: hsl(0deg 0% 10% / 98%);
     // --theme-input-bg-transparency: hsl(0deg 0% 10% / 50%);
     --theme-input-row-odd: #444;
     --theme-input-row-even: #666;
@@ -103,8 +113,8 @@ body {
   overflow-x: hidden;
   overflow-y: hidden;
   height: 100%;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen",
+    "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue",
     sans-serif;
   font-size: 13px;
   // background-color: var(--blue);
@@ -185,7 +195,6 @@ html {
   // window styling based on dark, light themes
   .content,
   .handlebar {
-    // background-color: $theme-bg;
     color: $theme-text-color;
   }
 
@@ -211,5 +220,12 @@ html {
   left: 0;
   // box-shadow: 0 0 12px $theme-lines-between-color;
   z-index: 20;
+}
+
+.has-text-centered {
+  text-align: center;
+}
+.pt-1 {
+  padding-top: 4px;
 }
 </style>
