@@ -1,10 +1,3 @@
-//
-//  main.swift
-//  relapse-window
-//
-//  Created by Joshua Cave on 5/02/22.
-//
-
 import Foundation
 import AppKit
 

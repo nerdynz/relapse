@@ -156,19 +156,16 @@ func (gp *GlimpsePool) DisectOnAdd(adding *Glimpse) {
 }
 
 func (gp *GlimpsePool) clipToScreenBounds(glimpse *Glimpse) *Glimpse {
-	logrus.Info("what are my screebs", gp.screens)
-	logGlimpse(glimpse)
 	bigestIntersection := image.Rect(-1, -1, -1, -1)
 	for _, scr := range gp.screens {
 		intersection := glimpse.Rectangle.Intersect(scr)
 		intersectionArea := intersection.Size().X * intersection.Size().Y
-		logRect("intersection", intersection)
+		// logRect("intersection", intersection)
 		bigestIntersectionArea := bigestIntersection.Size().X * bigestIntersection.Size().Y
 		if intersectionArea > bigestIntersectionArea {
 			bigestIntersection = intersection
 		}
 	}
-	logRect(glimpse.Label+" within screen", bigestIntersection)
 	return NewGlimpseFromRect(glimpse.Label, glimpse.Layer, bigestIntersection)
 }
 

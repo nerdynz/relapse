@@ -12,14 +12,14 @@
     "build": "vite build",
     "serve": "vite preview",
     "electron:dev": "cross-env NODE_ENV=development electron index.js",
-    "electron:testbuild": "rimraf dist && vite build  && mkdir ./dist/grpc && mkdir ./dist/bin && mkdir ./dist/icons && cp ./src/grpc/*.js ./dist/grpc && cp ./src/bin/daemon ./dist/bin/daemon && cp ./src/icons/** ./dist/icons",
+    "electron:testbuild": "rimraf dist && vite build  && mkdir ./dist/grpc && mkdir ./dist/bin && mkdir ./dist/icons && cp ./src/grpc/*.js ./dist/grpc && cp ./src/bin/daemon ./dist/bin/daemon && cp ./src/bin/screeninfo ./dist/bin/screeninfo && cp ./src/icons/** ./dist/icons",
     "electron:build": "yarn electron:testbuild && tsc -p tsconfig.electron.json && electron-builder -m",
     "postinstall": "electron-builder install-app-deps"
   },
   "dependencies": {
     "dateformat": "^4.5.1",
     "electron-log": "^4.4.0",
-    "fabric": "^4.4.0",
+    "fabric": "^5.2.1",
     "google-protobuf": "^3.15.8",
     "grpc": "^1.24.10",
     "moment": "^2.29.1",
@@ -38,8 +38,8 @@
     "@vue/compiler-sfc": "^3.0.5",
     "copyfiles": "^2.4.1",
     "cross-env": "^7.0.3",
-    "electron": "^12.0.0",
-    "electron-builder": "^22.10.5",
+    "electron": "^18.2.1",
+    "electron-builder": "^23.0.3",
     "node-sass": "^6.0.1",
     "rimraf": "^3.0.2",
     "sass": "^1.35.2",
@@ -71,6 +71,7 @@
     "asar": true,
     "asarUnpack": [
       "dist/bin/daemon",
+      "dist/bin/screeninfo",
       "dist/icons/**"
     ],
     "directories": {

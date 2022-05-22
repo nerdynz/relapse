@@ -66,6 +66,16 @@ func main() {
 	}
 
 	_, err = db.Exec(`
+	CREATE TABLE IF NOT EXISTS app (
+		app_name								TEXT DEFAULT '' PRIMARY KEY
+	);
+	`)
+	if err != nil {
+		logrus.Error("Failed to create schema", err)
+		return
+	}
+
+	_, err = db.Exec(`
 	drop view if exists capture_day_summary;
 	create view if not exists capture_day_summary
 	AS

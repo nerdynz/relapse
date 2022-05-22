@@ -7,6 +7,8 @@
     <button
       class="side-btn prev-minute"
       @click="goleft(1)"
+      @mousedown="prevSkipOn"
+      @mouseup="prevSkipOff"
       title="Previous 30 Seconds"
     >
       <ico icon="angle-left" />
@@ -48,8 +50,9 @@
     <div class="splitter" />
     <button
       class="side-btn next-30-sec"
-      @mousedown="prevSkipOn"
-      @mouseup="prevSkipOff"
+      @click="goRight(1)"
+      @mousedown="nextSkipOn"
+      @mouseup="nextSkipOff"
       title="Next 30 Seconds"
     >
       <ico icon="angle-right" />
@@ -65,7 +68,6 @@
 import { CaptureSimple } from "@render/interfaces/dayInfo.interface";
 import { format } from "date-fns";
 import { fabric } from "fabric";
-import { IEvent } from "fabric/fabric-impl";
 import { Options, Vue } from "vue-class-component";
 import { Prop, Watch } from "vue-property-decorator";
 import Datepicker from "vue3-datepicker";
@@ -173,26 +175,37 @@ export default class Timeline extends Vue {
   }
 
   skipChangeIncrement = 0;
-  skipChangeMultipler = 1;
+  skipChangeMultipler = 0.1;
+  skipDirection: "prev" | "next" | "" = "";
 
   prevSkipOn() {
     this.skipChangeIncrement = 1;
+    this.skipDirection = "prev";
   }
 
   prevSkipOff() {
     this.skipChangeIncrement = 0;
-    this.skipChangeMultipler = 1;
+    this.skipChangeMultipler = 0.1;
+    this.skipDirection = "";
+  }
+
+  nextSkipOn() {
+    this.skipChangeIncrement = 1;
+    this.skipDirection = "next";
+  }
+
+  nextSkipOff() {
+    this.skipChangeIncrement = 0;
+    this.skipChangeMultipler = 0.1;
+    this.skipDirection = "";
   }
 
   recurringMove() {
     let nextInc =
       this.skipChangeIncrement * Math.floor(this.skipChangeMultipler);
-    this.prevSkip(nextInc);
+    if (this.skipDirection === "prev") this.prevSkip(nextInc);
+    if (this.skipDirection === "next") this.nextSkip(nextInc);
     this.skipChangeMultipler += 0.1;
-  }
-
-  nextSkipOff() {
-    this.skipChangeIncrement = 0;
   }
 
   minuteChanged(index: number) {
@@ -441,20 +454,20 @@ export default class Timeline extends Vue {
       return val;
     };
 
-    this.canvas.on("mouse:up", (e: IEvent) => {
+    this.canvas.on("mouse:up", (e: any) => {
       this.minuteChanged(calcCursorPos(e));
       panning = false;
     });
 
-    this.canvas.on("mouse:down", (e: IEvent) => {
+    this.canvas.on("mouse:down", (e: any) => {
       this.minuteChanged(calcCursorPos(e));
       panning = true;
     });
-    this.canvas.on("mouse:out", (e: IEvent) => {
+    this.canvas.on("mouse:out", (e: any) => {
       this.hideMinuteHoverLine();
     });
 
-    this.canvas.on("mouse:move", (e: IEvent) => {
+    this.canvas.on("mouse:move", (e: any) => {
       if (e && e.e) {
         if (panning) {
           this.minuteChanged(calcCursorPos(e));

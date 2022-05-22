@@ -6,8 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"image"
-	"image/color"
-	"image/png"
 	"io/fs"
 	"io/ioutil"
 	"math"
@@ -26,9 +24,6 @@ import (
 	"github.com/nfnt/resize"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
-	"golang.org/x/image/font"
-	"golang.org/x/image/font/basicfont"
-	"golang.org/x/image/math/fixed"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -81,7 +76,7 @@ func (cap *captureServer) GetSettings(ctx context.Context, req *relapse_proto.Se
 
 	appInfos := make([]*relapse_proto.ApplicationInfo, 0)
 	rows, err := tx.Query(`
-	select app_name from capture
+	select app_name from app
 	group by app_name
 	`)
 	if err != nil {
@@ -419,6 +414,14 @@ func (cap *captureServer) captureScreen() error {
 	if err != nil {
 		return fmt.Errorf("DB trans begin failed: %v", err)
 	}
+
+	for _, screenWindow := range screenWindows {
+		_, err = tx.NamedExec("INSERT INTO app (app_name) VALUES (:app_name) ON CONFLICT (app_name) do NOTHING", screenWindow)
+		if err != nil {
+			return fmt.Errorf("app db insert failed : %v", err)
+		}
+	}
+
 	_, err = tx.NamedExec("INSERT INTO capture (app_name, app_path, filepath,fullpath, capture_time_seconds, capture_day_time_seconds, capture_size_bytes, is_purged) VALUES (:app_name,:app_path,:filepath, :fullpath,:capture_time_seconds,:capture_day_time_seconds, :capture_size_bytes, :is_purged)", capture)
 	if err != nil {
 		return fmt.Errorf("Capture db insert failed : %v", err)
@@ -585,175 +588,4 @@ func (cap *captureServer) settingsFromFile() (*relapse_proto.Settings, error) {
 	}
 
 	return settings, nil
-}
-
-type ScreenWindow struct {
-	AppName    string             `json:"appName"`
-	IsOnScreen bool               `json:"windowIsOnScreen"`
-	Layer      int32              `json:"layer"`
-	Pid        int32              `json:"pid"`
-	Bounds     ScreenWindowBounds `json:"bounds"`
-}
-
-type ScreenWindowBounds struct {
-	X      int32 `json:"x"`
-	Y      int32 `json:"y"`
-	Height int32 `json:"height"`
-	Width  int32 `json:"width"`
-}
-
-func (swb ScreenWindowBounds) ToRectangle() image.Rectangle {
-	return image.Rectangle{
-		Min: image.Point{
-			X: int(swb.X),
-			Y: int(swb.Y),
-		},
-		Max: image.Point{
-			X: int(swb.X) + int(swb.Width),
-			Y: int(swb.Y) + int(swb.Height),
-		},
-	}
-}
-
-func getScreens() []image.Rectangle {
-	n := screenshot.NumActiveDisplays()
-	logrus.Info("screens", n)
-	screens := make([]image.Rectangle, 0)
-	for i := 0; i < n; i++ {
-		screen := screenshot.GetDisplayBounds(i)
-		screens = append(screens, screen)
-	}
-	logrus.Info("screens", screens)
-	return screens
-}
-
-func getScreenBounds() (minX int, minY int, maxX int, maxY int) {
-	n := screenshot.NumActiveDisplays()
-	minX, minY, maxX, maxY = 0, 0, 0, 0
-	for i := 0; i < n; i++ {
-		bounds := screenshot.GetDisplayBounds(i)
-		if i == 0 {
-			minX = bounds.Min.X
-			maxX = bounds.Max.X
-			minY = bounds.Min.Y
-			maxY = bounds.Max.Y
-			continue
-		}
-
-		if bounds.Min.X < minX {
-			minX = bounds.Min.X
-		}
-		if bounds.Max.X > maxX {
-			maxX = bounds.Max.X
-		}
-		if bounds.Min.Y < minY {
-			minY = bounds.Min.Y
-		}
-		if bounds.Max.Y > maxY {
-			maxY = bounds.Max.Y
-		}
-	}
-	return minX, minY, maxX, maxY
-}
-
-//https://stackoverflow.com/questions/28992396/draw-a-rectangle-in-golang
-
-type ImageRenderer struct {
-	img   *image.RGBA
-	color color.Color
-}
-
-func NewImageRenderer(img *image.RGBA) *ImageRenderer {
-	return &ImageRenderer{
-		img:   img,
-		color: color.RGBA{128, 139, 151, 200},
-	}
-}
-
-func (ir *ImageRenderer) AddLabel(x, y int, label string) {
-	point := fixed.Point26_6{
-		X: fixed.Int26_6(x * 64),
-		Y: fixed.Int26_6(y * 64),
-	}
-
-	d := &font.Drawer{
-		Dst:  ir.img,
-		Src:  image.NewUniform(ir.color),
-		Face: basicfont.Face7x13,
-		Dot:  point,
-	}
-	d.DrawString(label)
-}
-
-// HLine draws a horizontal line
-func (ir *ImageRenderer) HLine(x1, y, x2 int) {
-	for ; x1 <= x2; x1++ {
-		ir.img.Set(x1, y, ir.color)
-	}
-}
-
-// VLine draws a veritcal line
-func (ir *ImageRenderer) VLine(x, y1, y2 int) {
-	for ; y1 <= y2; y1++ {
-		ir.img.Set(x, y1, ir.color)
-	}
-}
-
-// Rect draws a rectangle utilizing HLine() and VLine()
-func (ir *ImageRenderer) Rect(x1, y1, x2, y2 int) {
-	ir.HLine(x1, y1, x2)
-	ir.HLine(x1, y2, x2)
-	ir.VLine(x1, y1, y2)
-	ir.VLine(x2, y1, y2)
-}
-
-func (ir *ImageRenderer) Over(x1, y1, x2, y2 int) {
-	// ir.HLine(x1, y1, x2)
-	// ir.HLine(x1, y2, x2)
-	for i := x1; i < (x2 + 1); i++ {
-		ir.VLine(i, y1, y2)
-	}
-}
-
-func (ir *ImageRenderer) Overlay(rect image.Rectangle) {
-	x1 := rect.Min.X
-	x2 := rect.Max.X
-	y1 := rect.Min.Y
-	y2 := rect.Max.Y
-	ir.Over(x1, y1, x2, y2)
-}
-
-func (ir *ImageRenderer) Rectangle(rect image.Rectangle) {
-	x1 := rect.Min.X
-	x2 := rect.Max.X
-	y1 := rect.Min.Y
-	y2 := rect.Max.Y
-	ir.Rect(x1, y1, x2, y2)
-}
-
-func (ir *ImageRenderer) DrawLabeledRectangle(label string, rect image.Rectangle) {
-	ir.Rectangle(rect)
-
-	xCenter := (((rect.Max.X - rect.Min.X) / 2) + rect.Min.X) - len(label)
-	yCenter := (((rect.Max.Y - rect.Min.Y) / 2) + rect.Min.Y) - 5 // height of font is 10
-
-	ir.AddLabel(xCenter, yCenter, label)
-}
-
-func (ir *ImageRenderer) DrawGreyedOutRect(label string, rect image.Rectangle) {
-	ir.Overlay(rect)
-}
-
-func (ir *ImageRenderer) Write(path string) error {
-	logrus.Info("writing to ", path)
-	f, err := os.Create(path)
-	if err != nil {
-		return err
-	}
-	defer f.Close()
-	err = png.Encode(f, ir.img)
-	if err != nil {
-		return err
-	}
-	return nil
 }

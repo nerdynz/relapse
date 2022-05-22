@@ -23,7 +23,6 @@
 
 <script lang="ts">
 import { fabric } from "fabric";
-import { IEvent } from "fabric/fabric-impl";
 import { Options, Vue } from "vue-class-component";
 import { Watch } from "vue-property-decorator";
 import Timeline from "../components/Timeline.vue";
@@ -283,7 +282,7 @@ export default class ScreenshotViewer extends Vue {
     // canvas.defaultCursor = '-webkit-grab'
     canvas.absolutePan(new fabric.Point(-50, -50));
 
-    canvas.on("mouse:up", (e: IEvent) => {
+    canvas.on("mouse:up", (e: any) => {
       canvas.defaultCursor = "-webkit-grab";
       if (e.target) {
         e.target!.hoverCursor = "-webkit-grab";
@@ -291,7 +290,7 @@ export default class ScreenshotViewer extends Vue {
       panning = false;
     });
 
-    canvas.on("mouse:down", (e: IEvent) => {
+    canvas.on("mouse:down", (e: any) => {
       canvas.defaultCursor = "-webkit-grabbing";
       if (e.target) {
         e.target!.hoverCursor = "-webkit-grabbing";
@@ -299,7 +298,7 @@ export default class ScreenshotViewer extends Vue {
       panning = true;
     });
 
-    canvas.on("mouse:move", (e: IEvent) => {
+    canvas.on("mouse:move", (e: any) => {
       let event = e.e as any;
       canvasX = event.layerX;
       canvasY = event.layerY;

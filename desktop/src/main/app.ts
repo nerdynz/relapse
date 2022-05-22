@@ -53,7 +53,8 @@ function createSettingsWindow(isOpening = true) {
     width: 720,
     height: 540,
     titleBarStyle: "hiddenInset",
-    vibrancy: "appearance-based",
+    vibrancy: "under-window",
+    transparent: true,
     title: "settings",
     webPreferences: {
       nodeIntegration: false,
@@ -93,7 +94,8 @@ function createWindow() {
     width: 1440,
     height: 900,
     titleBarStyle: "hiddenInset",
-    vibrancy: "appearance-based",
+    vibrancy: "under-window",
+    transparent: true,
     webPreferences: {
       nodeIntegration: false,
       preload: join(__dirname, "preload.js"),
@@ -457,8 +459,8 @@ function createTrayAndMenusAndShortcuts(
 
   Menu.setApplicationMenu(mainMenu);
 
-  tray = new Tray(iconPath + "/TrayIcon@2x.png");
-  tray.setPressedImage(iconPath + "/TrayIcon@2x.png");
+  tray = new Tray(iconPath + "/TrayIconTemplate@2x.png");
+  tray.setPressedImage(iconPath + "/TrayIconTemplate@2x.png");
   trayContextMenu = Menu.buildFromTemplate([
     { label: "Show Window", type: "normal", click: show },
     { type: "separator" },
