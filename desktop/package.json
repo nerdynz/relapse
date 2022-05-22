@@ -64,6 +64,7 @@
     },
     "files": [
       "dist/bin/**/*",
+      "dist/icons/*",
       "dist/grpc/**/*",
       "dist/main/**/*",
       "dist/render/**/*"
