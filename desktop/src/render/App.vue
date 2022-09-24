@@ -60,8 +60,8 @@ export default class App extends Vue {
   }
 }
 </script>
-
 <style lang="scss">
+
 :root {
   --theme-titlebar-bg: hsl(0deg 0% 100% / 50%);
   --theme-unfocused-bg: #e6e6e6;
@@ -70,9 +70,9 @@ export default class App extends Vue {
   --theme-text-color: #515151;
   --theme-text-heading-color: #444444;
   --theme-text-subheading-color: #555555;
-  --theme-input-active-bg: hsl(0deg 0% 85% / 98%);
-  --theme-input-hover-bg: hsl(0deg 0% 85% / 98%);
-  --theme-input-bg: hsl(0deg 0% 92% / 98%);
+  --theme-input-active-bg: hsl(0deg 0% 80% / 98%);
+  --theme-input-hover-bg: hsl(0deg 0% 80% / 98%);
+  --theme-input-bg: hsl(0deg 0% 84% / 98%);
   // --theme-input-bg-transparency: hsl(0deg 0% 95% / 50%);
   --theme-input-row-odd: #ffffff;
   --theme-input-row-even: #f4f5f5;
@@ -109,7 +109,6 @@ body {
   height: 100%;
   display: flex;
   padding-top: $handlebar-height;
-  // background-color: black;
   overflow-x: hidden;
   overflow-y: hidden;
   height: 100%;
@@ -118,7 +117,9 @@ body {
     sans-serif;
   font-size: 13px;
   // background-color: var(--blue);
+  background-color: rgba(255, 255, 255, 0.1);
   @media (prefers-color-scheme: dark) {
+    background-color: rgba(0, 0, 0, 0.10);
     // background-color: var(--red);
   }
 }

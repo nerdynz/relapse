@@ -65,7 +65,7 @@ function createSettingsWindow(isOpening = true) {
   if (process.env.NODE_ENV === "development") {
     settingsWindow.loadURL("http://localhost:3000/#settings");
   } else {
-    settingsWindow.loadFile("dist/render/index.html#settings");
+    settingsWindow.loadFile("dist/render/index.html#/settings");
   }
   // and load the index.html of the app.
   settingsWindow.on("close", function (event) {

@@ -50,6 +50,8 @@ import { clone, remove } from "ramda";
 import { Options, Vue } from "vue-class-component";
 import { ApplicationInfo } from "../../grpc/relapse_pb";
 
+
+
 @Options({
   components: {
     Numeric,
@@ -120,7 +122,19 @@ export default class Settings extends Vue {
 }
 </script>
 
+<style src="@vueform/toggle/themes/default.css"></style>
+
 <style lang="scss">
+:root {
+  --toggle-width: 4.35rem;
+  --toggle-bg-on: #48C75B;
+  --toggle-border-on: #48C75B;
+  --toggle-text-on: #fff;
+  --toggle-bg-off: #FE6D46;
+  --toggle-border-off: #FE6D46;
+  --toggle-text-off: #fff;
+}
+
 .app-exclusions {
   border: 1px solid $theme-lines-between-color;
   border-radius: $radius;

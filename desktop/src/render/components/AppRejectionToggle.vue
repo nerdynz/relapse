@@ -1,11 +1,14 @@
 <template>
-  <div class="app-capture-toggle" :class="cssClass">
+  <!-- <div class="app-capture-toggle" :class="cssClass">
     <div class="capturing toggle-btn" @click="setCapture">Capture</div>
     <div class="reject toggle-btn" @click="setReject">Reject</div>
-  </div>
+  </div> -->
+  <toggle :model-value="value" on-label="Capture" off-label="Ignore" @input="changeToggle"></toggle>
 </template>
 
 <script lang="ts">
+import Toggle from '@vueform/toggle'
+
 // import FilePicker from './FilePicker'
 // import Numeric from '@render/components/Numeric'
 // import {mapGetters, mapActions} from 'vuex'
@@ -16,6 +19,7 @@ import { ApplicationInfo } from "../../grpc/relapse_pb";
 
 @Options({
   components: {
+    Toggle
     // Numeric
   },
 })
@@ -28,6 +32,21 @@ export default class Settings extends Vue {
       return "is-reject";
     }
     return "is-capturing";
+  }
+  
+  get value() {
+    if (this.rejections.includes(this.app.appname)) {
+      return false
+    }
+    return true
+  }
+
+  changeToggle() {
+    if (this.value) {
+      this.setReject()
+    } else {
+      this.setCapture()
+    }
   }
 
   setCapture() {
@@ -92,4 +111,6 @@ export default class Settings extends Vue {
     }
   }
 }
+
+
 </style>

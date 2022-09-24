@@ -34,6 +34,7 @@ class RelapseModule extends VuexModule {
   }
 
   get currentDay () {
+    console.log('this.day', this.day)
     return this.day
   }
 
@@ -128,6 +129,7 @@ class RelapseModule extends VuexModule {
   @Mutation
   setDay (day: DayResponse.AsObject) {
     this.day = day
+    console.log('SUMMARY=>', day.summary)
   }
 
   // @Action

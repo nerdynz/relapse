@@ -15,14 +15,7 @@
     </button>
 
     <div class="splitter" />
-    <div class="picker">
-      <datepicker
-        :model-value="currentDayTime"
-        input-format="d MMM yyyy h:mm:ss aa"
-        @update:model-value="dayChanged"
-      />
-    </div>
-    <div class="splitter" />
+
     <div class="canvas-bg" :style="timelineReadyStyle">
       <canvas
         ref="timelineCanvas"
@@ -48,6 +41,14 @@
       <ico icon="calendar-day" />
     </button>
     <div class="splitter" />
+    <div class="picker">
+      <datepicker
+        :model-value="currentDayTime"
+        input-format="d MMM yyyy h:mm:ss aa"
+        @update:model-value="dayChanged"
+      />
+    </div>
+    <div class="splitter" />
     <button
       class="side-btn next-30-sec"
       @click="goRight(1)"
@@ -61,16 +62,24 @@
     <button class="side-btn next-day" @click="nextDay" title="Next Day">
       <ico icon="arrow-from-left" />
     </button>
+
+    <div class="tick hours-total">
+      <div class="tick-text">
+        <ico icon="clock" class="is-small-icon" />
+        <div>{{ hoursTotal }}</div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script lang="ts">
 import { CaptureSimple } from "@render/interfaces/dayInfo.interface";
-import { format } from "date-fns";
+import { format, intervalToDuration } from "date-fns";
 import { fabric } from "fabric";
 import { Options, Vue } from "vue-class-component";
 import { Prop, Watch } from "vue-property-decorator";
 import Datepicker from "vue3-datepicker";
+import { CaptureDaySummary } from "../../grpc/relapse_pb";
 
 const timeColor = "#86DA9D";
 
@@ -98,6 +107,9 @@ export default class Timeline extends Vue {
   @Prop()
   currentCapture!: CaptureSimple;
 
+  @Prop()
+  summary!: CaptureDaySummary.AsObject;
+
   canvas!: fabric.Canvas;
   rect!: fabric.Rect;
   hoverRect!: fabric.Rect;
@@ -118,7 +130,24 @@ export default class Timeline extends Vue {
     if (this.isReady) {
       return "opacity:1;";
     }
-    return "opacity:1;";
+    return "opacity:0;";
+  }
+
+  get hoursTotal() {
+    console.log("this.summary", this.summary);
+    if (this.summary) {
+      const seconds = this.summary.totalcapturedtimeseconds;
+      console.log("seconds", seconds);
+      const duration = intervalToDuration({ start: 0, end: seconds * 1000 });
+      // { minutes: 30, seconds: 7 }
+
+      const zeroPad = (num: any) => String(num).padStart(2, "0");
+
+      const formatted = `${duration.hours}h ${zeroPad(duration.minutes)}m`;
+
+      return formatted;
+    }
+    return 0;
   }
 
   // get bgColor() {
@@ -422,10 +451,26 @@ export default class Timeline extends Vue {
     this.$ipc.receive("arrow-pressed", this.arrowPressed);
     this.$ipc.receive("day-function", this.dayChanging);
     this.interval = setInterval(this.recurringMove, 100);
+
+    window
+      .matchMedia("(prefers-color-scheme: dark)")
+      .addEventListener("change", this.onSchemeChange);
   }
 
   destroyed() {
     clearInterval(this.interval);
+
+    window
+      .matchMedia("(prefers-color-scheme: dark)")
+      .removeEventListener("change", this.onSchemeChange);
+  }
+
+  onSchemeChange(event: any) {
+    const newColorScheme = event.matches ? "dark" : "light";
+    this.isReady = false;
+    this.$nextTick(() => {
+      this.redrawCanvas();
+    });
   }
 
   interval = 0;
@@ -667,75 +712,95 @@ export default class Timeline extends Vue {
     position: relative;
     height: 34px;
     // border-left: 1px solid $theme-lines-between-color;
+  }
+  .time {
+    position: absolute;
+    top: 7px;
+    right: -99px;
+    pointer-events: none;
+    z-index: 500;
+    font-size: 16px;
+    -webkit-user-select: none;
+  }
+  user-select: none;
+  color: $theme-text-color;
 
-    .time {
+  .tick {
+    &.hours-total {
       position: absolute;
-      top: 7px;
-      right: -99px;
-      pointer-events: none;
-      z-index: 500;
-      font-size: 16px;
-      -webkit-user-select: none;
+      right: 80px;
+      width: 60px;
+      bottom: 2px;
+      .tick-text {
+        display: flex;
+        align-items: center;
+        
+        .is-small-icon {
+          margin-right: 3px;
+          width: 11px;
+          height: 11px;
+          svg {
+            width: 11px;
+            height: 11px;
+          }
+        }
+      }
     }
-    user-select: none;
+
+    font-size: 9px;
     color: $theme-text-color;
 
-    .tick {
-      font-size: 9px;
-      color: $theme-text-color;
+    font-weight: 300;
+    position: absolute;
+    -webkit-app-region: no-drag;
+    -webkit-user-select: none;
+    user-select: none;
 
-      font-weight: 300;
+    @media (max-width: 1020px) {
+      &:nth-child(even) {
+        display: none;
+      }
+    }
+
+    @media (max-width: 800px) {
+      display: none;
+      &:nth-child(even) {
+        display: none;
+      }
+      &:nth-child(4n + 1) {
+        display: block;
+      }
+    }
+
+    @media (max-width: 680px) {
+      display: none;
+      &:nth-child(even) {
+        display: none;
+      }
+      &:nth-child(4n + 1) {
+        display: none;
+      }
+      &:nth-child(6n-1) {
+        display: block;
+      }
+    }
+    @media (max-width: 480px) {
+      display: none;
+      &:nth-child(even) {
+        display: none;
+      }
+      &:nth-child(12n-1) {
+        display: none !important;
+      }
+    }
+
+    .tick-text {
       position: absolute;
+      left: -10px;
+      top: 3px;
       -webkit-app-region: no-drag;
       -webkit-user-select: none;
       user-select: none;
-
-      @media (max-width: 1020px) {
-        &:nth-child(even) {
-          display: none;
-        }
-      }
-
-      @media (max-width: 800px) {
-        display: none;
-        &:nth-child(even) {
-          display: none;
-        }
-        &:nth-child(4n + 1) {
-          display: block;
-        }
-      }
-
-      @media (max-width: 680px) {
-        display: none;
-        &:nth-child(even) {
-          display: none;
-        }
-        &:nth-child(4n + 1) {
-          display: none;
-        }
-        &:nth-child(6n-1) {
-          display: block;
-        }
-      }
-      @media (max-width: 480px) {
-        display: none;
-        &:nth-child(even) {
-          display: none;
-        }
-        &:nth-child(12n-1) {
-          display: none !important;
-        }
-      }
-
-      .tick-text {
-        position: absolute;
-        left: -10px;
-        top: 3px;
-        -webkit-app-region: no-drag;
-        -webkit-user-select: none;
-        user-select: none;
-      }
     }
   }
 }

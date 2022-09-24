@@ -26,6 +26,7 @@ import ArrowLeft from '@assets/fa-svgs/solid/arrow-left.svg?component'
 import ArrowRight from '@assets/fa-svgs/solid/arrow-right.svg?component'
 import CameraPolaroid from '@assets/fa-svgs/light/camera-polaroid.svg?component'
 import CalandarDay from '@assets/fa-svgs/regular/calendar-day.svg?component'
+import Clock from '@assets/fa-svgs/light/clock.svg?component'
 import Minus from '@assets/fa-svgs/light/minus.svg?component'
 import Plus from '@assets/fa-svgs/light/plus.svg?component'
 
@@ -52,7 +53,8 @@ const icons = (() => {
     'ico-minus': Minus,
     'ico-plus': Plus,
     'ico-camera-polaroid': CameraPolaroid,
-    'ico-calendar-day': CalandarDay
+    'ico-calendar-day': CalandarDay,
+    'ico-clock': Clock,
   }
 
   let aliases = {

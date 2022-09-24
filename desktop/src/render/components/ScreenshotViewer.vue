@@ -8,6 +8,7 @@
       @minute-index-change="currentImageIndexChanged"
       :current-capture="currentCapture"
       :day="currentDate"
+      :summary="currentDay?.summary"
       @day-change="loadNewDay"
     />
     <div class="screenshot-viewer">
@@ -310,13 +311,18 @@ export default class ScreenshotViewer extends Vue {
     });
 
     window.addEventListener("resize", this.setCanvasDimensions);
-
     // mousewheel & trackpad zoom
     // @ts-ignore
     document.addEventListener("mousewheel", this.onMouseWheel, false);
     this.updateLocalTimes();
     this.loadNewDay();
     this.redrawCanvas();
+  }
+  destroyed() {
+    // @ts-ignore
+    document.removeEventListener("mousewheel", this.onMouseWheel, false);
+    window.addEventListener("resize", this.setCanvasDimensions);
+
   }
 }
 </script>
