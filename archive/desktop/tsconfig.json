@@ -1,0 +1,25 @@
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "target": "esnext",
+    "module": "esnext",
+    "importHelpers": true,
+    "moduleResolution": "node",
+    "strict": true,
+    "jsx": "preserve",
+    "sourceMap": true,
+    "resolveJsonModule": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "experimentalDecorators": true,
+    "lib": ["esnext", "dom"],
+    "types": ["vite/client"],
+    "paths": {
+      "@assets/*": ["src/render/assets/*"],
+      "@render/*": ["src/render/*"],
+      "@grpc/*": ["src/grpc/*"]
+    },
+  },
+  "include": ["src/render/**/*.ts", "src/render/**/*.d.ts", "src/render/**/*.tsx", "src/render/**/*.vue"],
+  "exclude": ["src/app.ts"]
+}
