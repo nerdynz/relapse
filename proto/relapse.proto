@@ -1,0 +1,87 @@
+syntax = "proto3";
+package proto;
+
+message Capture {
+	int64 RowNum = 1;
+	string AppName = 2;
+	string AppPath = 3;
+	string Filepath = 4;
+	string Fullpath = 5;
+	int64 CaptureSizeBytes = 6;
+	bool IsPurged = 7;
+	string Dt = 8;
+	string Bod = 9;
+	bool IsReal = 10;
+}
+
+message CaptureDaySummary {
+	string Bod = 1;
+	int64 TotalCapturedTimeSeconds = 2;
+	int64 TotalCapturesForDay = 3;
+	int64 TotalCaptureSizeBytes = 4;
+	bool IsPurged = 5;
+}
+
+message DayRequest {
+  string Dt = 1;
+}
+
+message CapturedDay {
+  string Bod = 1;
+  repeated Capture Captures = 2;
+	CaptureDaySummary Summary = 3;
+}
+
+message Settings {
+	bool IsEnabled = 1;
+	int32 RetainForXDays = 2;
+	repeated string Rejections = 3;
+	bool OpenAutomaticallyAtLogin = 4;
+	bool IsDumping = 5;
+}
+
+message SettingsOptions {
+	repeated ApplicationInfo CapturedApplications = 1;
+}
+
+message ApplicationInfo {
+	string AppName = 1;
+	string AppPath = 2;
+}
+
+message DaySummariesRequest {
+	bool IncludeIsPurged = 1;
+	int64 CaptureDayTimeSecondsBefore = 2;
+	int64 CaptureDayTimeSecondsAfter = 3;
+}
+
+message DaySummaries {
+	repeated CaptureDaySummary DaySummaries = 1;
+}
+
+message SettingsPlusOptionsRequest {}
+message SettingsPlusOptions {
+	Settings Settings  = 1;
+	SettingsOptions SettingsOptions  = 2;
+}
+
+message ListenRequest {
+	bool IsPerformingInitialCapture = 1;
+}
+
+message DeleteCapturesForDayRequest {
+	int64 CaptureDayTimeSeconds = 1;
+}
+
+message DeleteCapturesForDayResponse {
+	int64 CaptureDayTimeSeconds = 1;
+	repeated string Deletions = 2;
+}
+
+service Relapse {
+  rpc GetSettings(SettingsPlusOptionsRequest) returns (SettingsPlusOptions) {}
+  rpc SetSettings(Settings) returns (Settings) {}
+  rpc LoadCapturedDay(DayRequest) returns (CapturedDay) {}
+  rpc GetDaySummaries(DaySummariesRequest) returns (DaySummaries) {}
+  rpc DeleteCapturesForDay(DeleteCapturesForDayRequest) returns (DeleteCapturesForDayResponse) {}
+}

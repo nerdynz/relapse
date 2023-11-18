@@ -1,13 +1,7 @@
 {
 	"folders": [
 		{
-			"path": "daemon"
-		},
-		{
-			"path": "desktop"
-		},
-		{
-			"path": "screenwindows"
+			"path": "."
 		}
 	],
 	"settings": {}
