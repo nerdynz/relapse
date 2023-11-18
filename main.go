@@ -28,7 +28,7 @@ import (
 	_ "modernc.org/sqlite"
 )
 
-//go:embed frontend/dist
+//go:embed assets
 var assets embed.FS
 var vwSetting *application.WebviewWindow
 
@@ -63,7 +63,7 @@ func main() {
 	// })
 	go relapse.Start()
 
-	b, err := assets.ReadFile("frontend/dist/appicon.png")
+	b, err := assets.ReadFile("assets/appicon.png")
 	if err != nil {
 		logrus.Fatal("load icon", err)
 	}
@@ -202,7 +202,7 @@ func main() {
 	tray := app.NewSystemTray()
 	tray.SetMenu(trayMenu)
 
-	b, err = assets.ReadFile("frontend/dist/rewind2.png")
+	b, err = assets.ReadFile("assets/rewind2.png")
 	if err != nil {
 		logrus.Fatal("load systray", err)
 	}
