@@ -1,5 +1,6 @@
 .DS_Store
 node_modules
+**/node_modules
 /dist
 
 
@@ -15,28 +16,10 @@ pnpm-debug.log*
 
 # Editor directories and files
 .idea
-.vscode
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
-
-#Electron-builder output
-/dist_electron
-/daemon/**/*.jpg
-/daemon/**/*.webp
-/daemon/tmp
-/app/relapse-darwin-x64/
-/daemon/*.db
-# app/src/bin/daemon
-
-app/dist_electron/
-
-daemon/settings.json
-
-daemon/screeninfo
-
-desktop/src/bin/
 
 relapse
