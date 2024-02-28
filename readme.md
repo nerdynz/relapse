@@ -1,4 +1,4 @@
-![Keeping track of your day just became a cinch](docs/relapse-github.png | width=100)
+<img src="/nerdynz/relapse/raw/master/docs/relapse-github.png" alt="Keeping track of your day just became a cinch" style="max-width: 200px">
 
 # Relapse
 
