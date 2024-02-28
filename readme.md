@@ -1,17 +1,10 @@
-<div style="display:flex; flex-direction:row;">
-  <div>
-    <img src="docs/relapse-github.png" alt="Keeping track of your day just became a cinch" style="max-width: 200px"> 
-  </div>
-  <div>
-    Keeping track of your day just became a cinch
-  </div>
-</div>
+![Keeping track of your day just became a cinch](docs/relapse-github.png)
 
 # Relapse
 
 Keeping track of your day just became a cinch
 
-![Application Example](docs/HeroImage.jpg)
+![Relapse Example](docs/HeroImage.jpg)
 
 Relapse takes a screen shot of your desktop every minute and allows you to scroll back and forth between your day. 
 
@@ -21,6 +14,8 @@ Works across multiple screens
 
 ![Relapse example](docs/MultiscreenSupport.jpg)
 
+
+Mac OSX only
 
 Built using 
 
