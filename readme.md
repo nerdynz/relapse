@@ -1,6 +1,6 @@
-# Relapse
+![Keeping track of your day just became a cinch](docs/relapse-github.png | width=100)
 
-![Keeping track of your day just became a cinch](docs/relapse-github.png)
+# Relapse
 
 Keeping track of your day just became a cinch
 
