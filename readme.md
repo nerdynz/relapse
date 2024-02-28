@@ -1,4 +1,11 @@
-<img src="docs/relapse-github.png" alt="Keeping track of your day just became a cinch" width="200px">
+<div style="display:flex; flex-direction:row;">
+  <div>
+    <img src="docs/relapse-github.png" alt="Keeping track of your day just became a cinch" style="max-width: 200px"> 
+  </div>
+  <div>
+    Keeping track of your day just became a cinch
+  </div>
+</div>
 
 # Relapse
 
