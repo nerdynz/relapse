@@ -1,4 +1,4 @@
-<img src="docs/relapse-github.png" alt="Keeping track of your day just became a cinch" style="max-width: 200px">
+<img src="docs/relapse-github.png" alt="Keeping track of your day just became a cinch" width="200px">
 
 # Relapse
 
