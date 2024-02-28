@@ -1,12 +1,16 @@
 package main
 
 import (
+	"fmt"
 	"image"
 	"image/draw"
+	"image/png"
 	_ "image/png" // Required for initializing the PNG decoder
+	"os"
 	"testing"
 
 	"github.com/golang/geo/r2"
+	"github.com/sirupsen/logrus"
 	"gopkg.in/stretchr/testify.v1/assert"
 )
 
@@ -147,4 +151,36 @@ func TestValidGlimpses(t *testing.T) {
 	// gp.DumpGlimpses()
 	// gp.GreyOutFromLabels(rejections)
 	gp.RenderAsFile("./test-image.png")
+}
+
+func TestBlaDraw(t *testing.T) {
+	file, err := os.Open("./bla.png")
+	if err != nil {
+		logrus.Fatal(err)
+	}
+	defer file.Close()
+
+	// Decode the image
+	pn, err := png.Decode(file)
+	if err != nil {
+		fmt.Println("Error decoding image:", err)
+		return
+	}
+
+	// Create an RGBA image
+	if img, ok := pn.(*image.RGBA); ok {
+		// img is now an *image.RGBA
+		ir := NewImageRendererDebug(img)
+		ir.DrawLabeledRectangle("bla", image.Rect(33, 195, 195+1507, 195+34))
+
+		f, err := os.Create("blaout.png")
+		if err != nil {
+			logrus.Fatal(err)
+		}
+		defer f.Close()
+		err = png.Encode(f, ir.img)
+		if err != nil {
+			logrus.Fatal(err)
+		}
+	}
 }

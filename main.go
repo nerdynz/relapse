@@ -25,21 +25,30 @@ import (
 
 	"github.com/sirupsen/logrus"
 	"github.com/wailsapp/wails/v3/pkg/application"
+	"golang.design/x/clipboard"
 	_ "modernc.org/sqlite"
 )
 
-//go:embed assets
+//go:embed frontend/dist
 var assets embed.FS
 var vwSetting *application.WebviewWindow
+var app *application.App
 
 func main() {
 	relapse := NewApp()
+
+	err := clipboard.Init()
+	if err != nil {
+		logrus.Errorf("clipboard %v", err)
+	}
+
 	relapse.Scheduler.Every(30).Seconds().Do(func() {
 		logrus.Info("capturing")
 		cap, err := relapse.Capture.CaptureScreens()
 		if err != nil {
 			logrus.Error(err)
 		}
+
 		relapse.Publish("screen-captured", cap)
 	})
 
@@ -68,7 +77,7 @@ func main() {
 		logrus.Fatal("load icon", err)
 	}
 
-	app := application.New(application.Options{
+	app = application.New(application.Options{
 		Name:        "Relapse",
 		Description: "A demo of using raw HTML & CSS",
 		Logger:      relapse.logger,
@@ -83,29 +92,8 @@ func main() {
 	})
 
 	// Create window
-	createWindowFn := func() {
-		vw := app.GetWindowByName("MainWindow")
-		if vw != nil {
-			vw.Show()
-			return
-		}
-		vw = app.NewWebviewWindowWithOptions(application.WebviewWindowOptions{
-			Name:  "MainWindow",
-			Title: "Relapse",
-			CSS:   `body { background-color: rgba(255, 255, 255, 0); } .main { color: white; margin: 20%; }`,
 
-			Mac: application.MacWindow{
-
-				InvisibleTitleBarHeight: 34,
-				Backdrop:                application.MacBackdropTranslucent,
-				TitleBar:                application.MacTitleBarHiddenInset,
-			},
-			DevToolsEnabled: true,
-			URL:             "/",
-		})
-		vw.Focus()
-	}
-	createWindowFn()
+	createOrShowMainWindow(app)
 
 	menu := app.NewMenu()
 
@@ -113,22 +101,7 @@ func main() {
 	appMenu.AddRole(application.About)
 	appMenu.AddSeparator()
 	appMenu.Add("Settings...").SetAccelerator("cmdorctrl+,").OnClick(func(ctx *application.Context) {
-		if vwSetting != nil {
-			vwSetting.Destroy()
-		}
-		vwSetting = app.NewWebviewWindowWithOptions(application.WebviewWindowOptions{
-			Title: "Settings",
-			CSS:   `body { background-color: rgba(255, 255, 255, 0); } .main { color: white; margin: 20%; }`,
-			Mac: application.MacWindow{
-				InvisibleTitleBarHeight: 34,
-				Backdrop:                application.MacBackdropTranslucent,
-				TitleBar:                application.MacTitleBarHiddenInset,
-			},
-			DevToolsEnabled: true,
-			URL:             "/#/settings",
-		})
-		vwSetting.Center()
-		vwSetting.Focus()
+		createOrShowSettingsWindow(app)
 	})
 	appMenu.AddSeparator()
 	appMenu.AddRole(application.ServicesMenu)
@@ -195,7 +168,7 @@ func main() {
 
 	trayMenu := app.NewMenu()
 	trayMenu.Add("Show").OnClick(func(ctx *application.Context) {
-		createWindowFn()
+		createOrShowMainWindow(app)
 	})
 	trayMenu.Add("Quit").SetAccelerator("cmdorctrl+q").OnClick(quitFunc)
 
@@ -361,6 +334,32 @@ func NewApp() *App {
 
 	mux.Handle(twirpHandler.PathPrefix(), twirpHandler)
 	mux.HandleFunc("/events", sseSrv.HTTPHandler)
+	mux.HandleFunc("/trigger", func(w http.ResponseWriter, req *http.Request) {
+
+		params := req.URL.Query()
+
+		windowName := params.Get("window")
+		if windowName == "" {
+			windowName = "MainWindow"
+		}
+		event := params.Get("event")
+		switch event {
+		case "maximise":
+			vw := app.GetWindowByName(windowName)
+			if vw != nil {
+				vw.Maximise()
+			}
+		case "copy":
+			b, err := io.ReadAll(req.Body)
+			if err != nil {
+				logrus.Error("errr", err)
+			}
+			clipboard.Write(clipboard.FmtText, b)
+		}
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("ok"))
+		return
+	})
 
 	// images
 	mux.HandleFunc("/capture", func(res http.ResponseWriter, req *http.Request) {
@@ -379,7 +378,7 @@ func NewApp() *App {
 	// Make a CORS wrapper:
 	corsWrapper := cors.New(cors.Options{
 		AllowedOrigins: []string{"http://localhost:5173", "http://127.0.0.1:5173", "wails://wails"},
-		AllowedMethods: []string{"POST"},
+		AllowedMethods: []string{"POST", "GET"},
 		AllowedHeaders: []string{"Content-Type"},
 	})
 
@@ -396,72 +395,50 @@ func NewApp() *App {
 	return app
 }
 
-func randomNotes() {
+func createOrShowMainWindow(app *application.App) {
+	windowName := "MainWindow"
+	vw := app.GetWindowByName(windowName)
+	if vw != nil {
+		vw.Show()
+		vw.Focus()
+		return
+	}
+	vw = app.NewWebviewWindowWithOptions(application.WebviewWindowOptions{
+		Name:  windowName,
+		Title: "Relapse",
+		CSS:   `body { background-color: rgba(255, 255, 255, 0); } .main { color: white; margin: 20%; }`,
 
-	// CONFIG
-	logrus.Println("Home data directory:", xdg.DataHome)
-	logrus.Println("Data directories:", xdg.DataDirs)
-	logrus.Println("Home config directory:", xdg.ConfigHome)
-	logrus.Println("Config directories:", xdg.ConfigDirs)
-	logrus.Println("Home state directory:", xdg.StateHome)
-	logrus.Println("Cache directory:", xdg.CacheHome)
-	logrus.Println("Runtime directory:", xdg.RuntimeDir)
+		Mac: application.MacWindow{
 
-	// Other common directories.
-	logrus.Println("Home directory:", xdg.Home)
-	logrus.Println("Application directories:", xdg.ApplicationDirs)
-	logrus.Println("Font directories:", xdg.FontDirs)
+			InvisibleTitleBarHeight: 34,
+			Backdrop:                application.MacBackdropTranslucent,
+			TitleBar:                application.MacTitleBarHiddenInset,
+		},
+		DevToolsEnabled: true,
+		URL:             "/",
+	})
+	vw.Focus()
+}
 
-	// For other types of application files use:
-	// xdg.DataFile()
-	// xdg.StateFile()
-	// xdg.CacheFile()
-	// xdg.RuntimeFile()
-
-	// Finding application config files.
-	// SearchConfigFile takes one parameter which must contain the name of
-	// the file, but it can also contain a set of parent directories relative
-	// to the config search paths (xdg.ConfigHome and xdg.ConfigDirs).
-	// configFilePath, err = xdg.SearchConfigFile("appname/config.yaml")
-	// if err != nil {
-	// 	logrus.Fatal(err)
-	// }
-	// logrus.Println("Config file was found at:", configFilePath)
-
-	// userDataPath := strings.TrimRight(databaseFilePath, "relapse.db")
-
-	// For other types of application files use:
-	// xdg.DataFile()
-	// xdg.StateFile()
-	// xdg.CacheFile()
-	// xdg.RuntimeFile()
-
-	// Finding application config files.
-	// SearchConfigFile takes one parameter which must contain the name of
-	// the file, but it can also contain a set of parent directories relative
-	// to the config search paths (xdg.ConfigHome and xdg.ConfigDirs).
-	// configFilePath, err = xdg.SearchConfigFile("appname/config.yaml")
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
-	// log.Println("Config file was found at:", configFilePath)
-
-	// END PLAY
-	// go func() {
-
-	// _, err = db.Exec(`
-	// drop view if exists capture_day_summary;
-	// create view if not exists capture_day_summary
-	// AS
-	// select capture_day_time_seconds, count(capture_time_seconds) * 30 as total_captured_time_seconds, count(capture_time_seconds) as total_captures_for_day, sum(capture_size_bytes) as total_capture_size_bytes, is_purged
-	// from capture
-	// group by capture_day_time_seconds, is_purged;
-	// 	`)
-	// if err != nil {
-	// 	logrus.Error("view capture_day_summary: ", err)
-	// 	return
-
-	// }
-
-	// }()
+func createOrShowSettingsWindow(app *application.App) {
+	windowName := "SettingsWindow"
+	vw := app.GetWindowByName(windowName)
+	if vw != nil {
+		vw.Show()
+		vw.Focus()
+		return
+	}
+	vw = app.NewWebviewWindowWithOptions(application.WebviewWindowOptions{
+		Name:  windowName,
+		Title: "Settings",
+		CSS:   `body { background-color: rgba(255, 255, 255, 0); } .main { color: white; margin: 20%; }`,
+		Mac: application.MacWindow{
+			InvisibleTitleBarHeight: 34,
+			Backdrop:                application.MacBackdropTranslucent,
+			TitleBar:                application.MacTitleBarHiddenInset,
+		},
+		DevToolsEnabled: true,
+		URL:             "/#/settings",
+	})
+	vw.Focus()
 }

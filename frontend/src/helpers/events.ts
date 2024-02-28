@@ -7,11 +7,11 @@ class EventStreamer {
   constructor(url: string = "http://localhost:5020/events?stream=messages") {
     (this.src = new EventSource(url)), (this.callbacks = {});
     this.src.onmessage = (e) => {
-      const data: {messageType: string, data: any} = JSON.parse(e.data)
+      const data: { messageType: string; data: any } = JSON.parse(e.data);
       if (this.callbacks[data.messageType]) {
-        for(let cb of Array.from(this.callbacks[data.messageType])){
+        for (let cb of Array.from(this.callbacks[data.messageType])) {
           cb(data.data);
-        } 
+        }
       }
     };
   }
@@ -32,4 +32,30 @@ export function eventsOn(
   callback: (arg?: any, arg2?: any) => any
 ) {
   eventStreamer.addEvent(eventType, callback);
+}
+
+export function trigger(
+  event: string,
+  payload: any = null,
+  window = "MainWindow"
+) {
+  console.log("triggering event", event, "on window", window);
+  let url = "http://localhost:5020/trigger?qs=1";
+  if (event) {
+    url += `&event=${event}`;
+  }
+  if (window) {
+    url += `&window=${window}`;
+  }
+
+  fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "text/plain",
+    },
+    body: payload, 
+  })
+    .then((response) => response.json())
+    .then((data) => console.log(data))
+    .catch((error) => console.error("Error:", error));
 }

@@ -11,6 +11,7 @@ const app = createApp(App);
 
 
 import Home from './views/Home.vue'
+import DaySummary from './views/DaySummary.vue'
 import About from './views/About.vue'
 import Settings from './views/Settings.vue'
 
@@ -19,6 +20,7 @@ import Settings from './views/Settings.vue'
 // We'll talk about nested routes later.
 const routes = [
   { path: '/', component: Home },
+  { path: '/summary', component: DaySummary },
   { path: '/about', component: About },
   { path: '/settings', component: Settings },
 ]

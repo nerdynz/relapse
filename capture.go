@@ -2,13 +2,11 @@ package main
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"image"
 	"io/fs"
 	"math"
 	"os"
-	"os/exec"
 	"path/filepath"
 
 	"github.com/chai2010/webp"
@@ -46,18 +44,6 @@ func (cap *ScreenCapturer) CaptureImage() (*image.RGBA, error) {
 
 func (cap *ScreenCapturer) GetScreenInfo() ([]*ScreenWindow, error) {
 	return grabScreenInfo()
-}
-func (cap *ScreenCapturer) GetScreenInfoOld() ([]*ScreenWindow, string, error) {
-	return nil, "", errors.New("removed in favor of cgo implmentation")
-	raw, err := exec.Command(cap.binPath + "/screeninfo").Output()
-	if err != nil {
-		return nil, "", err
-	}
-	sw, err := cap.extractScreenWindow(raw)
-	if err != nil {
-		return nil, "", err
-	}
-	return sw, string(raw), nil
 }
 
 func (cap *ScreenCapturer) LoadDump(dumpFilePath string) (string, []image.Rectangle, []*ScreenWindow, error) {
@@ -140,9 +126,9 @@ func (cap *ScreenCapturer) SaveWebp(fullpath string, filename string, img *image
 	// Encode lossless webp
 
 	imageWidth := math.Abs(float64(img.Bounds().Min.X)) + math.Abs(float64(img.Bounds().Max.X))
-	resizedWidth := math.Round(imageWidth * 0.65) // RESIZING breaks all glimpse logic on dumps
+	resizedWidth := math.Round(imageWidth * 0.60) // RESIZING breaks all glimpse logic on dumps
 	newImage := resize.Resize(uint(resizedWidth), 0, img, resize.Lanczos3)
-	err = webp.Encode(file, newImage, &webp.Options{Lossless: false, Quality: 40, Exact: false})
+	err = webp.Encode(file, newImage, &webp.Options{Lossless: false, Quality: 60, Exact: false})
 	if err != nil {
 		return "", err
 	}

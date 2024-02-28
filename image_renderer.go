@@ -33,7 +33,7 @@ func NewImageRenderer(img *image.RGBA) *ImageRenderer {
 }
 
 func NewImageRendererDebug(img *image.RGBA) *ImageRenderer {
-	fontBytes, err := os.ReadFile("./RobotoMono.ttf")
+	fontBytes, err := os.ReadFile("./assets/RobotoMono.ttf")
 	if err != nil {
 		logrus.Fatal(err)
 	}

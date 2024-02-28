@@ -108,16 +108,17 @@ const props = defineProps<{
 }>()
 
 const times: Array<Capture> = $computed(() => {
-  return relapseStore.currentDay.Captures || []
+  return relapseStore.currentDay?.Captures || []
 })
 
-const currentDay: CapturedDay = $computed(() => {
+const currentDay: CapturedDay | null = $computed(() => {
   return relapseStore.currentDay
 })
 
 watch($$(currentDay), () => {
   redrawCanvas()
 })
+
 watch(() => props.currentImageIndex, () => {
   redrawCanvas()
 })
@@ -174,7 +175,7 @@ const timesWhereIsWholeHour = computed(() => {
     }
     return false;
   });
-  return [...wholeHours, wholeHours[0]];
+  return [...wholeHours];
 })
 
 function prevDay() {

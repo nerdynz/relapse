@@ -2,13 +2,11 @@ syntax = "proto3";
 package proto;
 
 message Capture {
-	int64 RowNum = 1;
+	int32 RowNum = 1;
 	string AppName = 2;
-	string AppPath = 3;
 	string Filepath = 4;
 	string Fullpath = 5;
-	int64 CaptureSizeBytes = 6;
-	bool IsPurged = 7;
+	int32 CaptureSizeBytes = 6;
 	string Dt = 8;
 	string Bod = 9;
 	bool IsReal = 10;
@@ -16,13 +14,12 @@ message Capture {
 
 message CaptureDaySummary {
 	string Bod = 1;
-	int64 TotalCapturedTimeSeconds = 2;
-	int64 TotalCapturesForDay = 3;
-	int64 TotalCaptureSizeBytes = 4;
-	bool IsPurged = 5;
+	int32 TotalCapturedMinutes = 2;
+	int32 TotalCapturesCount = 3;
+	int32 TotalCaptureSizeBytes = 4;
 }
 
-message DayRequest {
+message DateRequest {
   string Dt = 1;
 }
 
@@ -50,9 +47,8 @@ message ApplicationInfo {
 }
 
 message DaySummariesRequest {
-	bool IncludeIsPurged = 1;
-	int64 CaptureDayTimeSecondsBefore = 2;
-	int64 CaptureDayTimeSecondsAfter = 3;
+	string BodFrom = 1;
+	string BodTo = 2;
 }
 
 message DaySummaries {
@@ -70,18 +66,33 @@ message ListenRequest {
 }
 
 message DeleteCapturesForDayRequest {
-	int64 CaptureDayTimeSeconds = 1;
+	int32 CaptureDayTimeSeconds = 1;
 }
 
 message DeleteCapturesForDayResponse {
-	int64 CaptureDayTimeSeconds = 1;
+	int32 CaptureDayTimeSeconds = 1;
 	repeated string Deletions = 2;
 }
 
 service Relapse {
   rpc GetSettings(SettingsPlusOptionsRequest) returns (SettingsPlusOptions) {}
   rpc SetSettings(Settings) returns (Settings) {}
-  rpc LoadCapturedDay(DayRequest) returns (CapturedDay) {}
-  rpc GetDaySummaries(DaySummariesRequest) returns (DaySummaries) {}
+  rpc LoadCapturedDay(DateRequest) returns (CapturedDay) {}
+  rpc LoadCaptureOcr(DateRequest) returns (OcrFull) {}
+  rpc LoadDaySummaries(DaySummariesRequest) returns (DaySummaries) {}
   rpc DeleteCapturesForDay(DeleteCapturesForDayRequest) returns (DeleteCapturesForDayResponse) {}
+}
+
+message OcrFull {
+	repeated OcrMeta Meta = 1; 
+	string FullText = 2;
+}
+
+message OcrMeta {
+	string Text = 1;
+	double Confidence = 2;
+	double Height = 3;
+	double Width = 4;
+	double X = 5;
+	double Y = 6;
 }

@@ -2,7 +2,7 @@ module github.com/nerdynz/relapse
 
 go 1.21.1
 
-replace github.com/wailsapp/wails/v3 => /Users/jaybeecave/go/src/github.com/wailsapp/wails/v3
+replace github.com/wailsapp/wails/v3 => /Users/jaybeecave/go/src/github.com/nerdynz/wails/v3
 
 require (
 	github.com/adrg/xdg v0.4.0
@@ -11,7 +11,6 @@ require (
 	github.com/golang/geo v0.0.0-20230421003525-6adc56603217
 	github.com/google/uuid v1.3.1 // indirect; indirect // indirect
 	github.com/jmoiron/sqlx v1.3.5
-	github.com/kardianos/osext v0.0.0-20190222173326-2bc1f35cddc0
 	github.com/kbinani/screenshot v0.0.0-20230812210009-b87d31814237
 	github.com/mattn/go-sqlite3 v1.14.17
 	github.com/r3labs/sse v0.0.0-20210224172625-26fe804710bc
@@ -19,7 +18,7 @@ require (
 	github.com/sirupsen/logrus v1.9.3
 	github.com/twitchtv/twirp v8.1.3+incompatible
 	github.com/wailsapp/wails/v3 v3.0.0-alpha.0
-	golang.org/x/image v0.12.0
+	golang.org/x/image v0.14.0
 	google.golang.org/grpc v1.58.2
 	google.golang.org/protobuf v1.31.0
 	gopkg.in/stretchr/testify.v1 v1.2.2
@@ -29,7 +28,9 @@ require (
 require (
 	github.com/golang/freetype v0.0.0-20170609003504-e2365dfdc4a0
 	github.com/nfnt/resize v0.0.0-20180221191011-83c6a9932646
+	github.com/progrium/macdriver v0.5.0-preview
 	github.com/samber/slog-logrus v1.0.0
+	golang.design/x/clipboard v0.7.0
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1
 )
 
@@ -37,6 +38,8 @@ require (
 	github.com/godbus/dbus/v5 v5.1.0 // indirect
 	github.com/leaanthony/u v1.1.0 // indirect
 	github.com/pkg/browser v0.0.0-20210911075715-681adbf594b8 // indirect
+	golang.org/x/exp/shiny v0.0.0-20231226003508-02704c960a9b // indirect
+	golang.org/x/mobile v0.0.0-20231127183840-76ac6878050a // indirect
 )
 
 require (
@@ -56,7 +59,7 @@ require (
 	github.com/imdario/mergo v0.3.12 // indirect
 	github.com/jbenet/go-context v0.0.0-20150711004518-d14ea06fba99 // indirect
 	github.com/jchv/go-winloader v0.0.0-20210711035445-715c2860da7e // indirect
-	github.com/jezek/xgb v1.1.0 // indirect
+	github.com/jezek/xgb v1.1.1 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/kballard/go-shellquote v0.0.0-20180428030007-95032a82bc51 // indirect
 	github.com/kevinburke/ssh_config v0.0.0-20201106050909-4977a11b4351 // indirect
@@ -80,12 +83,12 @@ require (
 	github.com/wailsapp/mimetype v1.4.1 // indirect
 	github.com/xanzy/ssh-agent v0.3.0 // indirect
 	go.uber.org/atomic v1.9.0 // indirect
-	golang.org/x/crypto v0.13.0 // indirect
+	golang.org/x/crypto v0.16.0 // indirect
 	golang.org/x/exp v0.0.0-20230626212559-97b1e661b5df // indirect
-	golang.org/x/mod v0.12.0 // indirect
-	golang.org/x/net v0.15.0 // indirect
-	golang.org/x/sys v0.13.0 // indirect
-	golang.org/x/tools v0.6.0 // indirect
+	golang.org/x/mod v0.14.0 // indirect
+	golang.org/x/net v0.19.0 // indirect
+	golang.org/x/sys v0.15.0 // indirect
+	golang.org/x/tools v0.16.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20230920204549-e6e6cdab5c13 // indirect
 	gopkg.in/cenkalti/backoff.v1 v1.1.0 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect

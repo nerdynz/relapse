@@ -3,11 +3,13 @@
     @minute-index-change="(i: number) => currentImageIndex = i" :is-following="isFollowing"
     @toggle-follow="isFollowing = !isFollowing" />
   <screenshot-viewer :current-capture="currentCapture" />
+  <summary-footer />
 </template>
 
 <script lang="ts" setup>
 import { useRelapseStore } from "../store/relapse";
 import ScreenshotViewer from '../components/ScreenshotViewer.vue'
+import SummaryFooter from '../components/SummaryFooter.vue'
 import Timeline from '../components/Timeline.vue'
 import { onMounted } from "vue";
 import { eventsOn } from "../helpers/events";
@@ -34,8 +36,8 @@ onMounted(async () => {
   }
 
   eventsOn('screen-captured', async (day?: Capture) => {
-    if (day && day.Bod === relapseStore.currentDay.Bod) {
-      await relapseStore.loadDay(new Date(day.Bod))
+    if (day && day.Bod === relapseStore.currentDay?.Bod) {
+      await relapseStore.loadDay(new Date(relapseStore.currentDay.Bod)) // load more
       if (isFollowing) {
         currentImageIndex = latestCaptureIndex || currentImageIndex
       }

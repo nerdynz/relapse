@@ -1,15 +1,25 @@
 <template>
   <div class="screenshot-viewer">
-    <zoom :value="currentZoomLevel" @input="zoomChanged" @middle-clicked="resetCanvasZoom" />
+    <zoom
+      :value="currentZoomLevel"
+      @input="zoomChanged"
+      @middle-clicked="resetCanvasZoom"
+    >
+      <template #left>
+        <button class="btn zoom-btn gap-right" @click="doOcr">xxx</button>
+      </template>
+    </zoom>
     <canvas ref="canvasEl" id="screenshot-viewer" width="1280" height="800" />
   </div>
 </template>
 
 <script lang="ts" setup>
-import { Canvas, Image, Point } from 'fabric'
+import { Canvas, Image, Point, Rect } from "fabric";
 import Zoom from "../components/Zoom.vue";
 import { Ref, ref, onUnmounted, onMounted, watch } from "vue";
-import { Capture } from '../relapse.pb';
+import { Capture, LoadCaptureOcr } from "../relapse.pb";
+import { equals } from "ramda";
+import { trigger } from "../helpers/events";
 
 let canvas: Canvas;
 let canvasX: number;
@@ -17,30 +27,27 @@ let canvasY: number;
 let lastRenderedImg: Image;
 
 const currentZoomLevel = ref(0.5);
-const canvasEl: Ref<HTMLCanvasElement | undefined> = ref()
+const canvasEl: Ref<HTMLCanvasElement | undefined> = ref();
 
 const props = defineProps<{
-  currentCapture?: Capture
-}>()
+  currentCapture?: Capture;
+}>();
 
 const imagePath = $computed(() => {
-  let filepath = ''
+  let filepath = "";
   const file = props.currentCapture;
   if (file && file.Fullpath) {
     try {
-      filepath = 'http://localhost:5020/capture?path=' + file.Fullpath
-    } catch {
-
-    }
+      filepath = "http://localhost:5020/capture?path=" + file.Fullpath;
+    } catch {}
   }
-  
-
-  return filepath
-})
+  return filepath;
+});
 
 async function captureChanged() {
+  // image
   if (imagePath) {
-    let oImg = await Image.fromURL(imagePath)
+    let oImg = await Image.fromURL(imagePath);
     oImg.left = 0;
     oImg.top = 0;
     oImg.selectable = false;
@@ -53,8 +60,18 @@ async function captureChanged() {
     canvas.remove(lastRenderedImg);
   }
 }
-watch(() => props.currentCapture, captureChanged)
 
+let currentDt: string = "";
+watch(
+  () => props.currentCapture,
+  () => {
+    if (props.currentCapture?.Dt != currentDt) {
+      captureChanged();
+      currentDt = props.currentCapture?.Dt || "";
+    }
+    // props.currentCapture?.Bod
+  }
+);
 
 function zoomChanged(newZoom: number) {
   const canvasX = canvas.width! / 2;
@@ -75,7 +92,7 @@ function resetCanvasZoom() {
   canvas.defaultCursor = "-webkit-grab";
   canvas.absolutePan(new Point(-50, -60));
   canvas.setZoom(currentZoomLevel.value);
-  setCanvasDimensions()
+  setCanvasDimensions();
 }
 
 function setCanvasDimensions() {
@@ -105,6 +122,56 @@ function zoomFromMouseWheel(e: WheelEvent) {
     newZoom = newZoom / 100;
 
     setCanvasZoom(canvasX, canvasY, newZoom);
+  }
+}
+
+async function doOcr() {
+  if (props.currentCapture?.Dt) {
+    let meta = await LoadCaptureOcr({
+      Dt: props.currentCapture?.Dt,
+    });
+
+    for (let i = 0; i < meta.Meta.length; i++) {
+      const m = meta.Meta[i];
+      console.log(m.Text, {
+        width: m.Width + 4,
+        height: m.Height + 4,
+        left: m.X - 2,
+        top: m.Y - 2,
+      });
+      let rect = new Rect({
+        width: m.Width,
+        height: m.Height,
+        left: m.X,
+        top: m.Y,
+        fill: "transparent",
+        stroke: "#f55f5566",
+        strokeWidth: 1,
+        lockMovementY: true,
+        lockMovementX: true,
+        lockScalingFlip: true,
+        lockRotation: true,
+        lockScalingX: true,
+        lockScalingY: true,
+        lockSkewingX: true,
+        lockSkewingY: true,
+        selectable: false,
+        hoverCursor: "pointer",
+      });
+      rect.on("mouseover", () => {
+        rect.set("stroke", "#f55f55");
+        canvas.renderAll();
+      });
+      rect.on("mouseout", () => {
+        rect.set("stroke", "#f55f5566");
+        canvas.renderAll();
+      });
+      rect.on("mousedown", () => {
+        trigger("copy", m.Text);
+        console.log("on mousedown rect", m.Text);
+      });
+      canvas.add(rect);
+    }
   }
 }
 
@@ -148,16 +215,14 @@ onMounted(() => {
 
   captureChanged();
   resetCanvasZoom();
-})
+});
 
 onUnmounted(() => {
   window.addEventListener("resize", setCanvasDimensions);
 
   // @ts-ignore
   document.removeEventListener("mousewheel", zoomFromMouseWheel, false);
-})
-
-
+});
 </script>
 
 <style>

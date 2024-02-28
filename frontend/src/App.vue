@@ -10,13 +10,14 @@
 import { useRelapseStore } from "./store/relapse";
 
 import { onMounted } from "vue";
-import { eventsOn } from "./helpers/events";
+import { eventsOn, trigger } from "./helpers/events";
 
 let isFocused = $ref(true);
 
 const relapseStore = useRelapseStore();
 function maximise() {
   // WindowToggleMaximise()
+  trigger('maximise')
 }
 
 function onWindowBlur() {

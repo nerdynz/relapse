@@ -23,4 +23,8 @@ pnpm-debug.log*
 *.sw?
 
 relapse
-frontend/src/assets/fa-svgs
+frontend/src/assets/far
+frontend/src/assets/fas
+frontend/src/assets/fad
+frontend/src/assets/fal
+frontend/src/assets/fab

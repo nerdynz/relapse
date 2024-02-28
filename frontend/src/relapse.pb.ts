@@ -16,13 +16,11 @@ import type { ClientConfiguration } from "twirpscript";
 //========================================//
 
 export interface Capture {
-  RowNum: bigint;
+  RowNum: number;
   AppName: string;
-  AppPath: string;
   Filepath: string;
   Fullpath: string;
-  CaptureSizeBytes: bigint;
-  IsPurged: boolean;
+  CaptureSizeBytes: number;
   Dt: string;
   Bod: string;
   IsReal: boolean;
@@ -30,13 +28,12 @@ export interface Capture {
 
 export interface CaptureDaySummary {
   Bod: string;
-  TotalCapturedTimeSeconds: bigint;
-  TotalCapturesForDay: bigint;
-  TotalCaptureSizeBytes: bigint;
-  IsPurged: boolean;
+  TotalCapturedMinutes: number;
+  TotalCapturesCount: number;
+  TotalCaptureSizeBytes: number;
 }
 
-export interface DayRequest {
+export interface DateRequest {
   Dt: string;
 }
 
@@ -64,9 +61,8 @@ export interface ApplicationInfo {
 }
 
 export interface DaySummariesRequest {
-  IncludeIsPurged: boolean;
-  CaptureDayTimeSecondsBefore: bigint;
-  CaptureDayTimeSecondsAfter: bigint;
+  BodFrom: string;
+  BodTo: string;
 }
 
 export interface DaySummaries {
@@ -85,12 +81,26 @@ export interface ListenRequest {
 }
 
 export interface DeleteCapturesForDayRequest {
-  CaptureDayTimeSeconds: bigint;
+  CaptureDayTimeSeconds: number;
 }
 
 export interface DeleteCapturesForDayResponse {
-  CaptureDayTimeSeconds: bigint;
+  CaptureDayTimeSeconds: number;
   Deletions: string[];
+}
+
+export interface OcrFull {
+  Meta: OcrMeta[];
+  FullText: string;
+}
+
+export interface OcrMeta {
+  Text: string;
+  Confidence: number;
+  Height: number;
+  Width: number;
+  X: number;
+  Y: number;
 }
 
 //========================================//
@@ -122,23 +132,35 @@ export async function SetSettings(
 }
 
 export async function LoadCapturedDay(
-  dayRequest: DayRequest,
+  dateRequest: DateRequest,
   config?: ClientConfiguration,
 ): Promise<CapturedDay> {
   const response = await PBrequest(
     "/proto.Relapse/LoadCapturedDay",
-    DayRequest.encode(dayRequest),
+    DateRequest.encode(dateRequest),
     config,
   );
   return CapturedDay.decode(response);
 }
 
-export async function GetDaySummaries(
+export async function LoadCaptureOcr(
+  dateRequest: DateRequest,
+  config?: ClientConfiguration,
+): Promise<OcrFull> {
+  const response = await PBrequest(
+    "/proto.Relapse/LoadCaptureOcr",
+    DateRequest.encode(dateRequest),
+    config,
+  );
+  return OcrFull.decode(response);
+}
+
+export async function LoadDaySummaries(
   daySummariesRequest: DaySummariesRequest,
   config?: ClientConfiguration,
 ): Promise<DaySummaries> {
   const response = await PBrequest(
-    "/proto.Relapse/GetDaySummaries",
+    "/proto.Relapse/LoadDaySummaries",
     DaySummariesRequest.encode(daySummariesRequest),
     config,
   );
@@ -186,23 +208,35 @@ export async function SetSettingsJSON(
 }
 
 export async function LoadCapturedDayJSON(
-  dayRequest: DayRequest,
+  dateRequest: DateRequest,
   config?: ClientConfiguration,
 ): Promise<CapturedDay> {
   const response = await JSONrequest(
     "/proto.Relapse/LoadCapturedDay",
-    DayRequestJSON.encode(dayRequest),
+    DateRequestJSON.encode(dateRequest),
     config,
   );
   return CapturedDayJSON.decode(response);
 }
 
-export async function GetDaySummariesJSON(
+export async function LoadCaptureOcrJSON(
+  dateRequest: DateRequest,
+  config?: ClientConfiguration,
+): Promise<OcrFull> {
+  const response = await JSONrequest(
+    "/proto.Relapse/LoadCaptureOcr",
+    DateRequestJSON.encode(dateRequest),
+    config,
+  );
+  return OcrFullJSON.decode(response);
+}
+
+export async function LoadDaySummariesJSON(
   daySummariesRequest: DaySummariesRequest,
   config?: ClientConfiguration,
 ): Promise<DaySummaries> {
   const response = await JSONrequest(
-    "/proto.Relapse/GetDaySummaries",
+    "/proto.Relapse/LoadDaySummaries",
     DaySummariesRequestJSON.encode(daySummariesRequest),
     config,
   );
@@ -235,10 +269,14 @@ export interface Relapse<Context = unknown> {
     context: Context,
   ) => Promise<Settings> | Settings;
   LoadCapturedDay: (
-    dayRequest: DayRequest,
+    dateRequest: DateRequest,
     context: Context,
   ) => Promise<CapturedDay> | CapturedDay;
-  GetDaySummaries: (
+  LoadCaptureOcr: (
+    dateRequest: DateRequest,
+    context: Context,
+  ) => Promise<OcrFull> | OcrFull;
+  LoadDaySummaries: (
     daySummariesRequest: DaySummariesRequest,
     context: Context,
   ) => Promise<DaySummaries> | DaySummaries;
@@ -273,12 +311,18 @@ export function createRelapse<Context>(service: Relapse<Context>) {
       LoadCapturedDay: {
         name: "LoadCapturedDay",
         handler: service.LoadCapturedDay,
-        input: { protobuf: DayRequest, json: DayRequestJSON },
+        input: { protobuf: DateRequest, json: DateRequestJSON },
         output: { protobuf: CapturedDay, json: CapturedDayJSON },
       },
-      GetDaySummaries: {
-        name: "GetDaySummaries",
-        handler: service.GetDaySummaries,
+      LoadCaptureOcr: {
+        name: "LoadCaptureOcr",
+        handler: service.LoadCaptureOcr,
+        input: { protobuf: DateRequest, json: DateRequestJSON },
+        output: { protobuf: OcrFull, json: OcrFullJSON },
+      },
+      LoadDaySummaries: {
+        name: "LoadDaySummaries",
+        handler: service.LoadDaySummaries,
         input: { protobuf: DaySummariesRequest, json: DaySummariesRequestJSON },
         output: { protobuf: DaySummaries, json: DaySummariesJSON },
       },
@@ -322,13 +366,11 @@ export const Capture = {
    */
   initialize: function (): Capture {
     return {
-      RowNum: 0n,
+      RowNum: 0,
       AppName: "",
-      AppPath: "",
       Filepath: "",
       Fullpath: "",
-      CaptureSizeBytes: 0n,
-      IsPurged: false,
+      CaptureSizeBytes: 0,
       Dt: "",
       Bod: "",
       IsReal: false,
@@ -343,13 +385,10 @@ export const Capture = {
     writer: BinaryWriter,
   ): BinaryWriter {
     if (msg.RowNum) {
-      writer.writeInt64String(1, msg.RowNum.toString() as any);
+      writer.writeInt32(1, msg.RowNum);
     }
     if (msg.AppName) {
       writer.writeString(2, msg.AppName);
-    }
-    if (msg.AppPath) {
-      writer.writeString(3, msg.AppPath);
     }
     if (msg.Filepath) {
       writer.writeString(4, msg.Filepath);
@@ -358,10 +397,7 @@ export const Capture = {
       writer.writeString(5, msg.Fullpath);
     }
     if (msg.CaptureSizeBytes) {
-      writer.writeInt64String(6, msg.CaptureSizeBytes.toString() as any);
-    }
-    if (msg.IsPurged) {
-      writer.writeBool(7, msg.IsPurged);
+      writer.writeInt32(6, msg.CaptureSizeBytes);
     }
     if (msg.Dt) {
       writer.writeString(8, msg.Dt);
@@ -383,15 +419,11 @@ export const Capture = {
       const field = reader.getFieldNumber();
       switch (field) {
         case 1: {
-          msg.RowNum = BigInt(reader.readInt64String());
+          msg.RowNum = reader.readInt32();
           break;
         }
         case 2: {
           msg.AppName = reader.readString();
-          break;
-        }
-        case 3: {
-          msg.AppPath = reader.readString();
           break;
         }
         case 4: {
@@ -403,11 +435,7 @@ export const Capture = {
           break;
         }
         case 6: {
-          msg.CaptureSizeBytes = BigInt(reader.readInt64String());
-          break;
-        }
-        case 7: {
-          msg.IsPurged = reader.readBool();
+          msg.CaptureSizeBytes = reader.readInt32();
           break;
         }
         case 8: {
@@ -459,10 +487,9 @@ export const CaptureDaySummary = {
   initialize: function (): CaptureDaySummary {
     return {
       Bod: "",
-      TotalCapturedTimeSeconds: 0n,
-      TotalCapturesForDay: 0n,
-      TotalCaptureSizeBytes: 0n,
-      IsPurged: false,
+      TotalCapturedMinutes: 0,
+      TotalCapturesCount: 0,
+      TotalCaptureSizeBytes: 0,
     };
   },
 
@@ -476,20 +503,14 @@ export const CaptureDaySummary = {
     if (msg.Bod) {
       writer.writeString(1, msg.Bod);
     }
-    if (msg.TotalCapturedTimeSeconds) {
-      writer.writeInt64String(
-        2,
-        msg.TotalCapturedTimeSeconds.toString() as any,
-      );
+    if (msg.TotalCapturedMinutes) {
+      writer.writeInt32(2, msg.TotalCapturedMinutes);
     }
-    if (msg.TotalCapturesForDay) {
-      writer.writeInt64String(3, msg.TotalCapturesForDay.toString() as any);
+    if (msg.TotalCapturesCount) {
+      writer.writeInt32(3, msg.TotalCapturesCount);
     }
     if (msg.TotalCaptureSizeBytes) {
-      writer.writeInt64String(4, msg.TotalCaptureSizeBytes.toString() as any);
-    }
-    if (msg.IsPurged) {
-      writer.writeBool(5, msg.IsPurged);
+      writer.writeInt32(4, msg.TotalCaptureSizeBytes);
     }
     return writer;
   },
@@ -509,19 +530,15 @@ export const CaptureDaySummary = {
           break;
         }
         case 2: {
-          msg.TotalCapturedTimeSeconds = BigInt(reader.readInt64String());
+          msg.TotalCapturedMinutes = reader.readInt32();
           break;
         }
         case 3: {
-          msg.TotalCapturesForDay = BigInt(reader.readInt64String());
+          msg.TotalCapturesCount = reader.readInt32();
           break;
         }
         case 4: {
-          msg.TotalCaptureSizeBytes = BigInt(reader.readInt64String());
-          break;
-        }
-        case 5: {
-          msg.IsPurged = reader.readBool();
+          msg.TotalCaptureSizeBytes = reader.readInt32();
           break;
         }
         default: {
@@ -534,28 +551,28 @@ export const CaptureDaySummary = {
   },
 };
 
-export const DayRequest = {
+export const DateRequest = {
   /**
-   * Serializes DayRequest to protobuf.
+   * Serializes DateRequest to protobuf.
    */
-  encode: function (msg: PartialDeep<DayRequest>): Uint8Array {
-    return DayRequest._writeMessage(msg, new BinaryWriter()).getResultBuffer();
+  encode: function (msg: PartialDeep<DateRequest>): Uint8Array {
+    return DateRequest._writeMessage(msg, new BinaryWriter()).getResultBuffer();
   },
 
   /**
-   * Deserializes DayRequest from protobuf.
+   * Deserializes DateRequest from protobuf.
    */
-  decode: function (bytes: ByteSource): DayRequest {
-    return DayRequest._readMessage(
-      DayRequest.initialize(),
+  decode: function (bytes: ByteSource): DateRequest {
+    return DateRequest._readMessage(
+      DateRequest.initialize(),
       new BinaryReader(bytes),
     );
   },
 
   /**
-   * Initializes DayRequest with all fields set to their default value.
+   * Initializes DateRequest with all fields set to their default value.
    */
-  initialize: function (): DayRequest {
+  initialize: function (): DateRequest {
     return {
       Dt: "",
     };
@@ -565,7 +582,7 @@ export const DayRequest = {
    * @private
    */
   _writeMessage: function (
-    msg: PartialDeep<DayRequest>,
+    msg: PartialDeep<DateRequest>,
     writer: BinaryWriter,
   ): BinaryWriter {
     if (msg.Dt) {
@@ -577,7 +594,7 @@ export const DayRequest = {
   /**
    * @private
    */
-  _readMessage: function (msg: DayRequest, reader: BinaryReader): DayRequest {
+  _readMessage: function (msg: DateRequest, reader: BinaryReader): DateRequest {
     while (reader.nextField()) {
       const field = reader.getFieldNumber();
       switch (field) {
@@ -945,9 +962,8 @@ export const DaySummariesRequest = {
    */
   initialize: function (): DaySummariesRequest {
     return {
-      IncludeIsPurged: false,
-      CaptureDayTimeSecondsBefore: 0n,
-      CaptureDayTimeSecondsAfter: 0n,
+      BodFrom: "",
+      BodTo: "",
     };
   },
 
@@ -958,20 +974,11 @@ export const DaySummariesRequest = {
     msg: PartialDeep<DaySummariesRequest>,
     writer: BinaryWriter,
   ): BinaryWriter {
-    if (msg.IncludeIsPurged) {
-      writer.writeBool(1, msg.IncludeIsPurged);
+    if (msg.BodFrom) {
+      writer.writeString(1, msg.BodFrom);
     }
-    if (msg.CaptureDayTimeSecondsBefore) {
-      writer.writeInt64String(
-        2,
-        msg.CaptureDayTimeSecondsBefore.toString() as any,
-      );
-    }
-    if (msg.CaptureDayTimeSecondsAfter) {
-      writer.writeInt64String(
-        3,
-        msg.CaptureDayTimeSecondsAfter.toString() as any,
-      );
+    if (msg.BodTo) {
+      writer.writeString(2, msg.BodTo);
     }
     return writer;
   },
@@ -987,15 +994,11 @@ export const DaySummariesRequest = {
       const field = reader.getFieldNumber();
       switch (field) {
         case 1: {
-          msg.IncludeIsPurged = reader.readBool();
+          msg.BodFrom = reader.readString();
           break;
         }
         case 2: {
-          msg.CaptureDayTimeSecondsBefore = BigInt(reader.readInt64String());
-          break;
-        }
-        case 3: {
-          msg.CaptureDayTimeSecondsAfter = BigInt(reader.readInt64String());
+          msg.BodTo = reader.readString();
           break;
         }
         default: {
@@ -1298,7 +1301,7 @@ export const DeleteCapturesForDayRequest = {
    */
   initialize: function (): DeleteCapturesForDayRequest {
     return {
-      CaptureDayTimeSeconds: 0n,
+      CaptureDayTimeSeconds: 0,
     };
   },
 
@@ -1310,7 +1313,7 @@ export const DeleteCapturesForDayRequest = {
     writer: BinaryWriter,
   ): BinaryWriter {
     if (msg.CaptureDayTimeSeconds) {
-      writer.writeInt64String(1, msg.CaptureDayTimeSeconds.toString() as any);
+      writer.writeInt32(1, msg.CaptureDayTimeSeconds);
     }
     return writer;
   },
@@ -1326,7 +1329,7 @@ export const DeleteCapturesForDayRequest = {
       const field = reader.getFieldNumber();
       switch (field) {
         case 1: {
-          msg.CaptureDayTimeSeconds = BigInt(reader.readInt64String());
+          msg.CaptureDayTimeSeconds = reader.readInt32();
           break;
         }
         default: {
@@ -1367,7 +1370,7 @@ export const DeleteCapturesForDayResponse = {
    */
   initialize: function (): DeleteCapturesForDayResponse {
     return {
-      CaptureDayTimeSeconds: 0n,
+      CaptureDayTimeSeconds: 0,
       Deletions: [],
     };
   },
@@ -1380,7 +1383,7 @@ export const DeleteCapturesForDayResponse = {
     writer: BinaryWriter,
   ): BinaryWriter {
     if (msg.CaptureDayTimeSeconds) {
-      writer.writeInt64String(1, msg.CaptureDayTimeSeconds.toString() as any);
+      writer.writeInt32(1, msg.CaptureDayTimeSeconds);
     }
     if (msg.Deletions?.length) {
       writer.writeRepeatedString(2, msg.Deletions);
@@ -1399,11 +1402,177 @@ export const DeleteCapturesForDayResponse = {
       const field = reader.getFieldNumber();
       switch (field) {
         case 1: {
-          msg.CaptureDayTimeSeconds = BigInt(reader.readInt64String());
+          msg.CaptureDayTimeSeconds = reader.readInt32();
           break;
         }
         case 2: {
           msg.Deletions.push(reader.readString());
+          break;
+        }
+        default: {
+          reader.skipField();
+          break;
+        }
+      }
+    }
+    return msg;
+  },
+};
+
+export const OcrFull = {
+  /**
+   * Serializes OcrFull to protobuf.
+   */
+  encode: function (msg: PartialDeep<OcrFull>): Uint8Array {
+    return OcrFull._writeMessage(msg, new BinaryWriter()).getResultBuffer();
+  },
+
+  /**
+   * Deserializes OcrFull from protobuf.
+   */
+  decode: function (bytes: ByteSource): OcrFull {
+    return OcrFull._readMessage(OcrFull.initialize(), new BinaryReader(bytes));
+  },
+
+  /**
+   * Initializes OcrFull with all fields set to their default value.
+   */
+  initialize: function (): OcrFull {
+    return {
+      Meta: [],
+      FullText: "",
+    };
+  },
+
+  /**
+   * @private
+   */
+  _writeMessage: function (
+    msg: PartialDeep<OcrFull>,
+    writer: BinaryWriter,
+  ): BinaryWriter {
+    if (msg.Meta?.length) {
+      writer.writeRepeatedMessage(1, msg.Meta as any, OcrMeta._writeMessage);
+    }
+    if (msg.FullText) {
+      writer.writeString(2, msg.FullText);
+    }
+    return writer;
+  },
+
+  /**
+   * @private
+   */
+  _readMessage: function (msg: OcrFull, reader: BinaryReader): OcrFull {
+    while (reader.nextField()) {
+      const field = reader.getFieldNumber();
+      switch (field) {
+        case 1: {
+          const m = OcrMeta.initialize();
+          reader.readMessage(m, OcrMeta._readMessage);
+          msg.Meta.push(m);
+          break;
+        }
+        case 2: {
+          msg.FullText = reader.readString();
+          break;
+        }
+        default: {
+          reader.skipField();
+          break;
+        }
+      }
+    }
+    return msg;
+  },
+};
+
+export const OcrMeta = {
+  /**
+   * Serializes OcrMeta to protobuf.
+   */
+  encode: function (msg: PartialDeep<OcrMeta>): Uint8Array {
+    return OcrMeta._writeMessage(msg, new BinaryWriter()).getResultBuffer();
+  },
+
+  /**
+   * Deserializes OcrMeta from protobuf.
+   */
+  decode: function (bytes: ByteSource): OcrMeta {
+    return OcrMeta._readMessage(OcrMeta.initialize(), new BinaryReader(bytes));
+  },
+
+  /**
+   * Initializes OcrMeta with all fields set to their default value.
+   */
+  initialize: function (): OcrMeta {
+    return {
+      Text: "",
+      Confidence: 0,
+      Height: 0,
+      Width: 0,
+      X: 0,
+      Y: 0,
+    };
+  },
+
+  /**
+   * @private
+   */
+  _writeMessage: function (
+    msg: PartialDeep<OcrMeta>,
+    writer: BinaryWriter,
+  ): BinaryWriter {
+    if (msg.Text) {
+      writer.writeString(1, msg.Text);
+    }
+    if (msg.Confidence) {
+      writer.writeDouble(2, msg.Confidence);
+    }
+    if (msg.Height) {
+      writer.writeDouble(3, msg.Height);
+    }
+    if (msg.Width) {
+      writer.writeDouble(4, msg.Width);
+    }
+    if (msg.X) {
+      writer.writeDouble(5, msg.X);
+    }
+    if (msg.Y) {
+      writer.writeDouble(6, msg.Y);
+    }
+    return writer;
+  },
+
+  /**
+   * @private
+   */
+  _readMessage: function (msg: OcrMeta, reader: BinaryReader): OcrMeta {
+    while (reader.nextField()) {
+      const field = reader.getFieldNumber();
+      switch (field) {
+        case 1: {
+          msg.Text = reader.readString();
+          break;
+        }
+        case 2: {
+          msg.Confidence = reader.readDouble();
+          break;
+        }
+        case 3: {
+          msg.Height = reader.readDouble();
+          break;
+        }
+        case 4: {
+          msg.Width = reader.readDouble();
+          break;
+        }
+        case 5: {
+          msg.X = reader.readDouble();
+          break;
+        }
+        case 6: {
+          msg.Y = reader.readDouble();
           break;
         }
         default: {
@@ -1440,13 +1609,11 @@ export const CaptureJSON = {
    */
   initialize: function (): Capture {
     return {
-      RowNum: 0n,
+      RowNum: 0,
       AppName: "",
-      AppPath: "",
       Filepath: "",
       Fullpath: "",
-      CaptureSizeBytes: 0n,
-      IsPurged: false,
+      CaptureSizeBytes: 0,
       Dt: "",
       Bod: "",
       IsReal: false,
@@ -1459,13 +1626,10 @@ export const CaptureJSON = {
   _writeMessage: function (msg: PartialDeep<Capture>): Record<string, unknown> {
     const json: Record<string, unknown> = {};
     if (msg.RowNum) {
-      json["RowNum"] = msg.RowNum.toString();
+      json["RowNum"] = msg.RowNum;
     }
     if (msg.AppName) {
       json["AppName"] = msg.AppName;
-    }
-    if (msg.AppPath) {
-      json["AppPath"] = msg.AppPath;
     }
     if (msg.Filepath) {
       json["Filepath"] = msg.Filepath;
@@ -1474,10 +1638,7 @@ export const CaptureJSON = {
       json["Fullpath"] = msg.Fullpath;
     }
     if (msg.CaptureSizeBytes) {
-      json["CaptureSizeBytes"] = msg.CaptureSizeBytes.toString();
-    }
-    if (msg.IsPurged) {
-      json["IsPurged"] = msg.IsPurged;
+      json["CaptureSizeBytes"] = msg.CaptureSizeBytes;
     }
     if (msg.Dt) {
       json["Dt"] = msg.Dt;
@@ -1497,15 +1658,11 @@ export const CaptureJSON = {
   _readMessage: function (msg: Capture, json: any): Capture {
     const _RowNum_ = json["RowNum"];
     if (_RowNum_) {
-      msg.RowNum = BigInt(_RowNum_);
+      msg.RowNum = _RowNum_;
     }
     const _AppName_ = json["AppName"];
     if (_AppName_) {
       msg.AppName = _AppName_;
-    }
-    const _AppPath_ = json["AppPath"];
-    if (_AppPath_) {
-      msg.AppPath = _AppPath_;
     }
     const _Filepath_ = json["Filepath"];
     if (_Filepath_) {
@@ -1517,11 +1674,7 @@ export const CaptureJSON = {
     }
     const _CaptureSizeBytes_ = json["CaptureSizeBytes"];
     if (_CaptureSizeBytes_) {
-      msg.CaptureSizeBytes = BigInt(_CaptureSizeBytes_);
-    }
-    const _IsPurged_ = json["IsPurged"];
-    if (_IsPurged_) {
-      msg.IsPurged = _IsPurged_;
+      msg.CaptureSizeBytes = _CaptureSizeBytes_;
     }
     const _Dt_ = json["Dt"];
     if (_Dt_) {
@@ -1563,10 +1716,9 @@ export const CaptureDaySummaryJSON = {
   initialize: function (): CaptureDaySummary {
     return {
       Bod: "",
-      TotalCapturedTimeSeconds: 0n,
-      TotalCapturesForDay: 0n,
-      TotalCaptureSizeBytes: 0n,
-      IsPurged: false,
+      TotalCapturedMinutes: 0,
+      TotalCapturesCount: 0,
+      TotalCaptureSizeBytes: 0,
     };
   },
 
@@ -1580,18 +1732,14 @@ export const CaptureDaySummaryJSON = {
     if (msg.Bod) {
       json["Bod"] = msg.Bod;
     }
-    if (msg.TotalCapturedTimeSeconds) {
-      json["TotalCapturedTimeSeconds"] =
-        msg.TotalCapturedTimeSeconds.toString();
+    if (msg.TotalCapturedMinutes) {
+      json["TotalCapturedMinutes"] = msg.TotalCapturedMinutes;
     }
-    if (msg.TotalCapturesForDay) {
-      json["TotalCapturesForDay"] = msg.TotalCapturesForDay.toString();
+    if (msg.TotalCapturesCount) {
+      json["TotalCapturesCount"] = msg.TotalCapturesCount;
     }
     if (msg.TotalCaptureSizeBytes) {
-      json["TotalCaptureSizeBytes"] = msg.TotalCaptureSizeBytes.toString();
-    }
-    if (msg.IsPurged) {
-      json["IsPurged"] = msg.IsPurged;
+      json["TotalCaptureSizeBytes"] = msg.TotalCaptureSizeBytes;
     }
     return json;
   },
@@ -1607,48 +1755,44 @@ export const CaptureDaySummaryJSON = {
     if (_Bod_) {
       msg.Bod = _Bod_;
     }
-    const _TotalCapturedTimeSeconds_ = json["TotalCapturedTimeSeconds"];
-    if (_TotalCapturedTimeSeconds_) {
-      msg.TotalCapturedTimeSeconds = BigInt(_TotalCapturedTimeSeconds_);
+    const _TotalCapturedMinutes_ = json["TotalCapturedMinutes"];
+    if (_TotalCapturedMinutes_) {
+      msg.TotalCapturedMinutes = _TotalCapturedMinutes_;
     }
-    const _TotalCapturesForDay_ = json["TotalCapturesForDay"];
-    if (_TotalCapturesForDay_) {
-      msg.TotalCapturesForDay = BigInt(_TotalCapturesForDay_);
+    const _TotalCapturesCount_ = json["TotalCapturesCount"];
+    if (_TotalCapturesCount_) {
+      msg.TotalCapturesCount = _TotalCapturesCount_;
     }
     const _TotalCaptureSizeBytes_ = json["TotalCaptureSizeBytes"];
     if (_TotalCaptureSizeBytes_) {
-      msg.TotalCaptureSizeBytes = BigInt(_TotalCaptureSizeBytes_);
-    }
-    const _IsPurged_ = json["IsPurged"];
-    if (_IsPurged_) {
-      msg.IsPurged = _IsPurged_;
+      msg.TotalCaptureSizeBytes = _TotalCaptureSizeBytes_;
     }
     return msg;
   },
 };
 
-export const DayRequestJSON = {
+export const DateRequestJSON = {
   /**
-   * Serializes DayRequest to JSON.
+   * Serializes DateRequest to JSON.
    */
-  encode: function (msg: PartialDeep<DayRequest>): string {
-    return JSON.stringify(DayRequestJSON._writeMessage(msg));
+  encode: function (msg: PartialDeep<DateRequest>): string {
+    return JSON.stringify(DateRequestJSON._writeMessage(msg));
   },
 
   /**
-   * Deserializes DayRequest from JSON.
+   * Deserializes DateRequest from JSON.
    */
-  decode: function (json: string): DayRequest {
-    return DayRequestJSON._readMessage(
-      DayRequestJSON.initialize(),
+  decode: function (json: string): DateRequest {
+    return DateRequestJSON._readMessage(
+      DateRequestJSON.initialize(),
       JSON.parse(json),
     );
   },
 
   /**
-   * Initializes DayRequest with all fields set to their default value.
+   * Initializes DateRequest with all fields set to their default value.
    */
-  initialize: function (): DayRequest {
+  initialize: function (): DateRequest {
     return {
       Dt: "",
     };
@@ -1658,7 +1802,7 @@ export const DayRequestJSON = {
    * @private
    */
   _writeMessage: function (
-    msg: PartialDeep<DayRequest>,
+    msg: PartialDeep<DateRequest>,
   ): Record<string, unknown> {
     const json: Record<string, unknown> = {};
     if (msg.Dt) {
@@ -1670,7 +1814,7 @@ export const DayRequestJSON = {
   /**
    * @private
    */
-  _readMessage: function (msg: DayRequest, json: any): DayRequest {
+  _readMessage: function (msg: DateRequest, json: any): DateRequest {
     const _Dt_ = json["Dt"];
     if (_Dt_) {
       msg.Dt = _Dt_;
@@ -1979,9 +2123,8 @@ export const DaySummariesRequestJSON = {
    */
   initialize: function (): DaySummariesRequest {
     return {
-      IncludeIsPurged: false,
-      CaptureDayTimeSecondsBefore: 0n,
-      CaptureDayTimeSecondsAfter: 0n,
+      BodFrom: "",
+      BodTo: "",
     };
   },
 
@@ -1992,16 +2135,11 @@ export const DaySummariesRequestJSON = {
     msg: PartialDeep<DaySummariesRequest>,
   ): Record<string, unknown> {
     const json: Record<string, unknown> = {};
-    if (msg.IncludeIsPurged) {
-      json["IncludeIsPurged"] = msg.IncludeIsPurged;
+    if (msg.BodFrom) {
+      json["BodFrom"] = msg.BodFrom;
     }
-    if (msg.CaptureDayTimeSecondsBefore) {
-      json["CaptureDayTimeSecondsBefore"] =
-        msg.CaptureDayTimeSecondsBefore.toString();
-    }
-    if (msg.CaptureDayTimeSecondsAfter) {
-      json["CaptureDayTimeSecondsAfter"] =
-        msg.CaptureDayTimeSecondsAfter.toString();
+    if (msg.BodTo) {
+      json["BodTo"] = msg.BodTo;
     }
     return json;
   },
@@ -2013,17 +2151,13 @@ export const DaySummariesRequestJSON = {
     msg: DaySummariesRequest,
     json: any,
   ): DaySummariesRequest {
-    const _IncludeIsPurged_ = json["IncludeIsPurged"];
-    if (_IncludeIsPurged_) {
-      msg.IncludeIsPurged = _IncludeIsPurged_;
+    const _BodFrom_ = json["BodFrom"];
+    if (_BodFrom_) {
+      msg.BodFrom = _BodFrom_;
     }
-    const _CaptureDayTimeSecondsBefore_ = json["CaptureDayTimeSecondsBefore"];
-    if (_CaptureDayTimeSecondsBefore_) {
-      msg.CaptureDayTimeSecondsBefore = BigInt(_CaptureDayTimeSecondsBefore_);
-    }
-    const _CaptureDayTimeSecondsAfter_ = json["CaptureDayTimeSecondsAfter"];
-    if (_CaptureDayTimeSecondsAfter_) {
-      msg.CaptureDayTimeSecondsAfter = BigInt(_CaptureDayTimeSecondsAfter_);
+    const _BodTo_ = json["BodTo"];
+    if (_BodTo_) {
+      msg.BodTo = _BodTo_;
     }
     return msg;
   },
@@ -2275,7 +2409,7 @@ export const DeleteCapturesForDayRequestJSON = {
    */
   initialize: function (): DeleteCapturesForDayRequest {
     return {
-      CaptureDayTimeSeconds: 0n,
+      CaptureDayTimeSeconds: 0,
     };
   },
 
@@ -2287,7 +2421,7 @@ export const DeleteCapturesForDayRequestJSON = {
   ): Record<string, unknown> {
     const json: Record<string, unknown> = {};
     if (msg.CaptureDayTimeSeconds) {
-      json["CaptureDayTimeSeconds"] = msg.CaptureDayTimeSeconds.toString();
+      json["CaptureDayTimeSeconds"] = msg.CaptureDayTimeSeconds;
     }
     return json;
   },
@@ -2301,7 +2435,7 @@ export const DeleteCapturesForDayRequestJSON = {
   ): DeleteCapturesForDayRequest {
     const _CaptureDayTimeSeconds_ = json["CaptureDayTimeSeconds"];
     if (_CaptureDayTimeSeconds_) {
-      msg.CaptureDayTimeSeconds = BigInt(_CaptureDayTimeSeconds_);
+      msg.CaptureDayTimeSeconds = _CaptureDayTimeSeconds_;
     }
     return msg;
   },
@@ -2330,7 +2464,7 @@ export const DeleteCapturesForDayResponseJSON = {
    */
   initialize: function (): DeleteCapturesForDayResponse {
     return {
-      CaptureDayTimeSeconds: 0n,
+      CaptureDayTimeSeconds: 0,
       Deletions: [],
     };
   },
@@ -2343,7 +2477,7 @@ export const DeleteCapturesForDayResponseJSON = {
   ): Record<string, unknown> {
     const json: Record<string, unknown> = {};
     if (msg.CaptureDayTimeSeconds) {
-      json["CaptureDayTimeSeconds"] = msg.CaptureDayTimeSeconds.toString();
+      json["CaptureDayTimeSeconds"] = msg.CaptureDayTimeSeconds;
     }
     if (msg.Deletions?.length) {
       json["Deletions"] = msg.Deletions;
@@ -2360,11 +2494,157 @@ export const DeleteCapturesForDayResponseJSON = {
   ): DeleteCapturesForDayResponse {
     const _CaptureDayTimeSeconds_ = json["CaptureDayTimeSeconds"];
     if (_CaptureDayTimeSeconds_) {
-      msg.CaptureDayTimeSeconds = BigInt(_CaptureDayTimeSeconds_);
+      msg.CaptureDayTimeSeconds = _CaptureDayTimeSeconds_;
     }
     const _Deletions_ = json["Deletions"];
     if (_Deletions_) {
       msg.Deletions = _Deletions_;
+    }
+    return msg;
+  },
+};
+
+export const OcrFullJSON = {
+  /**
+   * Serializes OcrFull to JSON.
+   */
+  encode: function (msg: PartialDeep<OcrFull>): string {
+    return JSON.stringify(OcrFullJSON._writeMessage(msg));
+  },
+
+  /**
+   * Deserializes OcrFull from JSON.
+   */
+  decode: function (json: string): OcrFull {
+    return OcrFullJSON._readMessage(OcrFullJSON.initialize(), JSON.parse(json));
+  },
+
+  /**
+   * Initializes OcrFull with all fields set to their default value.
+   */
+  initialize: function (): OcrFull {
+    return {
+      Meta: [],
+      FullText: "",
+    };
+  },
+
+  /**
+   * @private
+   */
+  _writeMessage: function (msg: PartialDeep<OcrFull>): Record<string, unknown> {
+    const json: Record<string, unknown> = {};
+    if (msg.Meta?.length) {
+      json["Meta"] = msg.Meta.map(OcrMetaJSON._writeMessage);
+    }
+    if (msg.FullText) {
+      json["FullText"] = msg.FullText;
+    }
+    return json;
+  },
+
+  /**
+   * @private
+   */
+  _readMessage: function (msg: OcrFull, json: any): OcrFull {
+    const _Meta_ = json["Meta"];
+    if (_Meta_) {
+      for (const item of _Meta_) {
+        const m = OcrMetaJSON.initialize();
+        OcrMetaJSON._readMessage(m, item);
+        msg.Meta.push(m);
+      }
+    }
+    const _FullText_ = json["FullText"];
+    if (_FullText_) {
+      msg.FullText = _FullText_;
+    }
+    return msg;
+  },
+};
+
+export const OcrMetaJSON = {
+  /**
+   * Serializes OcrMeta to JSON.
+   */
+  encode: function (msg: PartialDeep<OcrMeta>): string {
+    return JSON.stringify(OcrMetaJSON._writeMessage(msg));
+  },
+
+  /**
+   * Deserializes OcrMeta from JSON.
+   */
+  decode: function (json: string): OcrMeta {
+    return OcrMetaJSON._readMessage(OcrMetaJSON.initialize(), JSON.parse(json));
+  },
+
+  /**
+   * Initializes OcrMeta with all fields set to their default value.
+   */
+  initialize: function (): OcrMeta {
+    return {
+      Text: "",
+      Confidence: 0,
+      Height: 0,
+      Width: 0,
+      X: 0,
+      Y: 0,
+    };
+  },
+
+  /**
+   * @private
+   */
+  _writeMessage: function (msg: PartialDeep<OcrMeta>): Record<string, unknown> {
+    const json: Record<string, unknown> = {};
+    if (msg.Text) {
+      json["Text"] = msg.Text;
+    }
+    if (msg.Confidence) {
+      json["Confidence"] = msg.Confidence;
+    }
+    if (msg.Height) {
+      json["Height"] = msg.Height;
+    }
+    if (msg.Width) {
+      json["Width"] = msg.Width;
+    }
+    if (msg.X) {
+      json["X"] = msg.X;
+    }
+    if (msg.Y) {
+      json["Y"] = msg.Y;
+    }
+    return json;
+  },
+
+  /**
+   * @private
+   */
+  _readMessage: function (msg: OcrMeta, json: any): OcrMeta {
+    const _Text_ = json["Text"];
+    if (_Text_) {
+      msg.Text = _Text_;
+    }
+    const _Confidence_ = json["Confidence"];
+    if (_Confidence_) {
+      msg.Confidence = _Confidence_;
+    }
+    const _Height_ = json["Height"];
+    if (_Height_) {
+      msg.Height = _Height_;
+    }
+    const _Width_ = json["Width"];
+    if (_Width_) {
+      msg.Width = _Width_;
+    }
+    const _X_ = json["X"];
+    if (_X_) {
+      msg.X = _X_;
+    }
+    const _Y_ = json["Y"];
+    if (_Y_) {
+      msg.Y = _Y_;
     }
     return msg;
   },

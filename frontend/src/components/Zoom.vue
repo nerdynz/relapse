@@ -1,16 +1,16 @@
 <template>
   <div class="zoom">
-    <div class="zoom-inner">
-      <button class="side-btn zoom-down" @click="zoomDown">
-        <ico icon="minus" size="small" />
-      </button>
-      <button class="zoom-text" @click="middleClicked">
-        {{ currentZoom }}
-      </button>
-      <button class="side-btn zoom-up" @click="zoomUp">
-        <ico icon="plus" size="small" />
-      </button>
-    </div>
+    <slot name="left" />
+
+    <button class="side-btn zoom-down is-left" @click="zoomDown">
+      <ico icon="minus" size="small" />
+    </button>
+    <button class="zoom-btn" @click="middleClicked">
+      {{ currentZoom }}
+    </button>
+    <button class="side-btn zoom-up is-right" @click="zoomUp">
+      <ico icon="plus" size="small" />
+    </button>
   </div>
 </template>
 
@@ -47,7 +47,7 @@ function zoomChanged(zoomLevel: number) {
   emit('input', zoomLevel)
 }
 
-onMounted(() =>  {
+onMounted(() => {
   eventsOn('zoom-function', (type: 'in' | 'out' | 'reset') => {
     if (type === 'in') {
       zoomUp()
@@ -63,17 +63,28 @@ onMounted(() =>  {
 <style lang="scss">
 @import '../scss/variables';
 
-.zoom-inner {
+.zoom {
   position: relative;
   z-index: 600;
-  width: 100px;
+  display: flex;
 
-  .zoom-text {
-    position: absolute;
+  .gap-right {
+    margin-right: 5px;
+  }
+
+  .zoom-btn, 
+  .side-btn {
     background: $theme-input-bg;
     color: $theme-text-color;
     height: 34px;
-    width: 44px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .zoom-btn {
+    
+    padding: 0 5px;
     text-align: center;
     line-height: 34px;
     left: 30px;
@@ -91,26 +102,19 @@ onMounted(() =>  {
 
   .side-btn {
     opacity: 0.8;
-    position: absolute;
-    height: 34px;
-    width: 30px;
     border: none;
-    background: $theme-input-bg;
-    color: $theme-text-color;
     top: 0;
     outline: none !important;
     cursor: pointer;
-    padding-top: 2px;
+    padding: 0 5px;
 
-    &.zoom-down {
-      left: 0;
+    &.is-left {
       border-right: 1px solid $theme-lines-between-color;
       border-top-left-radius: $radius;
       border-bottom-left-radius: $radius;
     }
 
-    &.zoom-up {
-      left: 74px;
+    &.is-right {
       border-left: 1px solid $theme-lines-between-color;
       border-top-right-radius: $radius;
       border-bottom-right-radius: $radius;

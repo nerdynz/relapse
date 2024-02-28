@@ -1,11 +1,13 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"database/sql"
 	"encoding/json"
 	"fmt"
 	"image"
+	"image/png"
 	"io/fs"
 	"io/ioutil"
 	"log"
@@ -16,9 +18,13 @@ import (
 	"time"
 
 	"github.com/adrg/xdg"
+	"github.com/chai2010/webp"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/nerdynz/relapse/proto"
+	"github.com/progrium/macdriver/macos/coreimage"
+	"github.com/progrium/macdriver/macos/vision"
+	"github.com/progrium/macdriver/objc"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -101,7 +107,7 @@ func (srv *server) GetSettings(ctx context.Context, req *proto.SettingsPlusOptio
 	}, nil
 }
 
-func (srv *server) GetDaySummaries(ctx context.Context, req *proto.DaySummariesRequest) (*proto.DaySummaries, error) {
+func (srv *server) LoadDaySummaries(ctx context.Context, req *proto.DaySummariesRequest) (*proto.DaySummaries, error) {
 	tx, err := srv.db.BeginTxx(ctx, nil)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "Failed to begin sql tx %v", err)
@@ -110,32 +116,23 @@ func (srv *server) GetDaySummaries(ctx context.Context, req *proto.DaySummariesR
 
 	summaries := make([]*proto.CaptureDaySummary, 0)
 	query := `
-	SELECT 
-	capture_day_time_seconds >> BROKEN,
-	total_captured_time_seconds,
-	total_captures_for_day,
-	case when total_capture_size_bytes is null then 0 else total_capture_size_bytes end as total_capture_size_bytes,
-	is_purged
-	FROM capture_day_summary 
-	WHERE 1=1
-`
-	if !req.IncludeIsPurged {
-		query += " AND is_purged = FALSE"
-	}
-	if req.CaptureDayTimeSecondsBefore > 0 {
-		query += " AND capture_day_time_seconds <= " + strconv.FormatInt(req.CaptureDayTimeSecondsBefore, 10)
-	}
-	if req.CaptureDayTimeSecondsAfter > 0 {
-		query += " AND capture_day_time_seconds >= " + strconv.FormatInt(req.CaptureDayTimeSecondsAfter, 10)
-	}
-	rows, err := tx.Query(query)
+	with summary_by_day as (
+		select bod, count(*) as total_captures_count, 
+		sum(capture_size_bytes) as total_capture_size_bytes 
+		from capture
+		where bod >= :1 and bod <= :2
+		group by bod
+	)
+	select *, (total_captures_count / 2) as total_captured_minutes from summary_by_day
+	`
+	rows, err := tx.Query(query, req.BodFrom, req.BodTo)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "Failed to select rows %v", err)
 	}
 
 	for rows.Next() {
 		record := &proto.CaptureDaySummary{}
-		err := rows.Scan(&record.Bod, &record.TotalCapturedTimeSeconds, &record.TotalCapturesForDay, &record.TotalCaptureSizeBytes, &record.IsPurged)
+		err := rows.Scan(&record.Bod, &record.TotalCapturedMinutes, &record.TotalCapturesCount, &record.TotalCaptureSizeBytes)
 		if err != nil {
 			return nil, status.Errorf(codes.Internal, "Failed to convert to *CaptureDaySummary %v", err)
 		}
@@ -143,45 +140,6 @@ func (srv *server) GetDaySummaries(ctx context.Context, req *proto.DaySummariesR
 	}
 	return &proto.DaySummaries{
 		DaySummaries: summaries,
-	}, nil
-}
-
-func (srv *server) getDaySummary(captureDayTimeSeconds int64) (*proto.CaptureDaySummary, error) {
-	ctx := context.Background()
-	tx, err := srv.db.BeginTxx(ctx, nil)
-	if err != nil {
-		return nil, status.Errorf(codes.Internal, "Failed to begin sql tx %v", err)
-	}
-	defer tx.Commit()
-
-	summaries := make([]*proto.CaptureDaySummary, 0)
-	rows, err := tx.Query(`select 
-	capture_day_time_seconds  >> BROKEN,
-	total_captured_time_seconds,
-	total_captures_for_day,
-	case when total_capture_size_bytes is null then 0 else total_capture_size_bytes end as total_capture_size_bytes,
-	is_purged
-	from capture_day_summary 
-	where capture_day_time_seconds = :1`, captureDayTimeSeconds)
-	if err != nil {
-		return nil, status.Errorf(codes.Internal, "Failed to select rows %v", err)
-	}
-
-	for rows.Next() {
-		record := &proto.CaptureDaySummary{}
-		err := rows.Scan(&record.Bod, &record.TotalCapturedTimeSeconds, &record.TotalCapturesForDay, &record.TotalCaptureSizeBytes, &record.IsPurged)
-		if err != nil {
-			return nil, status.Errorf(codes.Internal, "Failed to convert to *Capture %v", err)
-		}
-		summaries = append(summaries, record)
-	}
-
-	if len(summaries) > 0 {
-		return summaries[0], nil
-	}
-	// return nil, fmt.Errorf("No summary for capture day %d exists", captureDayTimeSeconds)
-	return &proto.CaptureDaySummary{
-		Bod: "BROKEN",
 	}, nil
 }
 
@@ -267,13 +225,12 @@ group by folder_path
 	return resp, nil
 }
 
-func (srv *server) LoadCapturedDay(ctx context.Context, req *proto.DayRequest) (*proto.CapturedDay, error) {
+func (srv *server) LoadCaptureOcr(ctx context.Context, req *proto.DateRequest) (*proto.OcrFull, error) {
 	dt, err := time.Parse(time.RFC3339, req.Dt)
 	if err != nil {
-		logrus.Info("errrr ", err)
-		return nil, err
+		return nil, status.Errorf(codes.Internal, "Failed time.Parse %v", err)
 	}
-	logrus.Info("DATE YOU CARE ABOUT ", dt.Format(time.Stamp), " -> ", dt.Unix())
+
 	tx, err := srv.db.BeginTxx(ctx, nil)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "Failed to begin sql tx %v", err)
@@ -281,56 +238,126 @@ func (srv *server) LoadCapturedDay(ctx context.Context, req *proto.DayRequest) (
 	defer tx.Commit()
 
 	sql := `
-	WITH RECURSIVE seconds_cte AS (
-		SELECT
-			0 AS second,
-			DATETIME(:1) as dt,
-			1 AS row_num
-		UNION ALL
-		SELECT
-			second + 30,
-			DATETIME(dt, '+30 seconds'),
-			row_num + 1
-		FROM
-			seconds_cte
-		WHERE
-			second + 30 < 86400
-	),
-	seconds_with_date AS (
-		SELECT
-			*,
-			strftime('%Y-%m-%dT%H:%M:%S', DATETIME(dt, 'localtime')) || PRINTF('%+.2d:%.2d', ROUND((JULIANDAY('now', 'localtime') - JULIANDAY('now')) * 24)) as dt_tz
-		FROM
-			seconds_cte
-	)
-	SELECT
-		row_num as capture_id, 
-		COALESCE(app_name, '') AS app_name,
-		COALESCE(app_path, '') AS app_path,
-		COALESCE(filepath, '') AS filepath,
-		COALESCE(fullpath, '') AS fullpath,
-		seconds_with_date.dt_tz,
-		:1 as bod,
-		COALESCE(capture_size_bytes, - 1) AS capture_size_bytes,
-		COALESCE(is_purged, FALSE) AS is_purged,
-		(capture.fullpath is not null) as is_real
-	FROM
-		seconds_with_date
-		JOIN capture ON seconds_with_date.dt = DATETIME(capture.dt)
-	WHERE capture.bod = :1
-	`
-
-	sql = `
 	select 
 	row_num,
 	COALESCE(app_name, '') AS app_name,
-	COALESCE(app_path, '') AS app_path,
 	COALESCE(filepath, '') AS filepath,
 	COALESCE(fullpath, '') AS fullpath,
 	dt,
 	bod,
 	COALESCE(capture_size_bytes, - 1) AS capture_size_bytes,
-	COALESCE(is_purged, FALSE) AS is_purged,
+	(capture.fullpath is not null) as is_real
+	from capture
+	WHERE capture.dt = :1
+	order by dt desc
+	limit 1;
+	`
+
+	capture := &proto.Capture{}
+	rows, err := tx.QueryContext(ctx, sql, dt.Format(time.RFC3339))
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "Failed to select rows %v", err)
+	}
+	for rows.Next() {
+		err := rows.Scan(&capture.RowNum, &capture.AppName, &capture.Filepath, &capture.Fullpath, &capture.Dt, &capture.Bod, &capture.CaptureSizeBytes, &capture.IsReal)
+		if err != nil {
+			return nil, status.Errorf(codes.Internal, "Failed to convert to *Capture %v", err)
+		}
+	}
+
+	ocrFull := &proto.OcrFull{
+		Meta: make([]*proto.OcrMeta, 0),
+	}
+
+	if capture.IsReal {
+		objc.WithAutoreleasePool(func() {
+			// filePath := "./20231128_122700.webp"
+			// filePath := "./bla.png"
+			file, err := os.Open(capture.Fullpath)
+			if err != nil {
+				log.Fatal(err)
+			}
+			defer file.Close()
+			// Decode the WebP image
+			img, err := webp.Decode(file)
+			// img, err := png.Decode(file)
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			var buf bytes.Buffer
+			err = png.Encode(&buf, img)
+			if err != nil {
+				logrus.Fatal("bla 1")
+			}
+
+			req := vision.NewRecognizeTextRequest()
+			req.SetRecognitionLevel(vision.RequestTextRecognitionLevelAccurate)
+
+			cimg := coreimage.NewImage().InitWithData(buf.Bytes())
+
+			strB := strings.Builder{}
+
+			handler := vision.NewImageRequestHandler()
+			handler.InitWithCIImageOptions(cimg, nil)
+			if success := handler.PerformRequestsError([]vision.IRequest{req}, nil); success {
+				for _, res := range req.Results() {
+					obs := vision.RecognizedTextObservationFrom(res.Ptr())
+					c := obs.TopCandidates(1)
+					for _, txt := range c {
+						strB.WriteString(txt.String())
+						strB.WriteRune('\n')
+
+						imgWidth := cimg.Extent().Size.Width
+						imgHeight := cimg.Extent().Size.Height
+						height := obs.BoundingBox().Size.Height * imgHeight
+						width := obs.BoundingBox().Size.Width * imgWidth
+						x := obs.BoundingBox().Origin.X * imgWidth
+						// y := xxx.BoundingBox().Origin.Y * imgHeight
+						y := imgHeight*(1-obs.BoundingBox().Origin.Y) - height
+
+						meta := &proto.OcrMeta{
+							X:          x,
+							Y:          y,
+							Height:     height,
+							Width:      width,
+							Confidence: float64(txt.Confidence()),
+							Text:       txt.String(),
+						}
+						ocrFull.Meta = append(ocrFull.Meta, meta)
+					}
+					// w, h = bbox.size.width, bbox.size.height
+					// x, y = bbox.origin.x, bbox.origin.y
+				}
+				// res.append((result.text(), result.confidence(), [x, y, w, h]))
+			}
+			ocrFull.FullText = strB.String()
+		})
+	}
+
+	return ocrFull, nil
+}
+
+func (srv *server) LoadCapturedDay(ctx context.Context, req *proto.DateRequest) (*proto.CapturedDay, error) {
+	dt, err := time.Parse(time.RFC3339, req.Dt)
+	if err != nil {
+		return nil, err
+	}
+	tx, err := srv.db.BeginTxx(ctx, nil)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "Failed to begin sql tx %v", err)
+	}
+	defer tx.Commit()
+
+	sql := `
+	select 
+	row_num,
+	COALESCE(app_name, '') AS app_name,
+	COALESCE(filepath, '') AS filepath,
+	COALESCE(fullpath, '') AS fullpath,
+	dt,
+	bod,
+	COALESCE(capture_size_bytes, - 1) AS capture_size_bytes,
 	(capture.fullpath is not null) as is_real
 	from capture
 	WHERE capture.bod = :1
@@ -340,12 +367,10 @@ func (srv *server) LoadCapturedDay(ctx context.Context, req *proto.DayRequest) (
 	captures := make([]*proto.Capture, 0)
 	rows, err := tx.QueryContext(ctx, sql, dt.Format(time.RFC3339))
 	if err != nil {
-		logrus.Errorf("errxxx %s", err.Error())
 		return nil, status.Errorf(codes.Internal, "Failed to select rows %v", err)
 	}
 
 	dtF := dt.Format(time.RFC3339)
-	logrus.Info("date sql -> ", dtF)
 	caps := make([]*proto.Capture, 0)
 	for i := 0; i <= 86400/30; i++ { // 30 second increments
 		// fmt.Println(i)
@@ -361,7 +386,7 @@ func (srv *server) LoadCapturedDay(ctx context.Context, req *proto.DayRequest) (
 	for rows.Next() {
 		record := &proto.Capture{}
 		record.IsReal = true
-		err := rows.Scan(&record.RowNum, &record.AppName, &record.AppPath, &record.Filepath, &record.Fullpath, &record.Dt, &record.Bod, &record.CaptureSizeBytes, &record.IsPurged, &record.IsReal)
+		err := rows.Scan(&record.RowNum, &record.AppName, &record.Filepath, &record.Fullpath, &record.Dt, &record.Bod, &record.CaptureSizeBytes, &record.IsReal)
 		if err != nil {
 			return nil, status.Errorf(codes.Internal, "Failed to convert to *Capture %v", err)
 		}
@@ -373,57 +398,23 @@ func (srv *server) LoadCapturedDay(ctx context.Context, req *proto.DayRequest) (
 		caps[int(record.RowNum)] = record
 	}
 
-	// sum, err := srv.getDaySummary(captureDayTimeSeconds)
-	// if err != nil {
-	// 	return nil, status.Errorf(codes.Internal, "Failed srv.getDaySummary %v", err)
-	// }
-	logrus.Info("actualRowCount", actualRowCount)
-	logrus.Info("totalRowCount", totalRowCount)
+	sum, err := srv.LoadDaySummaries(ctx, &proto.DaySummariesRequest{
+		BodFrom: dt.Format(time.RFC3339),
+		BodTo:   dt.Format(time.RFC3339),
+	})
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "Failed srv.getDaySummary %v", err)
+	}
+	if len(sum.DaySummaries) != 1 {
+		return nil, status.Errorf(codes.Internal, "Failed srv.getDaySummary %v incorrect amount of days", err)
+	}
 
 	return &proto.CapturedDay{
 		Bod:      dt.Format(time.RFC3339),
 		Captures: caps,
-		// Summary:               sum,
+		Summary:  sum.DaySummaries[0],
 	}, nil
-
-	// return srv.GetCapturesForADayFromDB(ctx, req.CaptureDayTimeSeconds)
 }
-
-// func (cap *captureServer) GetCapturesForADayFromDB(ctx context.Context, captureDayTimeSeconds int64) (*proto.CapturedDay, error) {
-// 	if captureDayTimeSeconds <= 0 {
-// 		return nil, status.Errorf(codes.InvalidArgument, "CaptureDayTimeSeconds is invalid")
-// 	}
-// 	tx, err := srv.db.BeginTxx(ctx, nil)
-// 	if err != nil {
-// 		return nil, status.Errorf(codes.Internal, "Failed to begin sql tx %v", err)
-// 	}
-// 	defer tx.Commit()
-
-// 	caps := make([]*proto.Capture, 0)
-// 	rows, err := tx.Query(`select capture_id, app_name, app_path, filepath,fullpath, capture_time_seconds, capture_day_time_seconds, capture_size_bytes, is_purged from capture where capture_day_time_seconds = :1`, captureDayTimeSeconds)
-// 	if err != nil {
-// 		return nil, status.Errorf(codes.Internal, "Failed to select rows %v", err)
-// 	}
-
-// 	for rows.Next() {
-// 		record := &proto.Capture{}
-// 		err := rows.Scan(&record.CaptureID, &record.AppName, &record.AppPath, &record.Filepath, &record.Fullpath, &record.CaptureTimeSeconds, &record.CaptureDayTimeSeconds, &record.CaptureSizeBytes, &record.IsPurged)
-// 		if err != nil {
-// 			return nil, status.Errorf(codes.Internal, "Failed to convert to *Capture %v", err)
-// 		}
-// 		caps = append(caps, record)
-// 	}
-
-// 	sum, err := srv.getDaySummary(captureDayTimeSeconds)
-// 	if err != nil {
-// 		return nil, status.Errorf(codes.Internal, "Failed srv.getDaySummary %v", err)
-// 	}
-// 	return &proto.CapturedDay{
-// 		CaptureDayTimeSeconds: captureDayTimeSeconds,
-// 		Captures:              caps,
-// 		Summary:               sum,
-// 	}, nil
-// }
 
 type FullDump struct {
 	ImagePath        string            `json:"imagePath"`
@@ -489,15 +480,13 @@ func (srv *server) CaptureScreens() (*proto.Capture, error) {
 	logrus.Info("ct", captureTime.Unix(), " bod", bod.Unix())
 
 	capture := &proto.Capture{
-		AppName: screenWindow.AppName,
-		RowNum:  (captureTime.Unix() - bod.Unix()) / 30,
-		// AppPath:               appPath,
+		AppName:          screenWindow.AppName,
+		RowNum:           int32((captureTime.Unix() - bod.Unix()) / 30),
 		Filepath:         filepath,
 		Fullpath:         fullpath,
 		Dt:               captureTime.Format(time.RFC3339),
 		Bod:              bod.Format(time.RFC3339),
-		CaptureSizeBytes: stat.Size(),
-		IsPurged:         false,
+		CaptureSizeBytes: int32(stat.Size()),
 	}
 
 	tx, err := srv.db.Beginx()
@@ -512,7 +501,7 @@ func (srv *server) CaptureScreens() (*proto.Capture, error) {
 		}
 	}
 
-	_, err = tx.NamedExec("INSERT INTO capture (row_num, app_name, app_path, filepath, fullpath, dt, bod, capture_size_bytes, is_purged) VALUES (:row_num,:app_name,:app_path,:filepath, :fullpath, :dt, :bod, :capture_size_bytes, :is_purged) ON CONFLICT (row_num,dt) do NOTHING", capture)
+	_, err = tx.NamedExec("INSERT INTO capture (row_num, app_name, filepath, fullpath, dt, bod, capture_size_bytes) VALUES (:row_num,:app_name,:filepath, :fullpath, :dt, :bod, :capture_size_bytes) ON CONFLICT (row_num,dt) do NOTHING", capture)
 	if err != nil {
 		logrus.Errorf("Capture db insert failed: %v", err)
 		return nil, fmt.Errorf("Capture db insert failed : %v", err)

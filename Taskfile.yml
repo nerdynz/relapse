@@ -10,8 +10,8 @@ tasks:
     dir: proto
     cmds: 
       - protoc --twirp_out=. --go_out=./ --go_opt=Mrelapse.proto=./ ./relapse.proto
-      - protoc -I ~/go/src/github.com/srikrsna/protoc-gen-gotag -I . --go_opt=Mrelapse.proto=github.com/nerdynz/relapse/proto  --go_out=$GOPATH/src ./relapse.proto 
-      - protoc -I ~/go/src/github.com/srikrsna/protoc-gen-gotag -I . --gotag_out=auto="db-as-lower_snake_case":. ./relapse.proto
+      - protoc -I protoc-gen-gotag -I . --go_opt=Mrelapse.proto=github.com/nerdynz/relapse/proto  --go_out=$GOPATH/src ./relapse.proto 
+      - protoc -I protoc-gen-gotag -I . --gotag_out=auto="db-as-lower_snake_case":. ./relapse.proto
 
   proto-fe:
     summary: proto gen for client
@@ -115,7 +115,6 @@ tasks:
       - cp build/icons.icns {{.APP_NAME}}.app/Contents/Resources
       - cp build/bin/{{.APP_NAME}} {{.APP_NAME}}.app/Contents/MacOS
       - cp build/Info.plist {{.APP_NAME}}.app/Contents
-      - cp screeninfo {{.APP_NAME}}.app/Contents/MacOS
 
   package-darwin-arm64:
     summary: Packages a production build of the application into a `.app` bundle
