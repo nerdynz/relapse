@@ -16,7 +16,11 @@
         :value="currentZoomLevel"
         @input="zoomLevelChanged"
         @middle-clicked="redrawCanvas()"
-      />
+      >
+      <button class="zoom-btn" @click="middleClicked">
+        {{ currentZoom }}
+      </button>
+      </zoom>
       <canvas ref="canvasEl" id="screenshot-viewer" width="1280" height="800" />
     </div>
   </div>
