@@ -1,0 +1,14 @@
+html {
+    text-align: center;
+    color: white;
+}
+
+body {
+    margin: 0;
+    color: white;
+}
+
+#app {
+    height: 100vh;
+    text-align: center;
+}

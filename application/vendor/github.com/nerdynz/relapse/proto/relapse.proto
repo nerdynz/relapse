@@ -1,0 +1,98 @@
+syntax = "proto3";
+package proto;
+
+message Capture {
+	int32 RowNum = 1;
+	string AppName = 2;
+	string Filepath = 4;
+	string Fullpath = 5;
+	int32 CaptureSizeBytes = 6;
+	string Dt = 8;
+	string Bod = 9;
+	bool IsReal = 10;
+}
+
+message CaptureDaySummary {
+	string Bod = 1;
+	int32 TotalCapturedMinutes = 2;
+	int32 TotalCapturesCount = 3;
+	int32 TotalCaptureSizeBytes = 4;
+}
+
+message DateRequest {
+  string Dt = 1;
+}
+
+message CapturedDay {
+  string Bod = 1;
+  repeated Capture Captures = 2;
+	CaptureDaySummary Summary = 3;
+}
+
+message Settings {
+	bool IsEnabled = 1;
+	int32 RetainForXDays = 2;
+	repeated string Rejections = 3;
+	bool OpenAutomaticallyAtLogin = 4;
+	bool IsDumping = 5;
+}
+
+message SettingsOptions {
+	repeated ApplicationInfo CapturedApplications = 1;
+}
+
+message ApplicationInfo {
+	string AppName = 1;
+	string AppPath = 2;
+}
+
+message DaySummariesRequest {
+	string BodFrom = 1;
+	string BodTo = 2;
+}
+
+message DaySummaries {
+	repeated CaptureDaySummary DaySummaries = 1;
+}
+
+message SettingsPlusOptionsRequest {}
+message SettingsPlusOptions {
+	Settings Settings  = 1;
+	SettingsOptions SettingsOptions  = 2;
+}
+
+message ListenRequest {
+	bool IsPerformingInitialCapture = 1;
+}
+
+message DeleteCapturesForDayRequest {
+	int32 CaptureDayTimeSeconds = 1;
+}
+
+message DeleteCapturesForDayResponse {
+	int32 CaptureDayTimeSeconds = 1;
+	repeated string Deletions = 2;
+}
+
+service Relapse {
+  rpc GetSettings(SettingsPlusOptionsRequest) returns (SettingsPlusOptions) {}
+  rpc SetSettings(Settings) returns (Settings) {}
+  rpc LoadCapturedDay(DateRequest) returns (CapturedDay) {}
+  rpc LoadCaptureOcr(DateRequest) returns (OcrFull) {}
+  rpc LoadDaySummaries(DaySummariesRequest) returns (DaySummaries) {}
+  rpc DeleteCapturesForDay(DeleteCapturesForDayRequest) returns (DeleteCapturesForDayResponse) {}
+}
+
+message OcrFull {
+	repeated OcrMeta Meta = 1; 
+	string FullText = 2;
+}
+
+message OcrMeta {
+	string Text = 1;
+	double Confidence = 2;
+	double Height = 3;
+	double Width = 4;
+	double X = 5;
+	double Y = 6;
+}

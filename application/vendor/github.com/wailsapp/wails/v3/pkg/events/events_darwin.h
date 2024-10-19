@@ -1,0 +1,137 @@
+//go:build darwin
+
+#ifndef _events_h
+#define _events_h
+
+extern void processApplicationEvent(unsigned int, void* data);
+extern void processWindowEvent(unsigned int, unsigned int);
+
+#define EventApplicationDidBecomeActive 1030
+#define EventApplicationDidChangeBackingProperties 1031
+#define EventApplicationDidChangeEffectiveAppearance 1032
+#define EventApplicationDidChangeIcon 1033
+#define EventApplicationDidChangeOcclusionState 1034
+#define EventApplicationDidChangeScreenParameters 1035
+#define EventApplicationDidChangeStatusBarFrame 1036
+#define EventApplicationDidChangeStatusBarOrientation 1037
+#define EventApplicationDidFinishLaunching 1038
+#define EventApplicationDidHide 1039
+#define EventApplicationDidResignActiveNotification 1040
+#define EventApplicationDidUnhide 1041
+#define EventApplicationDidUpdate 1042
+#define EventApplicationWillBecomeActive 1043
+#define EventApplicationWillFinishLaunching 1044
+#define EventApplicationWillHide 1045
+#define EventApplicationWillResignActive 1046
+#define EventApplicationWillTerminate 1047
+#define EventApplicationWillUnhide 1048
+#define EventApplicationWillUpdate 1049
+#define EventApplicationDidChangeTheme 1050
+#define EventApplicationShouldHandleReopen 1051
+#define EventWindowDidBecomeKey 1052
+#define EventWindowDidBecomeMain 1053
+#define EventWindowDidBeginSheet 1054
+#define EventWindowDidChangeAlpha 1055
+#define EventWindowDidChangeBackingLocation 1056
+#define EventWindowDidChangeBackingProperties 1057
+#define EventWindowDidChangeCollectionBehavior 1058
+#define EventWindowDidChangeEffectiveAppearance 1059
+#define EventWindowDidChangeOcclusionState 1060
+#define EventWindowDidChangeOrderingMode 1061
+#define EventWindowDidChangeScreen 1062
+#define EventWindowDidChangeScreenParameters 1063
+#define EventWindowDidChangeScreenProfile 1064
+#define EventWindowDidChangeScreenSpace 1065
+#define EventWindowDidChangeScreenSpaceProperties 1066
+#define EventWindowDidChangeSharingType 1067
+#define EventWindowDidChangeSpace 1068
+#define EventWindowDidChangeSpaceOrderingMode 1069
+#define EventWindowDidChangeTitle 1070
+#define EventWindowDidChangeToolbar 1071
+#define EventWindowDidChangeVisibility 1072
+#define EventWindowDidDeminiaturize 1073
+#define EventWindowDidEndSheet 1074
+#define EventWindowDidEnterFullScreen 1075
+#define EventWindowDidEnterVersionBrowser 1076
+#define EventWindowDidExitFullScreen 1077
+#define EventWindowDidExitVersionBrowser 1078
+#define EventWindowDidExpose 1079
+#define EventWindowDidFocus 1080
+#define EventWindowDidMiniaturize 1081
+#define EventWindowDidMove 1082
+#define EventWindowDidOrderOffScreen 1083
+#define EventWindowDidOrderOnScreen 1084
+#define EventWindowDidResignKey 1085
+#define EventWindowDidResignMain 1086
+#define EventWindowDidResize 1087
+#define EventWindowDidUpdate 1088
+#define EventWindowDidUpdateAlpha 1089
+#define EventWindowDidUpdateCollectionBehavior 1090
+#define EventWindowDidUpdateCollectionProperties 1091
+#define EventWindowDidUpdateShadow 1092
+#define EventWindowDidUpdateTitle 1093
+#define EventWindowDidUpdateToolbar 1094
+#define EventWindowDidUpdateVisibility 1095
+#define EventWindowShouldClose 1096
+#define EventWindowWillBecomeKey 1097
+#define EventWindowWillBecomeMain 1098
+#define EventWindowWillBeginSheet 1099
+#define EventWindowWillChangeOrderingMode 1100
+#define EventWindowWillClose 1101
+#define EventWindowWillDeminiaturize 1102
+#define EventWindowWillEnterFullScreen 1103
+#define EventWindowWillEnterVersionBrowser 1104
+#define EventWindowWillExitFullScreen 1105
+#define EventWindowWillExitVersionBrowser 1106
+#define EventWindowWillFocus 1107
+#define EventWindowWillMiniaturize 1108
+#define EventWindowWillMove 1109
+#define EventWindowWillOrderOffScreen 1110
+#define EventWindowWillOrderOnScreen 1111
+#define EventWindowWillResignMain 1112
+#define EventWindowWillResize 1113
+#define EventWindowWillUnfocus 1114
+#define EventWindowWillUpdate 1115
+#define EventWindowWillUpdateAlpha 1116
+#define EventWindowWillUpdateCollectionBehavior 1117
+#define EventWindowWillUpdateCollectionProperties 1118
+#define EventWindowWillUpdateShadow 1119
+#define EventWindowWillUpdateTitle 1120
+#define EventWindowWillUpdateToolbar 1121
+#define EventWindowWillUpdateVisibility 1122
+#define EventWindowWillUseStandardFrame 1123
+#define EventMenuWillOpen 1124
+#define EventMenuDidOpen 1125
+#define EventMenuDidClose 1126
+#define EventMenuWillSendAction 1127
+#define EventMenuDidSendAction 1128
+#define EventMenuWillHighlightItem 1129
+#define EventMenuDidHighlightItem 1130
+#define EventMenuWillDisplayItem 1131
+#define EventMenuDidDisplayItem 1132
+#define EventMenuWillAddItem 1133
+#define EventMenuDidAddItem 1134
+#define EventMenuWillRemoveItem 1135
+#define EventMenuDidRemoveItem 1136
+#define EventMenuWillBeginTracking 1137
+#define EventMenuDidBeginTracking 1138
+#define EventMenuWillEndTracking 1139
+#define EventMenuDidEndTracking 1140
+#define EventMenuWillUpdate 1141
+#define EventMenuDidUpdate 1142
+#define EventMenuWillPopUp 1143
+#define EventMenuDidPopUp 1144
+#define EventMenuWillSendActionToItem 1145
+#define EventMenuDidSendActionToItem 1146
+#define EventWebViewDidStartProvisionalNavigation 1147
+#define EventWebViewDidReceiveServerRedirectForProvisionalNavigation 1148
+#define EventWebViewDidFinishNavigation 1149
+#define EventWebViewDidCommitNavigation 1150
+#define EventWindowFileDraggingEntered 1151
+#define EventWindowFileDraggingPerformed 1152
+#define EventWindowFileDraggingExited 1153
+
+#define MAX_EVENTS 1154
+
+
+#endif

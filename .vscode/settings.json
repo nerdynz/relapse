@@ -1,0 +1,8 @@
+{
+  "files.exclude": {
+    "frontend/dist/**": true,
+    "application/tmp/**": true,
+    "application/vendor/**": true,
+    "application/.task/**": true
+  }
+}

@@ -1,0 +1,81 @@
+$font-size-default: 13px !default;
+$font-family-default: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto",
+  "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue",
+  sans-serif !default;
+
+$color-dark-red: #c91b1b;
+$color-red: #e84556;
+$color-light-red: #ef7c88;
+
+$color-green: #1bc98e;
+$color-light-green: #4cdaae;
+$color-dark-green: #1baf7d;
+
+$color-green: #00bf02;
+$color-purple: #9f82ff;
+$color-light-purple: #bca7ff;
+
+$color-yellow: #e5d916;
+$color-light-yellow: #ede45b;
+
+$color-blue: #1997c6;
+
+$color-white: #ffffff;
+$color-light-grey: #ccc;
+
+$color-disable: #e4e4e4;
+$color-disable-text-color: #656565;
+
+$handlebar-color: #252830;
+$color-med-bg: #3c414f;
+
+$radius-small: 4px;
+$radius: 6px;
+
+$inactive-bg: #ececec;
+
+$handlebar-drag-height: 34px;
+$handlebar-height: 94px;
+
+$standard-border-radius: 5px;
+
+$theme-titlebar-bg: var(--theme-titlebar-bg);
+$theme-unfocused-bg: var(--theme-unfocused-bg);
+$theme-unfocused-text-color: var(--theme-unfocused-text-color);
+$theme-lines-between-color: var(--theme-lines-between-color);
+$theme-text-color: var(--theme-text-color);
+$theme-text-heading-color: var(--theme-text-heading-color);
+$theme-text-subheading-color: var(--theme-text-subheading-color);
+$theme-input-active-bg: var(--theme-input-active-bg);
+$theme-input-hover-bg: var(--theme-input-hover-bg);
+$theme-input-bg: var(--theme-input-bg);
+$theme-input-row-odd: var(--theme-input-row-odd);
+$theme-input-row-even: var(--theme-input-row-even);
+
+
+// DARK
+$was-theme-unfocused-bg: #e6e6e6;
+$was-theme-unfocused-text-color: #acacac;
+$was-theme-lines-between-color: #403F3E;
+$was-theme-text-color: rgba(255, 255, 255, 0.87);
+$was-theme-text-heading-color: rgba(255, 255, 255, 0.74);
+$was-theme-text-subheading-color: rgba(255, 255, 255, 0.67);;
+$was-theme-input-active-bg: hsl(0deg 0% 20% / 60%);
+$was-theme-input-hover-bg: hsl(0deg 0% 15% / 60%);
+$was-theme-input-bg: hsl(0deg 0% 10% / 100%);
+$was-theme-input-row-odd: #ffffff;
+$was-theme-input-row-even: #f4f5f5;
+
+
+// Light
+$was-theme-unfocused-bg: #e6e6e6;
+$was-theme-unfocused-text-color: #acacac;
+$was-theme-lines-between-color: #b3b3b3;
+$was-theme-text-color: #515151;
+$was-theme-text-heading-color: #444444;
+$was-theme-text-subheading-color: #555555;
+$was-theme-input-active-bg: hsl(0deg 0% 90% / 100%);
+$was-theme-input-hover-bg: hsl(0deg 0% 85% / 100%);
+$was-theme-input-bg: hsl(0deg 0% 95% / 100%);
+$was-theme-input-row-odd: #ffffff;
+$was-theme-input-row-even: #f4f5f5;
