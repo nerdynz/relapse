@@ -2,7 +2,7 @@ module github.com/nerdynz/relapse
 
 go 1.21.1
 
-replace github.com/wailsapp/wails/v3 => /Users/jaybeecave/go/src/github.com/nerdynz/wails/v3
+replace github.com/wailsapp/wails/v3 => /Users/jcave/go/src/github.com/nerdynz/wails/v3
 
 require (
 	github.com/adrg/xdg v0.4.0

@@ -7,7 +7,7 @@
 
 <script lang="ts">
 // @ts-nocheck
-import {defineComponent} from 'vue'
+import { defineComponent } from 'vue'
 import Home from '../assets/fas/home.svg?component'
 import Share from '../assets/fas/share.svg?component'
 import ChevronLeft from '../assets/fas/chevron-left.svg?component'
@@ -81,13 +81,13 @@ export default defineComponent({
     },
     size: String
   },
-  data () {
+  data() {
     return {
       icons: icons
     }
   },
   computed: {
-    iconSize () {
+    iconSize() {
       let size = (this.size + '').toLowerCase()
       switch (size) {
         case 'small':
@@ -103,7 +103,7 @@ export default defineComponent({
           return ''
       }
     },
-    iconName () {
+    iconName() {
       let iconName = this.icon
       if (typeof this.icon === 'string') {
         // cool
@@ -114,7 +114,7 @@ export default defineComponent({
       iconName = 'ico-' + iconName
       return iconName
     },
-    hasIcon () {
+    hasIcon() {
       let hasIcon = !!this.icons[this.iconName]
       if (!hasIcon) {
         console.warn('missing icon', this.iconName)
@@ -135,25 +135,31 @@ export default defineComponent({
     width: 1.5rem;
     fill: currentColor;
   }
+
   &.is-large {
     height: 3rem;
     width: 3rem;
+
     svg {
       height: 3rem;
       width: 3rem;
     }
   }
+
   &.is-medium {
     height: 2rem;
     width: 2rem;
+
     svg {
       height: 2rem;
       width: 2rem;
     }
   }
+
   &.is-small {
     height: 1rem;
     width: 1rem;
+
     svg {
       height: 100%;
       width: 100%;
